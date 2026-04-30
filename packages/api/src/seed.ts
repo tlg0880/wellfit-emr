@@ -3,18 +3,37 @@ import { db } from "@wellfit-emr/db";
 import {
   allergyIntolerance,
   appointment,
+  attachmentLink,
+  binaryObject,
+  clinicalDocument,
+  clinicalDocumentVersion,
+  consentRecord,
+  coverage,
+  dataDisclosureAuthorization,
   diagnosis,
+  diagnosticReport,
+  documentSection,
   encounter,
   encounterParticipant,
+  ihceBundle,
+  incapacityCertificate,
+  interconsultation,
   medicationAdministration,
   medicationOrder,
   observation,
   organization,
   patient,
+  patientContact,
+  patientIdentifier,
+  payer,
   practitioner,
+  practitionerRole,
   procedureRecord,
+  ripsExport,
+  serviceRequest,
   serviceUnit,
   site,
+  userPractitionerLink,
 } from "@wellfit-emr/db/schema/clinical";
 import { ripsReferenceEntry } from "@wellfit-emr/db/schema/rips-reference";
 import { and, eq, like, sql } from "drizzle-orm";
@@ -62,6 +81,19 @@ async function cleanSeedData(): Promise<void> {
 
   await db.run(sql`PRAGMA foreign_keys = OFF`);
 
+  await db.delete(attachmentLink);
+  await db.delete(binaryObject);
+  await db.delete(ihceBundle);
+  await db.delete(ripsExport);
+  await db.delete(dataDisclosureAuthorization);
+  await db.delete(consentRecord);
+  await db.delete(incapacityCertificate);
+  await db.delete(interconsultation);
+  await db.delete(diagnosticReport);
+  await db.delete(serviceRequest);
+  await db.delete(documentSection);
+  await db.delete(clinicalDocumentVersion);
+  await db.delete(clinicalDocument);
   await db.delete(medicationAdministration);
   await db.delete(medicationOrder);
   await db.delete(observation);
@@ -71,8 +103,14 @@ async function cleanSeedData(): Promise<void> {
   await db.delete(encounter);
   await db.delete(appointment);
   await db.delete(allergyIntolerance);
+  await db.delete(coverage);
+  await db.delete(patientContact);
+  await db.delete(patientIdentifier);
   await db.delete(patient);
+  await db.delete(userPractitionerLink);
+  await db.delete(practitionerRole);
   await db.delete(practitioner);
+  await db.delete(payer);
   await db.delete(serviceUnit);
   await db.delete(site);
   await db.delete(organization);
@@ -211,6 +249,39 @@ async function getAnyEnabledCode(tableName: string): Promise<string> {
   return entry.code;
 }
 
+async function getFirstEnabledReferences(
+  tableName: string,
+  limit: number
+): Promise<Array<{ code: string; name: string }>> {
+  const entries = await db
+    .select({ code: ripsReferenceEntry.code, name: ripsReferenceEntry.name })
+    .from(ripsReferenceEntry)
+    .where(
+      and(
+        eq(ripsReferenceEntry.tableName, tableName),
+        eq(ripsReferenceEntry.enabled, true)
+      )
+    )
+    .orderBy(ripsReferenceEntry.name)
+    .limit(limit);
+
+  if (entries.length < limit) {
+    throw new Error(
+      `Expected at least ${limit} enabled codes in '${tableName}', found ${entries.length}.`
+    );
+  }
+
+  return entries;
+}
+
+async function hashText(input: string): Promise<string> {
+  const data = new TextEncoder().encode(input);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(hashBuffer))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
+
 // ─── Catalog Sync ───────────────────────────────────────────────────────────
 
 async function syncCatalogs() {
@@ -233,9 +304,12 @@ async function syncCatalogs() {
 
 interface FacilityContext {
   organizationId: string;
+  payers: Array<{ id: string; name: string; code: string }>;
   practitioners: Array<{ id: string; fullName: string; specialty: string }>;
   serviceUnitId: string;
+  serviceUnits: Array<{ id: string; name: string; careSetting: string }>;
   siteId: string;
+  sites: Array<{ id: string; name: string }>;
 }
 
 async function createFacilities(): Promise<FacilityContext> {
@@ -267,6 +341,35 @@ async function createFacilities(): Promise<FacilityContext> {
   });
   log("FACILITIES", `Service Unit: ${unit.name} (${unit.id})`);
 
+  const siteSur = await client.facilities.createSite({
+    organizationId: org.id,
+    siteCode: "WF-BOG-02",
+    name: "Sede Bogotá Sur",
+    municipalityCode: await resolveCode("Municipio", "Bogotá"),
+    address: "Carrera 30 # 12-45, Bogotá D.C.",
+  });
+
+  const urgentUnit = await client.facilities.createServiceUnit({
+    siteId: site.id,
+    serviceCode: "URG-24H",
+    name: "Urgencias 24 horas",
+    careSetting: "urgent-care",
+  });
+
+  const imagingUnit = await client.facilities.createServiceUnit({
+    siteId: siteSur.id,
+    serviceCode: "IMG-DX",
+    name: "Imagenología diagnóstica",
+    careSetting: "diagnostic",
+  });
+
+  const labUnit = await client.facilities.createServiceUnit({
+    siteId: siteSur.id,
+    serviceCode: "LAB-CLI",
+    name: "Laboratorio clínico",
+    careSetting: "diagnostic",
+  });
+
   const practitionerData = [
     { fullName: "Dra. Carolina Mendoza", specialty: "Medicina Interna" },
     { fullName: "Dr. Fernando Castillo", specialty: "Cardiología" },
@@ -276,6 +379,18 @@ async function createFacilities(): Promise<FacilityContext> {
     { fullName: "Dr. Ricardo Salazar", specialty: "Gastroenterología" },
     { fullName: "Dra. Natalia Vargas", specialty: "Ginecología y Obstetricia" },
     { fullName: "Dr. Daniel Ortega", specialty: "Ortopedia y Traumatología" },
+    { fullName: "Dra. Valentina Suárez", specialty: "Medicina General" },
+    { fullName: "Dr. Mateo Hernández", specialty: "Neumología" },
+    { fullName: "Dra. Camila Restrepo", specialty: "Endocrinología" },
+    { fullName: "Dr. Juan Pablo Mejía", specialty: "Radiología" },
+    { fullName: "Dra. Marcela Ortiz", specialty: "Laboratorio Clínico" },
+    { fullName: "Dr. Esteban Cárdenas", specialty: "Urgencias" },
+    { fullName: "Dra. Paola Benítez", specialty: "Enfermería Jefe" },
+    { fullName: "Dr. Santiago León", specialty: "Fisiatría" },
+    { fullName: "Dra. Manuela Arias", specialty: "Nutrición Clínica" },
+    { fullName: "Dr. Felipe Navarro", specialty: "Medicina Familiar" },
+    { fullName: "Dra. Daniela Acosta", specialty: "Psicología Clínica" },
+    { fullName: "Dr. Nicolás Rivas", specialty: "Cirugía General" },
   ];
 
   const practitioners: Array<{
@@ -299,13 +414,72 @@ async function createFacilities(): Promise<FacilityContext> {
       fullName: created.fullName,
       specialty: p.specialty,
     });
+    await db.insert(practitionerRole).values({
+      id: crypto.randomUUID(),
+      practitionerId: created.id,
+      organizationId: org.id,
+      siteId: index % 2 === 0 ? site.id : siteSur.id,
+      roleCode: p.specialty,
+      startAt: new Date("2024-01-01T08:00:00-05:00"),
+    });
     log("FACILITIES", `Practitioner: ${created.fullName}`);
+  }
+
+  const primaryPractitioner = practitioners[0];
+  if (primaryPractitioner) {
+    await db.insert(userPractitionerLink).values({
+      id: crypto.randomUUID(),
+      userId: SEED_USER.id,
+      practitionerId: primaryPractitioner.id,
+      linkType: "primary",
+      effectiveFrom: new Date("2024-01-01T08:00:00-05:00"),
+    });
+  }
+
+  const payerReferences = await getFirstEnabledReferences("CodigoEAPByNit", 3);
+
+  const payers: Array<{ id: string; name: string; code: string }> = [];
+  for (const [index, payerReference] of payerReferences.entries()) {
+    const [createdPayer] = await db
+      .insert(payer)
+      .values({
+        id: crypto.randomUUID(),
+        payerType: index === 2 ? "prepaid" : "eps",
+        name: payerReference.name,
+        code: payerReference.code,
+        status: "active",
+      })
+      .returning();
+
+    if (createdPayer) {
+      payers.push(createdPayer);
+      log("FACILITIES", `Payer: ${createdPayer.name}`);
+    }
   }
 
   return {
     organizationId: org.id,
+    payers,
     siteId: site.id,
     serviceUnitId: unit.id,
+    serviceUnits: [
+      { id: unit.id, name: unit.name, careSetting: unit.careSetting },
+      {
+        id: urgentUnit.id,
+        name: urgentUnit.name,
+        careSetting: urgentUnit.careSetting,
+      },
+      {
+        id: imagingUnit.id,
+        name: imagingUnit.name,
+        careSetting: imagingUnit.careSetting,
+      },
+      { id: labUnit.id, name: labUnit.name, careSetting: labUnit.careSetting },
+    ],
+    sites: [
+      { id: site.id, name: site.name },
+      { id: siteSur.id, name: siteSur.name },
+    ],
     practitioners,
   };
 }
@@ -1441,21 +1615,44 @@ function createNarratives(): PatientNarrative[] {
 interface SeedResult {
   allergiesCreated: number;
   appointmentsCreated: number;
+  attachmentsCreated: number;
+  clinicalDocumentsCreated: number;
+  consentsCreated: number;
+  contactsCreated: number;
+  coverageCreated: number;
+  dataDisclosuresCreated: number;
   diagnosesCreated: number;
+  diagnosticReportsCreated: number;
   encountersCreated: number;
+  ihceBundlesCreated: number;
+  incapacitiesCreated: number;
+  interconsultationsCreated: number;
+  medicationAdministrationsCreated: number;
   medicationsCreated: number;
   observationsCreated: number;
   patientsCreated: number;
   proceduresCreated: number;
+  ripsExportsCreated: number;
+  serviceRequestsCreated: number;
 }
 
 interface EncounterStats {
   appointments: number;
+  attachments: number;
+  clinicalDocuments: number;
+  consents: number;
+  dataDisclosures: number;
   diagnoses: number;
+  diagnosticReports: number;
   encounters: number;
+  ihceBundles: number;
+  incapacities: number;
+  interconsultations: number;
+  medicationAdministrations: number;
   medications: number;
   observations: number;
   procedures: number;
+  serviceRequests: number;
 }
 
 async function createPatientRecord(
@@ -1492,6 +1689,54 @@ async function createPatientRecord(
     `${patient.firstName} ${patient.lastName1} (${patient.id.slice(0, 8)})`
   );
   return patient;
+}
+
+async function createAdministrativePatientData(
+  patientId: string,
+  narrative: PatientNarrative,
+  facility: FacilityContext,
+  docIndex: number
+): Promise<{ contacts: number; coverage: number }> {
+  const selectedPayer = facility.payers[docIndex % facility.payers.length];
+  if (!selectedPayer) {
+    throw new Error("No payer available for patient coverage.");
+  }
+
+  const coveragePlanCode = await getAnyEnabledCode("CoberturaPlan");
+  const affiliateType = await getAnyEnabledCode("RIPSTipoUsuarioVersion2");
+
+  await db.insert(patientIdentifier).values({
+    id: crypto.randomUUID(),
+    patientId,
+    identifierSystem: "wellfit-mrn",
+    identifierType: "MR",
+    identifierValue: `WF-${String(docIndex + 1).padStart(6, "0")}`,
+    isCurrent: true,
+  });
+
+  await db.insert(patientContact).values({
+    id: crypto.randomUUID(),
+    patientId,
+    contactType: "emergency",
+    fullName: `${narrative.lastName1} ${docIndex % 2 === 0 ? "Gómez" : "López"}`,
+    relationshipCode: docIndex % 2 === 0 ? "conyuge" : "familiar",
+    phone: `300555${String(1000 + docIndex).padStart(4, "0")}`,
+    email: `contacto.${docIndex + 1}@wellfit.example`,
+    address: `Carrera ${10 + docIndex} # ${20 + docIndex}-35`,
+    isPrimary: true,
+  });
+
+  await db.insert(coverage).values({
+    id: crypto.randomUUID(),
+    patientId,
+    payerId: selectedPayer.id,
+    affiliateType,
+    coveragePlanCode,
+    policyNumber: `POL-WF-${selectedPayer.code}-${String(docIndex + 1).padStart(4, "0")}`,
+    effectiveFrom: new Date("2024-01-01T00:00:00-05:00"),
+  });
+
+  return { contacts: 1, coverage: 1 };
 }
 
 async function createAllergyIfAsthma(
@@ -1569,11 +1814,21 @@ async function createEncounterBundle(
   const client = getClient();
   const stats: EncounterStats = {
     appointments: 0,
+    attachments: 0,
+    clinicalDocuments: 0,
+    consents: 0,
+    dataDisclosures: 0,
     diagnoses: 0,
+    diagnosticReports: 0,
     encounters: 0,
+    ihceBundles: 0,
+    incapacities: 0,
+    interconsultations: 0,
+    medicationAdministrations: 0,
     medications: 0,
     observations: 0,
     procedures: 0,
+    serviceRequests: 0,
   };
 
   await client.appointments.create({
@@ -1665,7 +1920,7 @@ async function createEncounterBundle(
   }
 
   if (encounterIndex === 0 || encounterIndex === 1) {
-    await createMedicationForEncounter(
+    const medication = await createMedicationForEncounter(
       patientId,
       encounter.id,
       practitioner.id,
@@ -1676,12 +1931,44 @@ async function createEncounterBundle(
       encounterIndex
     );
     stats.medications++;
+    if (encounterIndex === 0) {
+      await client.medicationOrders.createAdministration({
+        medicationOrderId: medication.id,
+        administeredAt: new Date(startedAt.getTime() + 10 * 60_000),
+        administeredBy: practitioner.id,
+        doseAdministered:
+          `${medication.dose} ${medication.doseUnit ?? ""}`.trim(),
+        status: "completed",
+      });
+      stats.medicationAdministrations++;
+    }
   }
+
+  const enrichedStats = await createRegulatoryAndClinicalArtifacts(
+    patientId,
+    encounter.id,
+    facility,
+    practitioner.id,
+    encNarrative,
+    startedAt,
+    docIndex,
+    encounterIndex
+  );
+
+  stats.attachments += enrichedStats.attachments;
+  stats.clinicalDocuments += enrichedStats.clinicalDocuments;
+  stats.consents += enrichedStats.consents;
+  stats.dataDisclosures += enrichedStats.dataDisclosures;
+  stats.diagnosticReports += enrichedStats.diagnosticReports;
+  stats.ihceBundles += enrichedStats.ihceBundles;
+  stats.incapacities += enrichedStats.incapacities;
+  stats.interconsultations += enrichedStats.interconsultations;
+  stats.serviceRequests += enrichedStats.serviceRequests;
 
   return { stats, diagnosisIds };
 }
 
-async function createMedicationForEncounter(
+function createMedicationForEncounter(
   patientId: string,
   encounterId: string,
   prescriberId: string,
@@ -1690,7 +1977,11 @@ async function createMedicationForEncounter(
   startedAt: Date,
   docIndex: number,
   encounterIndex: number
-) {
+): Promise<{
+  dose: string;
+  doseUnit: string | null;
+  id: string;
+}> {
   const client = getClient();
   const medNames = [
     {
@@ -1753,7 +2044,7 @@ async function createMedicationForEncounter(
 
   const primaryDiagnosis = encNarrative.diagnosis[0];
 
-  await client.medicationOrders.create({
+  return client.medicationOrders.create({
     patientId,
     encounterId,
     prescriberId,
@@ -1773,6 +2064,404 @@ async function createMedicationForEncounter(
   });
 }
 
+type ArtifactStats = Pick<
+  EncounterStats,
+  | "attachments"
+  | "clinicalDocuments"
+  | "consents"
+  | "dataDisclosures"
+  | "diagnosticReports"
+  | "ihceBundles"
+  | "incapacities"
+  | "interconsultations"
+  | "serviceRequests"
+>;
+
+function createEmptyArtifactStats(): ArtifactStats {
+  return {
+    attachments: 0,
+    clinicalDocuments: 0,
+    consents: 0,
+    dataDisclosures: 0,
+    diagnosticReports: 0,
+    ihceBundles: 0,
+    incapacities: 0,
+    interconsultations: 0,
+    serviceRequests: 0,
+  };
+}
+
+async function createRegulatoryAndClinicalArtifacts(
+  patientId: string,
+  encounterId: string,
+  facility: FacilityContext,
+  practitionerId: string,
+  encNarrative: EncounterNarrative,
+  startedAt: Date,
+  docIndex: number,
+  encounterIndex: number
+): Promise<ArtifactStats> {
+  const stats = createEmptyArtifactStats();
+  const document = await createClinicalDocumentForEncounter(
+    patientId,
+    encounterId,
+    practitionerId,
+    encNarrative,
+    encounterIndex
+  );
+  stats.clinicalDocuments++;
+
+  if (encounterIndex === 0) {
+    const consentStats = await createConsentArtifacts(
+      patientId,
+      encounterId,
+      encNarrative,
+      startedAt
+    );
+    stats.consents += consentStats.consents;
+    stats.dataDisclosures += consentStats.dataDisclosures;
+  }
+
+  const serviceStats = await createServiceRequestArtifacts(
+    patientId,
+    encounterId,
+    facility,
+    practitionerId,
+    encNarrative,
+    startedAt,
+    docIndex,
+    encounterIndex
+  );
+  stats.serviceRequests += serviceStats.serviceRequests;
+  stats.diagnosticReports += serviceStats.diagnosticReports;
+  stats.attachments += serviceStats.attachments;
+
+  stats.interconsultations += await createInterconsultationIfNeeded(
+    encounterId,
+    practitionerId,
+    document.id,
+    encNarrative,
+    startedAt,
+    encounterIndex
+  );
+  stats.incapacities += await createIncapacityIfNeeded(
+    patientId,
+    encounterId,
+    practitionerId,
+    encNarrative,
+    startedAt
+  );
+  stats.ihceBundles += await createIhceBundle(
+    patientId,
+    encounterId,
+    document.id,
+    encNarrative,
+    startedAt,
+    docIndex,
+    encounterIndex
+  );
+
+  return stats;
+}
+
+async function createClinicalDocumentForEncounter(
+  patientId: string,
+  encounterId: string,
+  practitionerId: string,
+  encNarrative: EncounterNarrative,
+  encounterIndex: number
+): Promise<{ id: string }> {
+  const client = getClient();
+  const primaryDiagnosis = encNarrative.diagnosis[0];
+  const documentText = [
+    `Motivo de consulta: ${encNarrative.reasonForVisit}`,
+    `Diagnóstico principal: ${primaryDiagnosis?.description ?? "Sin diagnóstico principal"}`,
+    `Plan: continuar manejo integral y seguimiento por ${encNarrative.appointmentReason.toLowerCase()}.`,
+  ].join("\n");
+
+  const document = await client.clinicalDocuments.create({
+    patientId,
+    encounterId,
+    authorPractitionerId: practitionerId,
+    documentType: encounterIndex === 0 ? "historia_clinica" : "nota_evolucion",
+    payloadJson: {
+      source: "seed",
+      reasonForVisit: encNarrative.reasonForVisit,
+      diagnoses: encNarrative.diagnosis.map((diag) => diag.description),
+      observations: encNarrative.observations.map((obs) => ({
+        type: obs.observationType,
+        value: obs.valueText ?? obs.valueNum,
+        unit: obs.unit ?? null,
+      })),
+      plan: encNarrative.procedures.map((proc) => proc.description),
+    },
+    sections: [
+      {
+        sectionCode: "subjective",
+        sectionOrder: 1,
+        sectionPayloadJson: {
+          reasonForVisit: encNarrative.reasonForVisit,
+          notes: encNarrative.notes ?? null,
+        },
+      },
+      {
+        sectionCode: "assessment-plan",
+        sectionOrder: 2,
+        sectionPayloadJson: {
+          diagnoses: encNarrative.diagnosis.map((diag) => diag.description),
+          procedures: encNarrative.procedures.map((proc) => proc.description),
+        },
+      },
+    ],
+    textRendered: documentText,
+  });
+
+  if (encounterIndex !== 1) {
+    await client.clinicalDocuments.sign({ id: document.id });
+  }
+
+  return document;
+}
+
+async function createConsentArtifacts(
+  patientId: string,
+  encounterId: string,
+  encNarrative: EncounterNarrative,
+  startedAt: Date
+): Promise<Pick<ArtifactStats, "consents" | "dataDisclosures">> {
+  const client = getClient();
+  await client.consents.createConsent({
+    patientId,
+    encounterId,
+    consentType: "atencion_integral_ambulatoria",
+    procedureCode: encNarrative.procedures[0]
+      ? await resolveCode("CUPSRips", encNarrative.procedures[0].cupsSearch)
+      : null,
+    decision: "granted",
+    grantedByPersonName: "Paciente",
+    representativeRelationship: null,
+    signedAt: new Date(startedAt.getTime() - 15 * 60_000),
+    expiresAt: new Date(startedAt.getTime() + 365 * 24 * 60 * 60_000),
+  });
+
+  await client.consents.createDataDisclosure({
+    patientId,
+    thirdPartyName: "Entidad responsable de pago",
+    purposeCode: "facturacion-y-auditoria-medica",
+    scopeJson: {
+      data: ["identificacion", "diagnosticos", "procedimientos", "ordenes"],
+      source: "seed",
+    },
+    grantedAt: new Date(startedAt.getTime() - 10 * 60_000),
+    expiresAt: new Date(startedAt.getTime() + 365 * 24 * 60 * 60_000),
+    legalBasis: "consentimiento",
+  });
+
+  return { consents: 1, dataDisclosures: 1 };
+}
+
+async function createServiceRequestArtifacts(
+  patientId: string,
+  encounterId: string,
+  facility: FacilityContext,
+  practitionerId: string,
+  encNarrative: EncounterNarrative,
+  startedAt: Date,
+  docIndex: number,
+  encounterIndex: number
+): Promise<
+  Pick<ArtifactStats, "attachments" | "diagnosticReports" | "serviceRequests">
+> {
+  if (encNarrative.procedures.length <= 1 && encounterIndex !== 1) {
+    return { attachments: 0, diagnosticReports: 0, serviceRequests: 0 };
+  }
+
+  const client = getClient();
+  const primaryDiagnosis = encNarrative.diagnosis[0];
+  const requestCode = await resolveCode(
+    "CUPSRips",
+    encNarrative.procedures.at(-1)?.cupsSearch ?? "LABORATORIO"
+  );
+  const serviceRequest = await client.serviceRequests.create({
+    patientId,
+    encounterId,
+    requestType: encounterIndex % 2 === 0 ? "laboratory" : "imaging",
+    requestCode,
+    priority: encounterIndex === 0 ? "routine" : "preferential",
+    requestedBy: practitionerId,
+    requestedAt: new Date(startedAt.getTime() + 20 * 60_000),
+    status: "completed",
+  });
+
+  await client.serviceRequests.createReport({
+    requestId: serviceRequest.id,
+    encounterId,
+    reportType: serviceRequest.requestType,
+    issuedAt: new Date(startedAt.getTime() + 48 * 60 * 60_000),
+    conclusionText:
+      primaryDiagnosis?.description ??
+      "Resultado compatible con el contexto clínico registrado.",
+    performerOrgId: facility.organizationId,
+    status: "final",
+  });
+
+  await createAttachment(
+    serviceRequest.id,
+    "service_request",
+    `Soporte ${serviceRequest.requestType} ${docIndex + 1}-${encounterIndex + 1}`,
+    "diagnostic-result",
+    new Date(startedAt.getTime() + 49 * 60 * 60_000)
+  );
+
+  return { attachments: 1, diagnosticReports: 1, serviceRequests: 1 };
+}
+
+function getRequestedSpecialty(
+  encNarrative: EncounterNarrative
+): string | null {
+  const clinicalText =
+    `${encNarrative.appointmentReason} ${encNarrative.reasonForVisit}`.toLowerCase();
+  if (clinicalText.includes("prenatal")) {
+    return "Ginecología y Obstetricia";
+  }
+  if (clinicalText.includes("asma")) {
+    return "Neumología";
+  }
+  if (clinicalText.includes("cardiología")) {
+    return "Cardiología";
+  }
+  if (clinicalText.includes("dermatología")) {
+    return "Dermatología";
+  }
+  return null;
+}
+
+async function createInterconsultationIfNeeded(
+  encounterId: string,
+  practitionerId: string,
+  documentId: string,
+  encNarrative: EncounterNarrative,
+  startedAt: Date,
+  encounterIndex: number
+): Promise<number> {
+  const specialty = getRequestedSpecialty(encNarrative);
+  if (!specialty) {
+    return 0;
+  }
+
+  const client = getClient();
+  const interconsultation = await client.interconsultations.create({
+    encounterId,
+    requestedSpecialty: specialty,
+    requestedBy: practitionerId,
+    requestedAt: new Date(startedAt.getTime() + 25 * 60_000),
+    reasonText: `Valoración complementaria por ${specialty}: ${encNarrative.reasonForVisit}`,
+    status: encounterIndex === 0 ? "requested" : "completed",
+  });
+
+  if (encounterIndex !== 0) {
+    await client.interconsultations.respond({
+      id: interconsultation.id,
+      responseDocumentId: documentId,
+      status: "completed",
+    });
+  }
+
+  return 1;
+}
+
+async function createIncapacityIfNeeded(
+  patientId: string,
+  encounterId: string,
+  practitionerId: string,
+  encNarrative: EncounterNarrative,
+  startedAt: Date
+): Promise<number> {
+  const clinicalText =
+    `${encNarrative.appointmentReason} ${encNarrative.reasonForVisit}`.toLowerCase();
+  if (
+    !(clinicalText.includes("dolor lumbar") || clinicalText.includes("crisis"))
+  ) {
+    return 0;
+  }
+
+  const client = getClient();
+  await client.incapacityCertificates.create({
+    patientId,
+    encounterId,
+    issuedBy: practitionerId,
+    issuedAt: new Date(startedAt.getTime() + 35 * 60_000),
+    startDate: startedAt,
+    endDate: new Date(startedAt.getTime() + 3 * 24 * 60 * 60_000),
+    conceptText: `Incapacidad temporal por ${encNarrative.appointmentReason.toLowerCase()}.`,
+    destinationEntity: "Empleador / Entidad responsable de pago",
+    signedAt: new Date(startedAt.getTime() + 36 * 60_000),
+  });
+
+  return 1;
+}
+
+async function createIhceBundle(
+  patientId: string,
+  encounterId: string,
+  documentId: string,
+  encNarrative: EncounterNarrative,
+  startedAt: Date,
+  docIndex: number,
+  encounterIndex: number
+): Promise<number> {
+  const client = getClient();
+  await client.ihceBundles.create({
+    encounterId,
+    bundleType: "RDA",
+    bundleJson: {
+      source: "seed",
+      patientId,
+      encounterId,
+      documentId,
+      diagnoses: encNarrative.diagnosis.map((diag) => diag.description),
+    },
+    generatedAt: new Date(startedAt.getTime() + 60 * 60_000),
+    sentAt:
+      encounterIndex % 2 === 0
+        ? new Date(startedAt.getTime() + 65 * 60_000)
+        : null,
+    responseCode: encounterIndex % 2 === 0 ? "ACK" : null,
+    vidaCode: `VIDA-${docIndex + 1}-${encounterIndex + 1}`,
+    status: encounterIndex % 2 === 0 ? "sent" : "generated",
+  });
+
+  return 1;
+}
+
+async function createAttachment(
+  linkedEntityId: string,
+  linkedEntityType: string,
+  title: string,
+  classification: string,
+  capturedAt: Date
+) {
+  const client = getClient();
+  const storageLocator = `seed://${linkedEntityType}/${linkedEntityId}/${title}`;
+  const binary = await client.attachments.createBinaryObject({
+    storageLocator,
+    mimeType: "application/pdf",
+    sizeBytes: 24_576 + title.length,
+    hashSha256: await hashText(storageLocator),
+    encryptedKeyRef: `seed-key-${await hashText(`${storageLocator}:key`)}`,
+    retentionClass: "clinical-record",
+  });
+
+  return client.attachments.createLink({
+    binaryId: binary.id,
+    linkedEntityType,
+    linkedEntityId,
+    title,
+    classification,
+    capturedAt,
+  });
+}
+
 async function createPatientData(
   narrative: PatientNarrative,
   facility: FacilityContext,
@@ -1788,25 +2477,49 @@ async function createPatientData(
     patientsCreated: 1,
     allergiesCreated: 0,
     appointmentsCreated: 0,
+    attachmentsCreated: 0,
+    clinicalDocumentsCreated: 0,
+    consentsCreated: 0,
+    contactsCreated: 0,
+    coverageCreated: 0,
+    dataDisclosuresCreated: 0,
     encountersCreated: 0,
     diagnosesCreated: 0,
+    diagnosticReportsCreated: 0,
+    ihceBundlesCreated: 0,
+    incapacitiesCreated: 0,
+    interconsultationsCreated: 0,
+    medicationAdministrationsCreated: 0,
     observationsCreated: 0,
     proceduresCreated: 0,
     medicationsCreated: 0,
+    ripsExportsCreated: 0,
+    serviceRequestsCreated: 0,
   };
+
+  const administrativeData = await createAdministrativePatientData(
+    patient.id,
+    narrative,
+    facility,
+    docIndex
+  );
+  stats.contactsCreated = administrativeData.contacts;
+  stats.coverageCreated = administrativeData.coverage;
 
   const hasAllergy = await createAllergyIfAsthma(patient.id, narrative);
   if (hasAllergy) {
     stats.allergiesCreated = 1;
   }
 
-  const practitioner =
-    facility.practitioners[docIndex % facility.practitioners.length];
-  if (!practitioner) {
-    throw new Error("No practitioner available for patient.");
-  }
-
   for (const [encounterIndex, encNarrative] of narrative.encounters.entries()) {
+    const practitioner =
+      facility.practitioners[
+        (docIndex + encounterIndex) % facility.practitioners.length
+      ];
+    if (!practitioner) {
+      throw new Error("No practitioner available for encounter.");
+    }
+
     const scheduledAt = new Date(
       Date.now() -
         (narrative.encounters.length - encounterIndex) *
@@ -1839,9 +2552,126 @@ async function createPatientData(
       (stats.proceduresCreated ?? 0) + bundle.stats.procedures;
     stats.medicationsCreated =
       (stats.medicationsCreated ?? 0) + bundle.stats.medications;
+    stats.medicationAdministrationsCreated =
+      (stats.medicationAdministrationsCreated ?? 0) +
+      bundle.stats.medicationAdministrations;
+    stats.clinicalDocumentsCreated =
+      (stats.clinicalDocumentsCreated ?? 0) + bundle.stats.clinicalDocuments;
+    stats.consentsCreated =
+      (stats.consentsCreated ?? 0) + bundle.stats.consents;
+    stats.dataDisclosuresCreated =
+      (stats.dataDisclosuresCreated ?? 0) + bundle.stats.dataDisclosures;
+    stats.serviceRequestsCreated =
+      (stats.serviceRequestsCreated ?? 0) + bundle.stats.serviceRequests;
+    stats.diagnosticReportsCreated =
+      (stats.diagnosticReportsCreated ?? 0) + bundle.stats.diagnosticReports;
+    stats.interconsultationsCreated =
+      (stats.interconsultationsCreated ?? 0) + bundle.stats.interconsultations;
+    stats.incapacitiesCreated =
+      (stats.incapacitiesCreated ?? 0) + bundle.stats.incapacities;
+    stats.attachmentsCreated =
+      (stats.attachmentsCreated ?? 0) + bundle.stats.attachments;
+    stats.ihceBundlesCreated =
+      (stats.ihceBundlesCreated ?? 0) + bundle.stats.ihceBundles;
   }
 
   return { patientId: patient.id, stats };
+}
+
+async function createRipsExportsForPayers(
+  facility: FacilityContext,
+  totals: SeedResult
+): Promise<number> {
+  const client = getClient();
+  const periodTo = new Date();
+  const periodFrom = new Date(periodTo.getTime() - 90 * 24 * 60 * 60_000);
+  let created = 0;
+
+  for (const [index, selectedPayer] of facility.payers.entries()) {
+    await client.ripsExports.create({
+      payerId: selectedPayer.id,
+      periodFrom,
+      periodTo,
+      generatedAt: new Date(periodTo.getTime() + index * 60_000),
+      status: index === 0 ? "validated" : "draft",
+      payloadJson: {
+        source: "seed",
+        payerCode: selectedPayer.code,
+        period: {
+          from: periodFrom.toISOString(),
+          to: periodTo.toISOString(),
+        },
+        totals: {
+          patients: totals.patientsCreated,
+          encounters: totals.encountersCreated,
+          diagnoses: totals.diagnosesCreated,
+          procedures: totals.proceduresCreated,
+          serviceRequests: totals.serviceRequestsCreated,
+        },
+      },
+      validationResultJson:
+        index === 0
+          ? {
+              status: "ok",
+              warnings: [],
+              source: "seed",
+            }
+          : null,
+    });
+    created++;
+  }
+
+  return created;
+}
+
+function createEmptySeedResult(): SeedResult {
+  return {
+    allergiesCreated: 0,
+    appointmentsCreated: 0,
+    attachmentsCreated: 0,
+    clinicalDocumentsCreated: 0,
+    consentsCreated: 0,
+    contactsCreated: 0,
+    coverageCreated: 0,
+    dataDisclosuresCreated: 0,
+    diagnosesCreated: 0,
+    diagnosticReportsCreated: 0,
+    encountersCreated: 0,
+    ihceBundlesCreated: 0,
+    incapacitiesCreated: 0,
+    interconsultationsCreated: 0,
+    medicationAdministrationsCreated: 0,
+    medicationsCreated: 0,
+    observationsCreated: 0,
+    patientsCreated: 0,
+    proceduresCreated: 0,
+    ripsExportsCreated: 0,
+    serviceRequestsCreated: 0,
+  };
+}
+
+function addSeedStats(totals: SeedResult, stats: Partial<SeedResult>): void {
+  totals.patientsCreated += stats.patientsCreated ?? 0;
+  totals.appointmentsCreated += stats.appointmentsCreated ?? 0;
+  totals.encountersCreated += stats.encountersCreated ?? 0;
+  totals.diagnosesCreated += stats.diagnosesCreated ?? 0;
+  totals.observationsCreated += stats.observationsCreated ?? 0;
+  totals.proceduresCreated += stats.proceduresCreated ?? 0;
+  totals.medicationsCreated += stats.medicationsCreated ?? 0;
+  totals.medicationAdministrationsCreated +=
+    stats.medicationAdministrationsCreated ?? 0;
+  totals.allergiesCreated += stats.allergiesCreated ?? 0;
+  totals.contactsCreated += stats.contactsCreated ?? 0;
+  totals.coverageCreated += stats.coverageCreated ?? 0;
+  totals.clinicalDocumentsCreated += stats.clinicalDocumentsCreated ?? 0;
+  totals.consentsCreated += stats.consentsCreated ?? 0;
+  totals.dataDisclosuresCreated += stats.dataDisclosuresCreated ?? 0;
+  totals.serviceRequestsCreated += stats.serviceRequestsCreated ?? 0;
+  totals.diagnosticReportsCreated += stats.diagnosticReportsCreated ?? 0;
+  totals.interconsultationsCreated += stats.interconsultationsCreated ?? 0;
+  totals.incapacitiesCreated += stats.incapacitiesCreated ?? 0;
+  totals.attachmentsCreated += stats.attachmentsCreated ?? 0;
+  totals.ihceBundlesCreated += stats.ihceBundlesCreated ?? 0;
 }
 
 // ─── Main Seed Runner ───────────────────────────────────────────────────────
@@ -1885,28 +2715,17 @@ export async function runSeed(
     `Creating ${narratives.length} patients with full histories...`
   );
 
-  const totals: SeedResult = {
-    allergiesCreated: 0,
-    appointmentsCreated: 0,
-    diagnosesCreated: 0,
-    encountersCreated: 0,
-    medicationsCreated: 0,
-    observationsCreated: 0,
-    patientsCreated: 0,
-    proceduresCreated: 0,
-  };
+  const totals = createEmptySeedResult();
 
   for (const [index, narrative] of narratives.entries()) {
     const { stats } = await createPatientData(narrative, facility, index);
-    totals.patientsCreated += stats.patientsCreated ?? 0;
-    totals.appointmentsCreated += stats.appointmentsCreated ?? 0;
-    totals.encountersCreated += stats.encountersCreated ?? 0;
-    totals.diagnosesCreated += stats.diagnosesCreated ?? 0;
-    totals.observationsCreated += stats.observationsCreated ?? 0;
-    totals.proceduresCreated += stats.proceduresCreated ?? 0;
-    totals.medicationsCreated += stats.medicationsCreated ?? 0;
-    totals.allergiesCreated += stats.allergiesCreated ?? 0;
+    addSeedStats(totals, stats);
   }
+
+  totals.ripsExportsCreated = await createRipsExportsForPayers(
+    facility,
+    totals
+  );
 
   // Summary
   log("DONE", "Seed completed successfully!");
@@ -1917,7 +2736,20 @@ export async function runSeed(
   log("DONE", `Observations:  ${totals.observationsCreated}`);
   log("DONE", `Procedures:    ${totals.proceduresCreated}`);
   log("DONE", `Medications:   ${totals.medicationsCreated}`);
+  log("DONE", `Med Admins:    ${totals.medicationAdministrationsCreated}`);
   log("DONE", `Allergies:     ${totals.allergiesCreated}`);
+  log("DONE", `Documents:     ${totals.clinicalDocumentsCreated}`);
+  log("DONE", `Consents:      ${totals.consentsCreated}`);
+  log("DONE", `Disclosures:   ${totals.dataDisclosuresCreated}`);
+  log("DONE", `Service Req.:  ${totals.serviceRequestsCreated}`);
+  log("DONE", `Diag Reports:  ${totals.diagnosticReportsCreated}`);
+  log("DONE", `Interconsult.: ${totals.interconsultationsCreated}`);
+  log("DONE", `Incapacities:  ${totals.incapacitiesCreated}`);
+  log("DONE", `Attachments:   ${totals.attachmentsCreated}`);
+  log("DONE", `IHCE bundles:  ${totals.ihceBundlesCreated}`);
+  log("DONE", `RIPS exports:  ${totals.ripsExportsCreated}`);
+  log("DONE", `Contacts:      ${totals.contactsCreated}`);
+  log("DONE", `Coverage:      ${totals.coverageCreated}`);
 
   return totals;
 }

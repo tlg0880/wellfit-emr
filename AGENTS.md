@@ -98,9 +98,10 @@ _Ninguno. Todos los routers planificados están implementados._
 ### Características del seed
 - **Sincronización RIPS obligatoria**: Antes de crear cualquier dato, ejecuta `ripsReference.syncAll()` para poblar catálogos SISPRO desde la API del estado. **Ningún código RIPS está hardcodeado**; todos se resuelven dinámicamente contra la base de datos post-sync.
 - **Narrativas coherentes**: 10 pacientes con historias médicas realistas y evolutivas (diabetes, asma, prenatal, EPOC, pediatría, ortopedia, salud mental, cardiología, dermatología, gastroenterología).
-- **Datos completos por paciente**: múltiples appointments, encounters, diagnósticos CIE10, observaciones (signos vitales), procedimientos CUPS, y prescripciones médicas.
-- **Infraestructura base**: crea organización, sede, unidad de servicio y 8 profesionales de salud.
-- **Uso de RPC real**: todas las operaciones pasan por `createRouterClient(appRouter, { context })` con un contexto que incluye DB real y una sesión de seed user.
+- **Datos completos por paciente**: múltiples appointments, encounters, diagnósticos CIE10, observaciones (signos vitales), procedimientos CUPS, prescripciones médicas, administraciones, documentos clínicos, consentimientos, autorizaciones de divulgación, órdenes/resultados diagnósticos, interconsultas, incapacidades, anexos, bundles IHCE/RDA, contactos, identificadores y coberturas.
+- **Infraestructura base**: crea organización, dos sedes, unidades de consulta externa/urgencias/imagenología/laboratorio, 20 profesionales de salud con roles/sedes y especialidades variadas, distribuye las atenciones entre profesionales, vincula el seed user con profesional principal y crea pagadores reales resueltos desde `CodigoEAPByNit`.
+- **Uso de RPC real**: las entidades con router pasan por `createRouterClient(appRouter, { context })` con DB real y sesión de seed user; las tablas administrativas sin router público (contactos, cobertura, pagadores, roles/vínculos) se crean por Drizzle manteniendo FKs y códigos de catálogos sincronizados.
+- **Cobertura regulatoria ampliada**: crea exports RIPS por pagador con payload/resumen de validación, bundles IHCE/RDA por atención, consentimientos y autorizaciones por paciente, documentos firmados/borradores, anexos documentales con hash SHA-256 y resultados diagnósticos coherentes con la historia clínica.
 
 ### Comandos
 ```bash
