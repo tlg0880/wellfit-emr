@@ -112,13 +112,60 @@ const listIncapacityCertificatesProcedure = protectedProcedure
     };
   });
 
+const getByIdSchema = z.object({
+  id: nonEmptyStringSchema,
+});
+
+const getIncapacityCertificateProcedure = protectedProcedure
+  .input(getByIdSchema)
+  .output(incapacityCertificateSchema)
+  .handler(async ({ context, input }) => {
+    const [found] = await context.db
+      .select()
+      .from(incapacityCertificate)
+      .where(eq(incapacityCertificate.id, input.id))
+      .limit(1);
+
+    if (!found) {
+      throw new ORPCError("NOT_FOUND", {
+        message: "Incapacity certificate not found.",
+      });
+    }
+
+    return found;
+  });
+
+const deleteIncapacityCertificateProcedure = protectedProcedure
+  .input(getByIdSchema)
+  .output(z.boolean())
+  .handler(async ({ context, input }) => {
+    const [existing] = await context.db
+      .select()
+      .from(incapacityCertificate)
+      .where(eq(incapacityCertificate.id, input.id))
+      .limit(1);
+    if (!existing) {
+      throw new ORPCError("NOT_FOUND", {
+        message: "Incapacity certificate not found.",
+      });
+    }
+    await context.db
+      .delete(incapacityCertificate)
+      .where(eq(incapacityCertificate.id, input.id));
+    return true;
+  });
+
 export interface IncapacityCertificatesRouter
   extends Record<string, AnyRouter> {
   create: typeof createIncapacityCertificateProcedure;
+  delete: typeof deleteIncapacityCertificateProcedure;
+  get: typeof getIncapacityCertificateProcedure;
   list: typeof listIncapacityCertificatesProcedure;
 }
 
 export const incapacityCertificatesRouter: IncapacityCertificatesRouter = {
   create: createIncapacityCertificateProcedure,
+  delete: deleteIncapacityCertificateProcedure,
+  get: getIncapacityCertificateProcedure,
   list: listIncapacityCertificatesProcedure,
 };

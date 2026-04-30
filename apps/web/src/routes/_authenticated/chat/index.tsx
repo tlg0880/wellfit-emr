@@ -125,17 +125,43 @@ function ChatPage() {
 
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
+  const lastMessageCountRef = useRef(messages.length);
+  const isNearBottomRef = useRef(true);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  });
+    const container = messagesContainerRef.current;
+    if (!container) {
+      return;
+    }
+
+    const handleScroll = () => {
+      const threshold = 100;
+      isNearBottomRef.current =
+        container.scrollHeight - container.scrollTop - container.clientHeight <
+        threshold;
+    };
+
+    container.addEventListener("scroll", handleScroll);
+    return () => container.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+    if (
+      messages.length > lastMessageCountRef.current &&
+      isNearBottomRef.current
+    ) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+    lastMessageCountRef.current = messages.length;
+  }, [messages.length]);
 
   useEffect(() => {
     const hasToolResult = messages.some((m) =>
       m.parts?.some((p) => isToolUIPart(p) && p.state === "output-available")
     );
-    if (hasToolResult) {
+    if (hasToolResult && selectedPatientId) {
       queryClient.invalidateQueries({
         queryKey: orpc.medicationOrders.list.key({ type: "query" }),
       });
@@ -146,7 +172,7 @@ function ChatPage() {
         queryKey: orpc.encounters.list.key({ type: "query" }),
       });
     }
-  }, [messages, queryClient]);
+  }, [messages, queryClient, selectedPatientId]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -196,7 +222,7 @@ function ChatPage() {
           sidebarOpen={sidebarOpen}
         />
 
-        <div className="flex-1 overflow-auto p-4">
+        <div className="flex-1 overflow-auto p-4" ref={messagesContainerRef}>
           {messages.length === 0 && !isLoading && (
             <EmptyState
               hasPatient={!!selectedPatientId}
@@ -251,6 +277,7 @@ function ChatPage() {
           onSubmit={handleSubmit}
         >
           <Input
+            aria-label="Mensaje para el asistente médico"
             className="flex-1 text-sm"
             disabled={isLoading}
             onChange={(e) => setInput(e.target.value)}

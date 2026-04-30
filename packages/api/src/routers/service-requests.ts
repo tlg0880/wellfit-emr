@@ -169,9 +169,75 @@ const getDiagnosticReportProcedure = protectedProcedure
     return found;
   });
 
+const deleteByIdSchema = z.object({
+  id: nonEmptyStringSchema,
+});
+
+const getServiceRequestProcedure = protectedProcedure
+  .input(deleteByIdSchema)
+  .output(serviceRequestSchema)
+  .handler(async ({ context, input }) => {
+    const [found] = await context.db
+      .select()
+      .from(serviceRequest)
+      .where(eq(serviceRequest.id, input.id))
+      .limit(1);
+
+    if (!found) {
+      throw new ORPCError("NOT_FOUND", {
+        message: "Service request not found.",
+      });
+    }
+
+    return found;
+  });
+
+const deleteServiceRequestProcedure = protectedProcedure
+  .input(deleteByIdSchema)
+  .output(z.boolean())
+  .handler(async ({ context, input }) => {
+    const [existing] = await context.db
+      .select()
+      .from(serviceRequest)
+      .where(eq(serviceRequest.id, input.id))
+      .limit(1);
+    if (!existing) {
+      throw new ORPCError("NOT_FOUND", {
+        message: "Service request not found.",
+      });
+    }
+    await context.db
+      .delete(serviceRequest)
+      .where(eq(serviceRequest.id, input.id));
+    return true;
+  });
+
+const deleteDiagnosticReportProcedure = protectedProcedure
+  .input(deleteByIdSchema)
+  .output(z.boolean())
+  .handler(async ({ context, input }) => {
+    const [existing] = await context.db
+      .select()
+      .from(diagnosticReport)
+      .where(eq(diagnosticReport.id, input.id))
+      .limit(1);
+    if (!existing) {
+      throw new ORPCError("NOT_FOUND", {
+        message: "Diagnostic report not found.",
+      });
+    }
+    await context.db
+      .delete(diagnosticReport)
+      .where(eq(diagnosticReport.id, input.id));
+    return true;
+  });
+
 export interface ServiceRequestsRouter extends Record<string, AnyRouter> {
   create: typeof createServiceRequestProcedure;
   createReport: typeof createDiagnosticReportProcedure;
+  delete: typeof deleteServiceRequestProcedure;
+  deleteReport: typeof deleteDiagnosticReportProcedure;
+  get: typeof getServiceRequestProcedure;
   getReport: typeof getDiagnosticReportProcedure;
   list: typeof listServiceRequestsProcedure;
 }
@@ -179,6 +245,9 @@ export interface ServiceRequestsRouter extends Record<string, AnyRouter> {
 export const serviceRequestsRouter: ServiceRequestsRouter = {
   create: createServiceRequestProcedure,
   createReport: createDiagnosticReportProcedure,
+  delete: deleteServiceRequestProcedure,
+  deleteReport: deleteDiagnosticReportProcedure,
+  get: getServiceRequestProcedure,
   getReport: getDiagnosticReportProcedure,
   list: listServiceRequestsProcedure,
 };

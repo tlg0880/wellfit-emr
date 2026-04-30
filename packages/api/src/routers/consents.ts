@@ -236,9 +236,55 @@ const revokeDataDisclosureProcedure = protectedProcedure
     return updated;
   });
 
+const deleteByIdSchema = z.object({
+  id: nonEmptyStringSchema,
+});
+
+const deleteConsentProcedure = protectedProcedure
+  .input(deleteByIdSchema)
+  .output(z.boolean())
+  .handler(async ({ context, input }) => {
+    const [existing] = await context.db
+      .select()
+      .from(consentRecord)
+      .where(eq(consentRecord.id, input.id))
+      .limit(1);
+    if (!existing) {
+      throw new ORPCError("NOT_FOUND", {
+        message: "Consent record not found.",
+      });
+    }
+    await context.db
+      .delete(consentRecord)
+      .where(eq(consentRecord.id, input.id));
+    return true;
+  });
+
+const deleteDataDisclosureProcedure = protectedProcedure
+  .input(deleteByIdSchema)
+  .output(z.boolean())
+  .handler(async ({ context, input }) => {
+    const [existing] = await context.db
+      .select()
+      .from(dataDisclosureAuthorization)
+      .where(eq(dataDisclosureAuthorization.id, input.id))
+      .limit(1);
+    if (!existing) {
+      throw new ORPCError("NOT_FOUND", {
+        message: "Data disclosure authorization not found.",
+      });
+    }
+    await context.db
+      .delete(dataDisclosureAuthorization)
+      .where(eq(dataDisclosureAuthorization.id, input.id));
+    return true;
+  });
+
 export interface ConsentsRouter extends Record<string, AnyRouter> {
   createConsent: typeof createConsentProcedure;
   createDataDisclosure: typeof createDataDisclosureProcedure;
+  deleteConsent: typeof deleteConsentProcedure;
+  deleteDataDisclosure: typeof deleteDataDisclosureProcedure;
   listConsents: typeof listConsentsProcedure;
   listDataDisclosures: typeof listDataDisclosuresProcedure;
   revokeConsent: typeof revokeConsentProcedure;
@@ -248,6 +294,8 @@ export interface ConsentsRouter extends Record<string, AnyRouter> {
 export const consentsRouter: ConsentsRouter = {
   createConsent: createConsentProcedure,
   createDataDisclosure: createDataDisclosureProcedure,
+  deleteConsent: deleteConsentProcedure,
+  deleteDataDisclosure: deleteDataDisclosureProcedure,
   listConsents: listConsentsProcedure,
   listDataDisclosures: listDataDisclosuresProcedure,
   revokeConsent: revokeConsentProcedure,

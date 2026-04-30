@@ -405,9 +405,36 @@ const correctDocumentProcedure = protectedProcedure
     return created;
   });
 
+const deleteDocumentSchema = z.object({
+  id: nonEmptyStringSchema,
+});
+
+const deleteDocumentProcedure = protectedProcedure
+  .input(deleteDocumentSchema)
+  .output(z.boolean())
+  .handler(async ({ context, input }) => {
+    const [doc] = await context.db
+      .select()
+      .from(clinicalDocument)
+      .where(eq(clinicalDocument.id, input.id))
+      .limit(1);
+
+    if (!doc) {
+      throw new ORPCError("NOT_FOUND", {
+        message: "Clinical document not found.",
+      });
+    }
+
+    await context.db
+      .delete(clinicalDocument)
+      .where(eq(clinicalDocument.id, input.id));
+    return true;
+  });
+
 export interface ClinicalDocumentsRouter extends Record<string, AnyRouter> {
   correct: typeof correctDocumentProcedure;
   create: typeof createDocumentProcedure;
+  delete: typeof deleteDocumentProcedure;
   get: typeof getDocumentProcedure;
   list: typeof listDocumentsProcedure;
   sign: typeof signDocumentProcedure;
@@ -416,6 +443,7 @@ export interface ClinicalDocumentsRouter extends Record<string, AnyRouter> {
 export const clinicalDocumentsRouter: ClinicalDocumentsRouter = {
   correct: correctDocumentProcedure,
   create: createDocumentProcedure,
+  delete: deleteDocumentProcedure,
   get: getDocumentProcedure,
   list: listDocumentsProcedure,
   sign: signDocumentProcedure,

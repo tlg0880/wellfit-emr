@@ -340,11 +340,163 @@ const listPractitionersProcedure = protectedProcedure
     };
   });
 
+const getByIdSchema = z.object({
+  id: nonEmptyStringSchema,
+});
+
+const getOrganizationProcedure = protectedProcedure
+  .input(getByIdSchema)
+  .output(organizationSchema)
+  .handler(async ({ context, input }) => {
+    const [found] = await context.db
+      .select()
+      .from(organization)
+      .where(eq(organization.id, input.id))
+      .limit(1);
+
+    if (!found) {
+      throw new ORPCError("NOT_FOUND", {
+        message: "Organization not found.",
+      });
+    }
+
+    return found;
+  });
+
+const getSiteProcedure = protectedProcedure
+  .input(getByIdSchema)
+  .output(siteSchema)
+  .handler(async ({ context, input }) => {
+    const [found] = await context.db
+      .select()
+      .from(site)
+      .where(eq(site.id, input.id))
+      .limit(1);
+
+    if (!found) {
+      throw new ORPCError("NOT_FOUND", {
+        message: "Site not found.",
+      });
+    }
+
+    return found;
+  });
+
+const getServiceUnitProcedure = protectedProcedure
+  .input(getByIdSchema)
+  .output(serviceUnitSchema)
+  .handler(async ({ context, input }) => {
+    const [found] = await context.db
+      .select()
+      .from(serviceUnit)
+      .where(eq(serviceUnit.id, input.id))
+      .limit(1);
+
+    if (!found) {
+      throw new ORPCError("NOT_FOUND", {
+        message: "Service unit not found.",
+      });
+    }
+
+    return found;
+  });
+
+const getPractitionerProcedure = protectedProcedure
+  .input(getByIdSchema)
+  .output(practitionerSchema)
+  .handler(async ({ context, input }) => {
+    const [found] = await context.db
+      .select()
+      .from(practitioner)
+      .where(eq(practitioner.id, input.id))
+      .limit(1);
+
+    if (!found) {
+      throw new ORPCError("NOT_FOUND", {
+        message: "Practitioner not found.",
+      });
+    }
+
+    return found;
+  });
+
+const deleteOrganizationProcedure = protectedProcedure
+  .input(getByIdSchema)
+  .output(z.boolean())
+  .handler(async ({ context, input }) => {
+    const [existing] = await context.db
+      .select()
+      .from(organization)
+      .where(eq(organization.id, input.id))
+      .limit(1);
+    if (!existing) {
+      throw new ORPCError("NOT_FOUND", { message: "Organization not found." });
+    }
+    await context.db.delete(organization).where(eq(organization.id, input.id));
+    return true;
+  });
+
+const deleteSiteProcedure = protectedProcedure
+  .input(getByIdSchema)
+  .output(z.boolean())
+  .handler(async ({ context, input }) => {
+    const [existing] = await context.db
+      .select()
+      .from(site)
+      .where(eq(site.id, input.id))
+      .limit(1);
+    if (!existing) {
+      throw new ORPCError("NOT_FOUND", { message: "Site not found." });
+    }
+    await context.db.delete(site).where(eq(site.id, input.id));
+    return true;
+  });
+
+const deleteServiceUnitProcedure = protectedProcedure
+  .input(getByIdSchema)
+  .output(z.boolean())
+  .handler(async ({ context, input }) => {
+    const [existing] = await context.db
+      .select()
+      .from(serviceUnit)
+      .where(eq(serviceUnit.id, input.id))
+      .limit(1);
+    if (!existing) {
+      throw new ORPCError("NOT_FOUND", { message: "Service unit not found." });
+    }
+    await context.db.delete(serviceUnit).where(eq(serviceUnit.id, input.id));
+    return true;
+  });
+
+const deletePractitionerProcedure = protectedProcedure
+  .input(getByIdSchema)
+  .output(z.boolean())
+  .handler(async ({ context, input }) => {
+    const [existing] = await context.db
+      .select()
+      .from(practitioner)
+      .where(eq(practitioner.id, input.id))
+      .limit(1);
+    if (!existing) {
+      throw new ORPCError("NOT_FOUND", { message: "Practitioner not found." });
+    }
+    await context.db.delete(practitioner).where(eq(practitioner.id, input.id));
+    return true;
+  });
+
 export interface FacilitiesRouter extends Record<string, AnyRouter> {
   createOrganization: typeof createOrganizationProcedure;
   createPractitioner: typeof createPractitionerProcedure;
   createServiceUnit: typeof createServiceUnitProcedure;
   createSite: typeof createSiteProcedure;
+  deleteOrganization: typeof deleteOrganizationProcedure;
+  deletePractitioner: typeof deletePractitionerProcedure;
+  deleteServiceUnit: typeof deleteServiceUnitProcedure;
+  deleteSite: typeof deleteSiteProcedure;
+  getOrganization: typeof getOrganizationProcedure;
+  getPractitioner: typeof getPractitionerProcedure;
+  getServiceUnit: typeof getServiceUnitProcedure;
+  getSite: typeof getSiteProcedure;
   listOrganizations: typeof listOrganizationsProcedure;
   listPractitioners: typeof listPractitionersProcedure;
   listServiceUnits: typeof listServiceUnitsProcedure;
@@ -356,6 +508,14 @@ export const facilitiesRouter: FacilitiesRouter = {
   createPractitioner: createPractitionerProcedure,
   createServiceUnit: createServiceUnitProcedure,
   createSite: createSiteProcedure,
+  deleteOrganization: deleteOrganizationProcedure,
+  deletePractitioner: deletePractitionerProcedure,
+  deleteServiceUnit: deleteServiceUnitProcedure,
+  deleteSite: deleteSiteProcedure,
+  getOrganization: getOrganizationProcedure,
+  getPractitioner: getPractitionerProcedure,
+  getServiceUnit: getServiceUnitProcedure,
+  getSite: getSiteProcedure,
   listOrganizations: listOrganizationsProcedure,
   listPractitioners: listPractitionersProcedure,
   listServiceUnits: listServiceUnitsProcedure,

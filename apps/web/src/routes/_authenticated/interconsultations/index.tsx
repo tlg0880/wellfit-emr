@@ -1,3 +1,4 @@
+import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Button } from "@wellfit-emr/ui/components/button";
@@ -13,6 +14,7 @@ import { SearchSelect } from "@wellfit-emr/ui/components/search-select";
 import { Mail, Plus, Search } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { z } from "zod";
 
 import { DataTable } from "@/components/data-table";
 import { PageHeader } from "@/components/page-header";
@@ -34,15 +36,15 @@ export const Route = createFileRoute("/_authenticated/interconsultations/")({
   },
 });
 
-function CreateInterconsultationForm({ onCancel }: { onCancel: () => void }) {
-  const [form, setForm] = useState({
-    encounterId: "",
-    requestedSpecialty: "",
-    requestedBy: "",
-    reasonText: "",
-    requestedAt: new Date().toISOString().slice(0, 16),
-  });
+const interconsultationSchema = z.object({
+  encounterId: z.string().min(1, "Requerido"),
+  requestedSpecialty: z.string().min(1, "Requerido"),
+  requestedBy: z.string().min(1, "Requerido"),
+  reasonText: z.string().min(1, "Requerido"),
+  requestedAt: z.string().min(1, "Requerido"),
+});
 
+function CreateInterconsultationForm({ onCancel }: { onCancel: () => void }) {
   const [encounterSearch, setEncounterSearch] = useState("");
   const [practitionerSearch, setPractitionerSearch] = useState("");
 
@@ -80,17 +82,28 @@ function CreateInterconsultationForm({ onCancel }: { onCancel: () => void }) {
     },
   });
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    create.mutate({
-      encounterId: form.encounterId,
-      requestedSpecialty: form.requestedSpecialty,
-      requestedBy: form.requestedBy,
-      reasonText: form.reasonText,
-      requestedAt: new Date(form.requestedAt),
-      status: "requested",
-    });
-  }
+  const form = useForm({
+    defaultValues: {
+      encounterId: "",
+      requestedSpecialty: "",
+      requestedBy: "",
+      reasonText: "",
+      requestedAt: new Date().toISOString().slice(0, 16),
+    },
+    onSubmit: async ({ value }) => {
+      await create.mutateAsync({
+        encounterId: value.encounterId,
+        requestedSpecialty: value.requestedSpecialty,
+        requestedBy: value.requestedBy,
+        reasonText: value.reasonText,
+        requestedAt: new Date(value.requestedAt),
+        status: "requested",
+      });
+    },
+    validators: {
+      onSubmit: interconsultationSchema,
+    },
+  });
 
   return (
     <Card className="mx-6">
@@ -100,80 +113,139 @@ function CreateInterconsultationForm({ onCancel }: { onCancel: () => void }) {
       <CardContent>
         <form
           className="grid grid-cols-1 gap-3 md:grid-cols-3"
-          onSubmit={handleSubmit}
+          onSubmit={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            form.handleSubmit();
+          }}
         >
-          <div className="space-y-1">
-            <Label>Atención</Label>
-            <SearchSelect
-              emptyMessage="Escribe para buscar atenciones"
-              loading={encountersLoading}
-              onChange={(v) => setForm((f) => ({ ...f, encounterId: v }))}
-              onSearchChange={setEncounterSearch}
-              options={
-                encountersData?.encounters.map((e) => ({
-                  value: e.id,
-                  label: e.reasonForVisit || "Sin motivo",
-                  description: new Date(e.startedAt).toLocaleDateString(
-                    "es-CO"
-                  ),
-                })) ?? []
-              }
-              placeholder="Buscar atención..."
-              required
-              search={encounterSearch}
-              value={form.encounterId}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label>Especialidad solicitada</Label>
-            <Input
-              onChange={(e) =>
-                setForm({ ...form, requestedSpecialty: e.target.value })
-              }
-              placeholder="Ej: cardiología"
-              required
-              value={form.requestedSpecialty}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label>Solicitado por</Label>
-            <SearchSelect
-              emptyMessage="Escribe para buscar profesionales"
-              loading={practitionersLoading}
-              onChange={(v) => setForm((f) => ({ ...f, requestedBy: v }))}
-              onSearchChange={setPractitionerSearch}
-              options={
-                practitionersData?.practitioners.map((p) => ({
-                  value: p.id,
-                  label: p.fullName,
-                  description: p.documentNumber,
-                })) ?? []
-              }
-              placeholder="Buscar profesional..."
-              required
-              search={practitionerSearch}
-              value={form.requestedBy}
-            />
-          </div>
-          <div className="space-y-1 md:col-span-2">
-            <Label>Motivo</Label>
-            <Input
-              onChange={(e) => setForm({ ...form, reasonText: e.target.value })}
-              required
-              value={form.reasonText}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label>Fecha solicitud</Label>
-            <Input
-              onChange={(e) =>
-                setForm({ ...form, requestedAt: e.target.value })
-              }
-              required
-              type="datetime-local"
-              value={form.requestedAt}
-            />
-          </div>
+          <form.Field name="encounterId">
+            {(field) => (
+              <div className="space-y-1">
+                <Label htmlFor={field.name}>Atención</Label>
+                <SearchSelect
+                  emptyMessage="Escribe para buscar atenciones"
+                  loading={encountersLoading}
+                  onChange={(v) => field.handleChange(v)}
+                  onSearchChange={setEncounterSearch}
+                  options={
+                    encountersData?.encounters.map((e) => ({
+                      value: e.id,
+                      label: e.reasonForVisit || "Sin motivo",
+                      description: new Date(e.startedAt).toLocaleDateString(
+                        "es-CO"
+                      ),
+                    })) ?? []
+                  }
+                  placeholder="Buscar atención..."
+                  required
+                  search={encounterSearch}
+                  value={field.state.value}
+                />
+                {field.state.meta.errors.map((error) => (
+                  <p className="text-destructive text-xs" key={String(error)}>
+                    {String(error)}
+                  </p>
+                ))}
+              </div>
+            )}
+          </form.Field>
+
+          <form.Field name="requestedSpecialty">
+            {(field) => (
+              <div className="space-y-1">
+                <Label htmlFor={field.name}>Especialidad solicitada</Label>
+                <Input
+                  id={field.name}
+                  name={field.name}
+                  onBlur={field.handleBlur}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  placeholder="Ej: cardiología"
+                  required
+                  value={field.state.value}
+                />
+                {field.state.meta.errors.map((error) => (
+                  <p className="text-destructive text-xs" key={String(error)}>
+                    {String(error)}
+                  </p>
+                ))}
+              </div>
+            )}
+          </form.Field>
+
+          <form.Field name="requestedBy">
+            {(field) => (
+              <div className="space-y-1">
+                <Label htmlFor={field.name}>Solicitado por</Label>
+                <SearchSelect
+                  emptyMessage="Escribe para buscar profesionales"
+                  loading={practitionersLoading}
+                  onChange={(v) => field.handleChange(v)}
+                  onSearchChange={setPractitionerSearch}
+                  options={
+                    practitionersData?.practitioners.map((p) => ({
+                      value: p.id,
+                      label: p.fullName,
+                      description: p.documentNumber,
+                    })) ?? []
+                  }
+                  placeholder="Buscar profesional..."
+                  required
+                  search={practitionerSearch}
+                  value={field.state.value}
+                />
+                {field.state.meta.errors.map((error) => (
+                  <p className="text-destructive text-xs" key={String(error)}>
+                    {String(error)}
+                  </p>
+                ))}
+              </div>
+            )}
+          </form.Field>
+
+          <form.Field name="reasonText">
+            {(field) => (
+              <div className="space-y-1 md:col-span-2">
+                <Label htmlFor={field.name}>Motivo</Label>
+                <Input
+                  id={field.name}
+                  name={field.name}
+                  onBlur={field.handleBlur}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  required
+                  value={field.state.value}
+                />
+                {field.state.meta.errors.map((error) => (
+                  <p className="text-destructive text-xs" key={String(error)}>
+                    {String(error)}
+                  </p>
+                ))}
+              </div>
+            )}
+          </form.Field>
+
+          <form.Field name="requestedAt">
+            {(field) => (
+              <div className="space-y-1">
+                <Label htmlFor={field.name}>Fecha solicitud</Label>
+                <Input
+                  id={field.name}
+                  name={field.name}
+                  onBlur={field.handleBlur}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  required
+                  type="datetime-local"
+                  value={field.state.value}
+                />
+                {field.state.meta.errors.map((error) => (
+                  <p className="text-destructive text-xs" key={String(error)}>
+                    {String(error)}
+                  </p>
+                ))}
+              </div>
+            )}
+          </form.Field>
+
           <div className="flex items-end gap-2 md:col-span-3">
             <Button
               onClick={onCancel}
@@ -183,9 +255,22 @@ function CreateInterconsultationForm({ onCancel }: { onCancel: () => void }) {
             >
               Cancelar
             </Button>
-            <Button disabled={create.isPending} size="sm" type="submit">
-              {create.isPending ? "Guardando..." : "Guardar interconsulta"}
-            </Button>
+            <form.Subscribe
+              selector={(state) => ({
+                canSubmit: state.canSubmit,
+                isSubmitting: state.isSubmitting,
+              })}
+            >
+              {({ canSubmit, isSubmitting }) => (
+                <Button
+                  disabled={!canSubmit || isSubmitting}
+                  size="sm"
+                  type="submit"
+                >
+                  {isSubmitting ? "Guardando..." : "Guardar interconsulta"}
+                </Button>
+              )}
+            </form.Subscribe>
           </div>
         </form>
       </CardContent>

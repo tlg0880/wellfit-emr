@@ -84,6 +84,10 @@ const createAdministrationSchema = z.object({
   status: nonEmptyStringSchema,
 });
 
+const getMedicationOrderSchema = z.object({
+  id: nonEmptyStringSchema,
+});
+
 const listAdministrationsSchema = z.object({
   limit: z.number().int().min(1).max(100).default(25),
   medicationOrderId: nonEmptyStringSchema,
@@ -124,6 +128,25 @@ const createMedicationOrderProcedure = protectedProcedure
       .returning();
 
     return created ?? throwCreateError("medication order");
+  });
+
+const getMedicationOrderProcedure = protectedProcedure
+  .input(getMedicationOrderSchema)
+  .output(medicationOrderSchema)
+  .handler(async ({ context, input }) => {
+    const [found] = await context.db
+      .select()
+      .from(medicationOrder)
+      .where(eq(medicationOrder.id, input.id))
+      .limit(1);
+
+    if (!found) {
+      throw new ORPCError("NOT_FOUND", {
+        message: "Medication order not found.",
+      });
+    }
+
+    return found;
   });
 
 const listMedicationOrdersProcedure = protectedProcedure
@@ -214,9 +237,56 @@ const listAdministrationsProcedure = protectedProcedure
     };
   });
 
+const deleteByIdSchema = z.object({
+  id: nonEmptyStringSchema,
+});
+
+const deleteMedicationOrderProcedure = protectedProcedure
+  .input(deleteByIdSchema)
+  .output(z.boolean())
+  .handler(async ({ context, input }) => {
+    const [existing] = await context.db
+      .select()
+      .from(medicationOrder)
+      .where(eq(medicationOrder.id, input.id))
+      .limit(1);
+    if (!existing) {
+      throw new ORPCError("NOT_FOUND", {
+        message: "Medication order not found.",
+      });
+    }
+    await context.db
+      .delete(medicationOrder)
+      .where(eq(medicationOrder.id, input.id));
+    return true;
+  });
+
+const deleteAdministrationProcedure = protectedProcedure
+  .input(deleteByIdSchema)
+  .output(z.boolean())
+  .handler(async ({ context, input }) => {
+    const [existing] = await context.db
+      .select()
+      .from(medicationAdministration)
+      .where(eq(medicationAdministration.id, input.id))
+      .limit(1);
+    if (!existing) {
+      throw new ORPCError("NOT_FOUND", {
+        message: "Administration not found.",
+      });
+    }
+    await context.db
+      .delete(medicationAdministration)
+      .where(eq(medicationAdministration.id, input.id));
+    return true;
+  });
+
 export interface MedicationOrdersRouter extends Record<string, AnyRouter> {
   create: typeof createMedicationOrderProcedure;
   createAdministration: typeof createAdministrationProcedure;
+  delete: typeof deleteMedicationOrderProcedure;
+  deleteAdministration: typeof deleteAdministrationProcedure;
+  get: typeof getMedicationOrderProcedure;
   list: typeof listMedicationOrdersProcedure;
   listAdministrations: typeof listAdministrationsProcedure;
 }
@@ -224,6 +294,9 @@ export interface MedicationOrdersRouter extends Record<string, AnyRouter> {
 export const medicationOrdersRouter: MedicationOrdersRouter = {
   create: createMedicationOrderProcedure,
   createAdministration: createAdministrationProcedure,
+  delete: deleteMedicationOrderProcedure,
+  deleteAdministration: deleteAdministrationProcedure,
+  get: getMedicationOrderProcedure,
   list: listMedicationOrdersProcedure,
   listAdministrations: listAdministrationsProcedure,
 };

@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { Button } from "@wellfit-emr/ui/components/button";
 import {
@@ -254,6 +254,7 @@ function EncounterDetailPage() {
 }
 
 function DiagnosesTab({ encounterId }: { encounterId: string }) {
+  const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [diagnosisSearch, setDiagnosisSearch] = useState("");
   const [diagnosisTypeSearch, setDiagnosisTypeSearch] = useState("");
@@ -266,7 +267,7 @@ function DiagnosesTab({ encounterId }: { encounterId: string }) {
     certainty: "",
   });
 
-  const { data, isLoading, refetch } = useQuery(
+  const { data, isLoading } = useQuery(
     orpc.clinicalRecords.listDiagnoses.queryOptions({ input: { encounterId } })
   );
 
@@ -304,7 +305,9 @@ function DiagnosesTab({ encounterId }: { encounterId: string }) {
         rank: "",
         certainty: "",
       });
-      refetch();
+      queryClient.invalidateQueries({
+        queryKey: orpc.clinicalRecords.listDiagnoses.key({ type: "query" }),
+      });
     },
     onError: (error: Error) => {
       toast.error(`Error: ${error.message}`);
@@ -474,6 +477,7 @@ function DiagnosesTab({ encounterId }: { encounterId: string }) {
 }
 
 function AllergiesTab({ patientId }: { patientId: string }) {
+  const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [practitionerSearch, setPractitionerSearch] = useState("");
   const [form, setForm] = useState({
@@ -485,7 +489,7 @@ function AllergiesTab({ patientId }: { patientId: string }) {
     recordedBy: "",
   });
 
-  const { data, isLoading, refetch } = useQuery({
+  const { data, isLoading } = useQuery({
     ...orpc.clinicalRecords.listAllergies.queryOptions({
       input: { patientId },
     }),
@@ -515,7 +519,9 @@ function AllergiesTab({ patientId }: { patientId: string }) {
         status: "active",
         recordedBy: "",
       });
-      refetch();
+      queryClient.invalidateQueries({
+        queryKey: orpc.clinicalRecords.listAllergies.key({ type: "query" }),
+      });
     },
     onError: (error: Error) => {
       toast.error(`Error: ${error.message}`);
@@ -680,6 +686,7 @@ function ObservationsTab({
   encounterId: string;
   patientId: string;
 }) {
+  const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({
     observationType: "",
@@ -692,7 +699,7 @@ function ObservationsTab({
     status: "preliminary",
   });
 
-  const { data, isLoading, refetch } = useQuery({
+  const { data, isLoading } = useQuery({
     ...orpc.clinicalRecords.listObservations.queryOptions({
       input: { encounterId },
     }),
@@ -714,7 +721,9 @@ function ObservationsTab({
         observedAt: new Date().toISOString().slice(0, 16),
         status: "preliminary",
       });
-      refetch();
+      queryClient.invalidateQueries({
+        queryKey: orpc.clinicalRecords.listObservations.key({ type: "query" }),
+      });
     },
     onError: (error: Error) => {
       toast.error(`Error: ${error.message}`);
@@ -877,6 +886,7 @@ function ProceduresTab({
   encounterId: string;
   patientId: string;
 }) {
+  const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [cupsSearch, setCupsSearch] = useState("");
   const [performerSearch, setPerformerSearch] = useState("");
@@ -908,7 +918,7 @@ function ProceduresTab({
     })
   );
 
-  const { data, isLoading, refetch } = useQuery({
+  const { data, isLoading } = useQuery({
     ...orpc.clinicalRecords.listProcedures.queryOptions({
       input: { encounterId },
     }),
@@ -927,7 +937,9 @@ function ProceduresTab({
         performerId: "",
         status: "completed",
       });
-      refetch();
+      queryClient.invalidateQueries({
+        queryKey: orpc.clinicalRecords.listProcedures.key({ type: "query" }),
+      });
     },
     onError: (error: Error) => {
       toast.error(`Error: ${error.message}`);

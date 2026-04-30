@@ -130,14 +130,100 @@ const listAttachmentLinksProcedure = protectedProcedure
     };
   });
 
+const getByIdSchema = z.object({
+  id: nonEmptyStringSchema,
+});
+
+const getBinaryObjectProcedure = protectedProcedure
+  .input(getByIdSchema)
+  .output(binaryObjectSchema)
+  .handler(async ({ context, input }) => {
+    const [found] = await context.db
+      .select()
+      .from(binaryObject)
+      .where(eq(binaryObject.id, input.id))
+      .limit(1);
+
+    if (!found) {
+      throw new ORPCError("NOT_FOUND", {
+        message: "Binary object not found.",
+      });
+    }
+
+    return found;
+  });
+
+const getAttachmentLinkProcedure = protectedProcedure
+  .input(getByIdSchema)
+  .output(attachmentLinkSchema)
+  .handler(async ({ context, input }) => {
+    const [found] = await context.db
+      .select()
+      .from(attachmentLink)
+      .where(eq(attachmentLink.id, input.id))
+      .limit(1);
+
+    if (!found) {
+      throw new ORPCError("NOT_FOUND", {
+        message: "Attachment link not found.",
+      });
+    }
+
+    return found;
+  });
+
+const deleteBinaryObjectProcedure = protectedProcedure
+  .input(getByIdSchema)
+  .output(z.boolean())
+  .handler(async ({ context, input }) => {
+    const [existing] = await context.db
+      .select()
+      .from(binaryObject)
+      .where(eq(binaryObject.id, input.id))
+      .limit(1);
+    if (!existing) {
+      throw new ORPCError("NOT_FOUND", { message: "Binary object not found." });
+    }
+    await context.db.delete(binaryObject).where(eq(binaryObject.id, input.id));
+    return true;
+  });
+
+const deleteAttachmentLinkProcedure = protectedProcedure
+  .input(getByIdSchema)
+  .output(z.boolean())
+  .handler(async ({ context, input }) => {
+    const [existing] = await context.db
+      .select()
+      .from(attachmentLink)
+      .where(eq(attachmentLink.id, input.id))
+      .limit(1);
+    if (!existing) {
+      throw new ORPCError("NOT_FOUND", {
+        message: "Attachment link not found.",
+      });
+    }
+    await context.db
+      .delete(attachmentLink)
+      .where(eq(attachmentLink.id, input.id));
+    return true;
+  });
+
 export interface AttachmentsRouter extends Record<string, AnyRouter> {
   createBinaryObject: typeof createBinaryObjectProcedure;
   createLink: typeof createAttachmentLinkProcedure;
+  deleteBinaryObject: typeof deleteBinaryObjectProcedure;
+  deleteLink: typeof deleteAttachmentLinkProcedure;
+  getBinaryObject: typeof getBinaryObjectProcedure;
+  getLink: typeof getAttachmentLinkProcedure;
   listLinks: typeof listAttachmentLinksProcedure;
 }
 
 export const attachmentsRouter: AttachmentsRouter = {
   createBinaryObject: createBinaryObjectProcedure,
   createLink: createAttachmentLinkProcedure,
+  deleteBinaryObject: deleteBinaryObjectProcedure,
+  deleteLink: deleteAttachmentLinkProcedure,
+  getBinaryObject: getBinaryObjectProcedure,
+  getLink: getAttachmentLinkProcedure,
   listLinks: listAttachmentLinksProcedure,
 };

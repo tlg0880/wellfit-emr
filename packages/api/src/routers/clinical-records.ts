@@ -274,11 +274,87 @@ const listProceduresProcedure = protectedProcedure
       )
   );
 
+const deleteByIdSchema = z.object({
+  id: nonEmptyStringSchema,
+});
+
+const deleteDiagnosisProcedure = protectedProcedure
+  .input(deleteByIdSchema)
+  .output(z.boolean())
+  .handler(async ({ context, input }) => {
+    const [existing] = await context.db
+      .select()
+      .from(diagnosis)
+      .where(eq(diagnosis.id, input.id))
+      .limit(1);
+    if (!existing) {
+      throw new ORPCError("NOT_FOUND", { message: "Diagnosis not found." });
+    }
+    await context.db.delete(diagnosis).where(eq(diagnosis.id, input.id));
+    return true;
+  });
+
+const deleteAllergyProcedure = protectedProcedure
+  .input(deleteByIdSchema)
+  .output(z.boolean())
+  .handler(async ({ context, input }) => {
+    const [existing] = await context.db
+      .select()
+      .from(allergyIntolerance)
+      .where(eq(allergyIntolerance.id, input.id))
+      .limit(1);
+    if (!existing) {
+      throw new ORPCError("NOT_FOUND", { message: "Allergy not found." });
+    }
+    await context.db
+      .delete(allergyIntolerance)
+      .where(eq(allergyIntolerance.id, input.id));
+    return true;
+  });
+
+const deleteObservationProcedure = protectedProcedure
+  .input(deleteByIdSchema)
+  .output(z.boolean())
+  .handler(async ({ context, input }) => {
+    const [existing] = await context.db
+      .select()
+      .from(observation)
+      .where(eq(observation.id, input.id))
+      .limit(1);
+    if (!existing) {
+      throw new ORPCError("NOT_FOUND", { message: "Observation not found." });
+    }
+    await context.db.delete(observation).where(eq(observation.id, input.id));
+    return true;
+  });
+
+const deleteProcedureProcedure = protectedProcedure
+  .input(deleteByIdSchema)
+  .output(z.boolean())
+  .handler(async ({ context, input }) => {
+    const [existing] = await context.db
+      .select()
+      .from(procedureRecord)
+      .where(eq(procedureRecord.id, input.id))
+      .limit(1);
+    if (!existing) {
+      throw new ORPCError("NOT_FOUND", { message: "Procedure not found." });
+    }
+    await context.db
+      .delete(procedureRecord)
+      .where(eq(procedureRecord.id, input.id));
+    return true;
+  });
+
 export interface ClinicalRecordsRouter extends Record<string, AnyRouter> {
   createAllergy: typeof createAllergyProcedure;
   createDiagnosis: typeof createDiagnosisProcedure;
   createObservation: typeof createObservationProcedure;
   createProcedure: typeof createProcedureProcedure;
+  deleteAllergy: typeof deleteAllergyProcedure;
+  deleteDiagnosis: typeof deleteDiagnosisProcedure;
+  deleteObservation: typeof deleteObservationProcedure;
+  deleteProcedure: typeof deleteProcedureProcedure;
   listAllergies: typeof listAllergiesProcedure;
   listDiagnoses: typeof listDiagnosesProcedure;
   listObservations: typeof listObservationsProcedure;
@@ -290,6 +366,10 @@ export const clinicalRecordsRouter: ClinicalRecordsRouter = {
   createDiagnosis: createDiagnosisProcedure,
   createObservation: createObservationProcedure,
   createProcedure: createProcedureProcedure,
+  deleteAllergy: deleteAllergyProcedure,
+  deleteDiagnosis: deleteDiagnosisProcedure,
+  deleteObservation: deleteObservationProcedure,
+  deleteProcedure: deleteProcedureProcedure,
   listAllergies: listAllergiesProcedure,
   listDiagnoses: listDiagnosesProcedure,
   listObservations: listObservationsProcedure,

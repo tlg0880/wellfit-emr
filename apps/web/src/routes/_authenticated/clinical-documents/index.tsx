@@ -106,6 +106,22 @@ function CreateDocumentForm({ onCancel }: { onCancel: () => void }) {
       toast.error("JSON inválido en payload o sección");
       return;
     }
+    if (
+      typeof payloadJson !== "object" ||
+      payloadJson === null ||
+      Array.isArray(payloadJson)
+    ) {
+      toast.error("Payload JSON debe ser un objeto");
+      return;
+    }
+    if (
+      typeof sectionPayloadJson !== "object" ||
+      sectionPayloadJson === null ||
+      Array.isArray(sectionPayloadJson)
+    ) {
+      toast.error("Payload de sección debe ser un objeto");
+      return;
+    }
     create.mutate({
       patientId: form.patientId,
       encounterId: form.encounterId,

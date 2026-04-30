@@ -132,14 +132,61 @@ const respondInterconsultationProcedure = protectedProcedure
     return updated;
   });
 
+const getByIdSchema = z.object({
+  id: nonEmptyStringSchema,
+});
+
+const getInterconsultationProcedure = protectedProcedure
+  .input(getByIdSchema)
+  .output(interconsultationSchema)
+  .handler(async ({ context, input }) => {
+    const [found] = await context.db
+      .select()
+      .from(interconsultation)
+      .where(eq(interconsultation.id, input.id))
+      .limit(1);
+
+    if (!found) {
+      throw new ORPCError("NOT_FOUND", {
+        message: "Interconsultation not found.",
+      });
+    }
+
+    return found;
+  });
+
+const deleteInterconsultationProcedure = protectedProcedure
+  .input(getByIdSchema)
+  .output(z.boolean())
+  .handler(async ({ context, input }) => {
+    const [existing] = await context.db
+      .select()
+      .from(interconsultation)
+      .where(eq(interconsultation.id, input.id))
+      .limit(1);
+    if (!existing) {
+      throw new ORPCError("NOT_FOUND", {
+        message: "Interconsultation not found.",
+      });
+    }
+    await context.db
+      .delete(interconsultation)
+      .where(eq(interconsultation.id, input.id));
+    return true;
+  });
+
 export interface InterconsultationsRouter extends Record<string, AnyRouter> {
   create: typeof createInterconsultationProcedure;
+  delete: typeof deleteInterconsultationProcedure;
+  get: typeof getInterconsultationProcedure;
   list: typeof listInterconsultationsProcedure;
   respond: typeof respondInterconsultationProcedure;
 }
 
 export const interconsultationsRouter: InterconsultationsRouter = {
   create: createInterconsultationProcedure,
+  delete: deleteInterconsultationProcedure,
+  get: getInterconsultationProcedure,
   list: listInterconsultationsProcedure,
   respond: respondInterconsultationProcedure,
 };

@@ -1,3 +1,4 @@
+import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Button } from "@wellfit-emr/ui/components/button";
@@ -13,6 +14,7 @@ import { SearchSelect } from "@wellfit-emr/ui/components/search-select";
 import { Pill, Plus, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { z } from "zod";
 
 import { DataTable } from "@/components/data-table";
 import { PageHeader } from "@/components/page-header";
@@ -36,26 +38,25 @@ export const Route = createFileRoute("/_authenticated/medication-orders/")({
   },
 });
 
-function CreateMedicationOrderForm({ onCancel }: { onCancel: () => void }) {
-  const [form, setForm] = useState({
-    patientId: "",
-    encounterId: "",
-    prescriberId: "",
-    genericName: "",
-    concentration: "",
-    dosageForm: "",
-    dose: "",
-    doseUnit: "",
-    routeCode: "",
-    frequencyText: "",
-    durationText: "",
-    quantityTotal: "",
-    indications: "",
-    status: "active",
-    signedAt: new Date().toISOString().slice(0, 16),
-    atcCode: null as string | null,
-  });
+const medicationOrderSchema = z.object({
+  patientId: z.string().min(1, "Requerido"),
+  encounterId: z.string().min(1, "Requerido"),
+  prescriberId: z.string().min(1, "Requerido"),
+  genericName: z.string().min(1, "Requerido"),
+  concentration: z.string().min(1, "Requerido"),
+  dosageForm: z.string().min(1, "Requerido"),
+  dose: z.string().min(1, "Requerido"),
+  doseUnit: z.string(),
+  routeCode: z.string().min(1, "Requerido"),
+  frequencyText: z.string().min(1, "Requerido"),
+  durationText: z.string().min(1, "Requerido"),
+  quantityTotal: z.string().min(1, "Requerido"),
+  indications: z.string(),
+  signedAt: z.string().min(1, "Requerido"),
+  atcCode: z.string().nullable(),
+});
 
+function CreateMedicationOrderForm({ onCancel }: { onCancel: () => void }) {
   const [patientSearch, setPatientSearch] = useState("");
   const [encounterSearch, setEncounterSearch] = useState("");
   const [prescriberSearch, setPrescriberSearch] = useState("");
@@ -131,22 +132,6 @@ function CreateMedicationOrderForm({ onCancel }: { onCancel: () => void }) {
     })
   );
 
-  useEffect(() => {
-    if (selectedCumData?.extraData) {
-      const extra = selectedCumData.extraData;
-      const concentrationRaw = extra.Extra_VI
-        ? String(extra.Extra_VI).replace(TRAILING_ZERO_DECIMALS_REGEX, "")
-        : "";
-      setForm((f) => ({
-        ...f,
-        genericName: extra.Extra_III || selectedCumData.name,
-        concentration: concentrationRaw ? `${concentrationRaw} mg` : "",
-        routeCode: extra.Extra_VIII || "",
-        atcCode: extra.Extra_II || null,
-      }));
-    }
-  }, [selectedCumData]);
-
   const create = useMutation({
     ...orpc.medicationOrders.create.mutationOptions(),
     onSuccess: () => {
@@ -161,29 +146,69 @@ function CreateMedicationOrderForm({ onCancel }: { onCancel: () => void }) {
     },
   });
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    create.mutate({
-      patientId: form.patientId,
-      encounterId: form.encounterId,
-      prescriberId: form.prescriberId,
-      genericName: form.genericName,
-      concentration: form.concentration,
-      dosageForm: form.dosageForm,
-      dose: form.dose,
-      doseUnit: form.doseUnit || null,
-      routeCode: form.routeCode,
-      frequencyText: form.frequencyText,
-      durationText: form.durationText,
-      quantityTotal: form.quantityTotal,
-      indications: form.indications || null,
-      status: form.status,
-      signedAt: new Date(form.signedAt),
-      diagnosisId: null,
-      atcCode: form.atcCode,
-      validUntil: null,
-    });
-  }
+  const form = useForm({
+    defaultValues: {
+      patientId: "",
+      encounterId: "",
+      prescriberId: "",
+      genericName: "",
+      concentration: "",
+      dosageForm: "",
+      dose: "",
+      doseUnit: "",
+      routeCode: "",
+      frequencyText: "",
+      durationText: "",
+      quantityTotal: "",
+      indications: "",
+      signedAt: new Date().toISOString().slice(0, 16),
+      atcCode: null as string | null,
+    },
+    onSubmit: async ({ value }) => {
+      await create.mutateAsync({
+        patientId: value.patientId,
+        encounterId: value.encounterId,
+        prescriberId: value.prescriberId,
+        genericName: value.genericName,
+        concentration: value.concentration,
+        dosageForm: value.dosageForm,
+        dose: value.dose,
+        doseUnit: value.doseUnit || null,
+        routeCode: value.routeCode,
+        frequencyText: value.frequencyText,
+        durationText: value.durationText,
+        quantityTotal: value.quantityTotal,
+        indications: value.indications || null,
+        status: "active",
+        signedAt: new Date(value.signedAt),
+        diagnosisId: null,
+        atcCode: value.atcCode,
+        validUntil: null,
+      });
+    },
+    validators: {
+      onSubmit: medicationOrderSchema,
+    },
+  });
+
+  useEffect(() => {
+    if (selectedCumData?.extraData) {
+      const extra = selectedCumData.extraData;
+      const concentrationRaw = extra.Extra_VI
+        ? String(extra.Extra_VI).replace(TRAILING_ZERO_DECIMALS_REGEX, "")
+        : "";
+      form.setFieldValue(
+        "genericName",
+        extra.Extra_III || selectedCumData.name
+      );
+      form.setFieldValue(
+        "concentration",
+        concentrationRaw ? `${concentrationRaw} mg` : ""
+      );
+      form.setFieldValue("routeCode", extra.Extra_VIII || "");
+      form.setFieldValue("atcCode", extra.Extra_II || null);
+    }
+  }, [selectedCumData, form]);
 
   return (
     <Card className="mx-6">
@@ -193,70 +218,104 @@ function CreateMedicationOrderForm({ onCancel }: { onCancel: () => void }) {
       <CardContent>
         <form
           className="grid grid-cols-1 gap-3 md:grid-cols-3"
-          onSubmit={handleSubmit}
+          onSubmit={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            form.handleSubmit();
+          }}
         >
-          <div className="space-y-1">
-            <Label>Paciente</Label>
-            <SearchSelect
-              emptyMessage="Escribe para buscar pacientes"
-              loading={patientsLoading}
-              onChange={(v) => setForm((f) => ({ ...f, patientId: v }))}
-              onSearchChange={setPatientSearch}
-              options={
-                patientsData?.patients.map((p) => ({
-                  value: p.id,
-                  label: `${p.firstName} ${p.lastName1}`,
-                  description: `${p.primaryDocumentType} ${p.primaryDocumentNumber}`,
-                })) ?? []
-              }
-              placeholder="Buscar paciente..."
-              required
-              search={patientSearch}
-              value={form.patientId}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label>Atención</Label>
-            <SearchSelect
-              emptyMessage="Escribe para buscar atenciones"
-              loading={encountersLoading}
-              onChange={(v) => setForm((f) => ({ ...f, encounterId: v }))}
-              onSearchChange={setEncounterSearch}
-              options={
-                encountersData?.encounters.map((e) => ({
-                  value: e.id,
-                  label: e.reasonForVisit || "Sin motivo",
-                  description: new Date(e.startedAt).toLocaleDateString(
-                    "es-CO"
-                  ),
-                })) ?? []
-              }
-              placeholder="Buscar atención..."
-              required
-              search={encounterSearch}
-              value={form.encounterId}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label>Prescriptor</Label>
-            <SearchSelect
-              emptyMessage="Escribe para buscar profesionales"
-              loading={practitionersLoading}
-              onChange={(v) => setForm((f) => ({ ...f, prescriberId: v }))}
-              onSearchChange={setPrescriberSearch}
-              options={
-                practitionersData?.practitioners.map((p) => ({
-                  value: p.id,
-                  label: p.fullName,
-                  description: p.documentNumber,
-                })) ?? []
-              }
-              placeholder="Buscar profesional..."
-              required
-              search={prescriberSearch}
-              value={form.prescriberId}
-            />
-          </div>
+          <form.Field name="patientId">
+            {(field) => (
+              <div className="space-y-1">
+                <Label htmlFor={field.name}>Paciente</Label>
+                <SearchSelect
+                  emptyMessage="Escribe para buscar pacientes"
+                  loading={patientsLoading}
+                  onChange={(v) => field.handleChange(v)}
+                  onSearchChange={setPatientSearch}
+                  options={
+                    patientsData?.patients.map((p) => ({
+                      value: p.id,
+                      label: `${p.firstName} ${p.lastName1}`,
+                      description: `${p.primaryDocumentType} ${p.primaryDocumentNumber}`,
+                    })) ?? []
+                  }
+                  placeholder="Buscar paciente..."
+                  required
+                  search={patientSearch}
+                  value={field.state.value}
+                />
+                {field.state.meta.errors.map((error) => (
+                  <p className="text-destructive text-xs" key={String(error)}>
+                    {String(error)}
+                  </p>
+                ))}
+              </div>
+            )}
+          </form.Field>
+
+          <form.Field name="encounterId">
+            {(field) => (
+              <div className="space-y-1">
+                <Label htmlFor={field.name}>Atención</Label>
+                <SearchSelect
+                  emptyMessage="Escribe para buscar atenciones"
+                  loading={encountersLoading}
+                  onChange={(v) => field.handleChange(v)}
+                  onSearchChange={setEncounterSearch}
+                  options={
+                    encountersData?.encounters.map((e) => ({
+                      value: e.id,
+                      label: e.reasonForVisit || "Sin motivo",
+                      description: new Date(e.startedAt).toLocaleDateString(
+                        "es-CO"
+                      ),
+                    })) ?? []
+                  }
+                  placeholder="Buscar atención..."
+                  required
+                  search={encounterSearch}
+                  value={field.state.value}
+                />
+                {field.state.meta.errors.map((error) => (
+                  <p className="text-destructive text-xs" key={String(error)}>
+                    {String(error)}
+                  </p>
+                ))}
+              </div>
+            )}
+          </form.Field>
+
+          <form.Field name="prescriberId">
+            {(field) => (
+              <div className="space-y-1">
+                <Label htmlFor={field.name}>Prescriptor</Label>
+                <SearchSelect
+                  emptyMessage="Escribe para buscar profesionales"
+                  loading={practitionersLoading}
+                  onChange={(v) => field.handleChange(v)}
+                  onSearchChange={setPrescriberSearch}
+                  options={
+                    practitionersData?.practitioners.map((p) => ({
+                      value: p.id,
+                      label: p.fullName,
+                      description: p.documentNumber,
+                    })) ?? []
+                  }
+                  placeholder="Buscar profesional..."
+                  required
+                  search={prescriberSearch}
+                  value={field.state.value}
+                />
+                {field.state.meta.errors.map((error) => (
+                  <p className="text-destructive text-xs" key={String(error)}>
+                    {String(error)}
+                  </p>
+                ))}
+              </div>
+            )}
+          </form.Field>
+
           <div className="space-y-1 md:col-span-3">
             <Label>Medicamento (CUM)</Label>
             <SearchSelect
@@ -279,133 +338,249 @@ function CreateMedicationOrderForm({ onCancel }: { onCancel: () => void }) {
               value={selectedCumCode}
             />
           </div>
-          <div className="space-y-1 md:col-span-2">
-            <Label>Nombre genérico (DCI)</Label>
-            <Input
-              onChange={(e) =>
-                setForm({ ...form, genericName: e.target.value })
-              }
-              required
-              value={form.genericName}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label>Concentración</Label>
-            <Input
-              onChange={(e) =>
-                setForm({ ...form, concentration: e.target.value })
-              }
-              placeholder="Ej: 500 mg"
-              required
-              value={form.concentration}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label>Forma farmacéutica</Label>
-            <SearchSelect
-              emptyMessage="Escribe para buscar en FFM"
-              loading={ffmLoading}
-              onChange={(v) => setForm((f) => ({ ...f, dosageForm: v }))}
-              onSearchChange={setFfmSearch}
-              options={
-                ffmData?.entries.map((e) => ({
-                  value: e.name,
-                  label: e.name,
-                  description: e.code,
-                })) ?? []
-              }
-              placeholder="Buscar forma farmacéutica..."
-              required
-              search={ffmSearch}
-              value={form.dosageForm}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label>Dosis</Label>
-            <Input
-              onChange={(e) => setForm({ ...form, dose: e.target.value })}
-              required
-              value={form.dose}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label>Unidad dosis</Label>
-            <SearchSelect
-              emptyMessage="Escribe para buscar en UMM"
-              loading={ummLoading}
-              onChange={(v) => setForm((f) => ({ ...f, doseUnit: v }))}
-              onSearchChange={setUmmSearch}
-              options={
-                ummData?.entries.map((e) => ({
-                  value: e.name,
-                  label: e.name,
-                  description: e.code,
-                })) ?? []
-              }
-              placeholder="Buscar unidad..."
-              search={ummSearch}
-              value={form.doseUnit}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label>Vía</Label>
-            <Input
-              onChange={(e) => setForm({ ...form, routeCode: e.target.value })}
-              placeholder="Ej: oral"
-              required
-              value={form.routeCode}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label>Frecuencia</Label>
-            <Input
-              onChange={(e) =>
-                setForm({ ...form, frequencyText: e.target.value })
-              }
-              placeholder="Ej: cada 8 horas"
-              required
-              value={form.frequencyText}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label>Duración</Label>
-            <Input
-              onChange={(e) =>
-                setForm({ ...form, durationText: e.target.value })
-              }
-              placeholder="Ej: 7 días"
-              required
-              value={form.durationText}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label>Cantidad total</Label>
-            <Input
-              onChange={(e) =>
-                setForm({ ...form, quantityTotal: e.target.value })
-              }
-              required
-              value={form.quantityTotal}
-            />
-          </div>
-          <div className="space-y-1 md:col-span-2">
-            <Label>Indicaciones</Label>
-            <Input
-              onChange={(e) =>
-                setForm({ ...form, indications: e.target.value })
-              }
-              value={form.indications}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label>Fecha firma</Label>
-            <Input
-              onChange={(e) => setForm({ ...form, signedAt: e.target.value })}
-              required
-              type="datetime-local"
-              value={form.signedAt}
-            />
-          </div>
+
+          <form.Field name="genericName">
+            {(field) => (
+              <div className="space-y-1 md:col-span-2">
+                <Label htmlFor={field.name}>Nombre genérico (DCI)</Label>
+                <Input
+                  id={field.name}
+                  name={field.name}
+                  onBlur={field.handleBlur}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  required
+                  value={field.state.value}
+                />
+                {field.state.meta.errors.map((error) => (
+                  <p className="text-destructive text-xs" key={String(error)}>
+                    {String(error)}
+                  </p>
+                ))}
+              </div>
+            )}
+          </form.Field>
+
+          <form.Field name="concentration">
+            {(field) => (
+              <div className="space-y-1">
+                <Label htmlFor={field.name}>Concentración</Label>
+                <Input
+                  id={field.name}
+                  name={field.name}
+                  onBlur={field.handleBlur}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  placeholder="Ej: 500 mg"
+                  required
+                  value={field.state.value}
+                />
+                {field.state.meta.errors.map((error) => (
+                  <p className="text-destructive text-xs" key={String(error)}>
+                    {String(error)}
+                  </p>
+                ))}
+              </div>
+            )}
+          </form.Field>
+
+          <form.Field name="dosageForm">
+            {(field) => (
+              <div className="space-y-1">
+                <Label htmlFor={field.name}>Forma farmacéutica</Label>
+                <SearchSelect
+                  emptyMessage="Escribe para buscar en FFM"
+                  loading={ffmLoading}
+                  onChange={(v) => field.handleChange(v)}
+                  onSearchChange={setFfmSearch}
+                  options={
+                    ffmData?.entries.map((e) => ({
+                      value: e.name,
+                      label: e.name,
+                      description: e.code,
+                    })) ?? []
+                  }
+                  placeholder="Buscar forma farmacéutica..."
+                  required
+                  search={ffmSearch}
+                  value={field.state.value}
+                />
+                {field.state.meta.errors.map((error) => (
+                  <p className="text-destructive text-xs" key={String(error)}>
+                    {String(error)}
+                  </p>
+                ))}
+              </div>
+            )}
+          </form.Field>
+
+          <form.Field name="dose">
+            {(field) => (
+              <div className="space-y-1">
+                <Label htmlFor={field.name}>Dosis</Label>
+                <Input
+                  id={field.name}
+                  name={field.name}
+                  onBlur={field.handleBlur}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  required
+                  value={field.state.value}
+                />
+                {field.state.meta.errors.map((error) => (
+                  <p className="text-destructive text-xs" key={String(error)}>
+                    {String(error)}
+                  </p>
+                ))}
+              </div>
+            )}
+          </form.Field>
+
+          <form.Field name="doseUnit">
+            {(field) => (
+              <div className="space-y-1">
+                <Label htmlFor={field.name}>Unidad dosis</Label>
+                <SearchSelect
+                  emptyMessage="Escribe para buscar en UMM"
+                  loading={ummLoading}
+                  onChange={(v) => field.handleChange(v)}
+                  onSearchChange={setUmmSearch}
+                  options={
+                    ummData?.entries.map((e) => ({
+                      value: e.name,
+                      label: e.name,
+                      description: e.code,
+                    })) ?? []
+                  }
+                  placeholder="Buscar unidad..."
+                  search={ummSearch}
+                  value={field.state.value}
+                />
+              </div>
+            )}
+          </form.Field>
+
+          <form.Field name="routeCode">
+            {(field) => (
+              <div className="space-y-1">
+                <Label htmlFor={field.name}>Vía</Label>
+                <Input
+                  id={field.name}
+                  name={field.name}
+                  onBlur={field.handleBlur}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  placeholder="Ej: oral"
+                  required
+                  value={field.state.value}
+                />
+                {field.state.meta.errors.map((error) => (
+                  <p className="text-destructive text-xs" key={String(error)}>
+                    {String(error)}
+                  </p>
+                ))}
+              </div>
+            )}
+          </form.Field>
+
+          <form.Field name="frequencyText">
+            {(field) => (
+              <div className="space-y-1">
+                <Label htmlFor={field.name}>Frecuencia</Label>
+                <Input
+                  id={field.name}
+                  name={field.name}
+                  onBlur={field.handleBlur}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  placeholder="Ej: cada 8 horas"
+                  required
+                  value={field.state.value}
+                />
+                {field.state.meta.errors.map((error) => (
+                  <p className="text-destructive text-xs" key={String(error)}>
+                    {String(error)}
+                  </p>
+                ))}
+              </div>
+            )}
+          </form.Field>
+
+          <form.Field name="durationText">
+            {(field) => (
+              <div className="space-y-1">
+                <Label htmlFor={field.name}>Duración</Label>
+                <Input
+                  id={field.name}
+                  name={field.name}
+                  onBlur={field.handleBlur}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  placeholder="Ej: 7 días"
+                  required
+                  value={field.state.value}
+                />
+                {field.state.meta.errors.map((error) => (
+                  <p className="text-destructive text-xs" key={String(error)}>
+                    {String(error)}
+                  </p>
+                ))}
+              </div>
+            )}
+          </form.Field>
+
+          <form.Field name="quantityTotal">
+            {(field) => (
+              <div className="space-y-1">
+                <Label htmlFor={field.name}>Cantidad total</Label>
+                <Input
+                  id={field.name}
+                  name={field.name}
+                  onBlur={field.handleBlur}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  required
+                  value={field.state.value}
+                />
+                {field.state.meta.errors.map((error) => (
+                  <p className="text-destructive text-xs" key={String(error)}>
+                    {String(error)}
+                  </p>
+                ))}
+              </div>
+            )}
+          </form.Field>
+
+          <form.Field name="indications">
+            {(field) => (
+              <div className="space-y-1 md:col-span-2">
+                <Label htmlFor={field.name}>Indicaciones</Label>
+                <Input
+                  id={field.name}
+                  name={field.name}
+                  onBlur={field.handleBlur}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  value={field.state.value}
+                />
+              </div>
+            )}
+          </form.Field>
+
+          <form.Field name="signedAt">
+            {(field) => (
+              <div className="space-y-1">
+                <Label htmlFor={field.name}>Fecha firma</Label>
+                <Input
+                  id={field.name}
+                  name={field.name}
+                  onBlur={field.handleBlur}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  required
+                  type="datetime-local"
+                  value={field.state.value}
+                />
+                {field.state.meta.errors.map((error) => (
+                  <p className="text-destructive text-xs" key={String(error)}>
+                    {String(error)}
+                  </p>
+                ))}
+              </div>
+            )}
+          </form.Field>
+
           <div className="flex items-end gap-2 md:col-span-3">
             <Button
               onClick={onCancel}
@@ -415,9 +590,22 @@ function CreateMedicationOrderForm({ onCancel }: { onCancel: () => void }) {
             >
               Cancelar
             </Button>
-            <Button disabled={create.isPending} size="sm" type="submit">
-              {create.isPending ? "Guardando..." : "Guardar prescripción"}
-            </Button>
+            <form.Subscribe
+              selector={(state) => ({
+                canSubmit: state.canSubmit,
+                isSubmitting: state.isSubmitting,
+              })}
+            >
+              {({ canSubmit, isSubmitting }) => (
+                <Button
+                  disabled={!canSubmit || isSubmitting}
+                  size="sm"
+                  type="submit"
+                >
+                  {isSubmitting ? "Guardando..." : "Guardar prescripción"}
+                </Button>
+              )}
+            </form.Subscribe>
           </div>
         </form>
       </CardContent>

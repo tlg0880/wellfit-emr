@@ -62,6 +62,15 @@ const mutation = useMutation({ ...orpc.patients.create.mutationOptions(), onSucc
 ### Backend routers PENDIENTES
 _Ninguno. Todos los routers planificados están implementados._
 
+### Cambios recientes (2026-04-30)
+- **DELETE endpoints**: Agregados a `patients`, `encounters`, `clinicalRecords` (diagnosis/allergy/observation/procedure), `clinicalDocuments`, `medicationOrders`, `medicationAdministrations`, `serviceRequests`, `diagnosticReports`, `interconsultations`, `incapacityCertificates`, `attachments` (binary/link), `facilities` (org/site/unit/practitioner), `ripsExports`, `ihceBundles`, `consents` (consent/dataDisclosure).
+- **GET endpoints**: Agregados a `medicationOrders`, `serviceRequests`, `interconsultations`, `incapacityCertificates`, `attachments` (binary/link), `ripsExports`, `ihceBundles`, `facilities` (org/site/unit/practitioner).
+- **onDelete cascade**: Agregado a FKs del schema DB para permitir eliminación en cascada de registros clínicos vinculados a pacientes/atenciones.
+- **Frontend fixes**: `refetch()` reemplazado por `invalidateQueries()` en `encounters/index.tsx` y `encounters/$encounterId.tsx`. Scroll infinito buggeado corregido en chat con detección de posición del usuario. Validación de tipo objeto agregada a campos JSON libres en clinical-documents e ihce-bundles. `aria-label` agregado al input de chat.
+- **Rutas de detalle**: Creadas 11 rutas de detalle: `/appointments/$appointmentId`, `/medication-orders/$orderId`, `/service-requests/$requestId`, `/interconsultations/$interconsultationId`, `/incapacity-certificates/$certificateId`, `/attachments/$attachmentId`, `/ihce-bundles/$bundleId`, `/rips-exports/$exportId`, `/facilities/sites/$siteId`, `/facilities/service-units/$unitId`, `/facilities/practitioners/$practitionerId`.
+- **Vistas faltantes**: Agregado tab de "Autorizaciones de divulgación" en `/consents` con CRUD completo. Agregado indicador y modal de reportes diagnósticos en `/service-requests`.
+- **Migración de formularios**: Todos los formularios de creación migrados de `useState` a `@tanstack/react-form` + Zod: `appointments`, `patients`, `encounters`, `medication-orders`, `service-requests`, `consents`, `interconsultations`, `incapacity-certificates`, `clinical-documents`, `ihce-bundles`.
+
 ### Vistas frontend implementadas
 - `/` — Dashboard
 - `/patients` — Listado, búsqueda, registro
@@ -74,12 +83,20 @@ _Ninguno. Todos los routers planificados están implementados._
 - `/medication-orders` — Prescripciones y administraciones
 - `/service-requests` — Órdenes de servicio y resultados
 - `/interconsultations` — Interconsultas y remisiones
+- `/interconsultations/$interconsultationId` — Detalle de interconsulta
 - `/incapacity-certificates` — Certificados de incapacidad
+- `/incapacity-certificates/$certificateId` — Detalle de certificado
 - `/attachments` — Anexos y enlaces documentales
+- `/attachments/$attachmentId` — Detalle de anexo
 - `/audit-events` — Bitácora de auditoría y acceso
 - `/rips-exports` — Panel regulatorio RIPS
+- `/rips-exports/$exportId` — Detalle de exportación RIPS
 - `/ihce-bundles` — Bundles IHCE/RDA para interoperabilidad
+- `/ihce-bundles/$bundleId` — Detalle de bundle IHCE
 - `/facilities/organizations`, `/sites`, `/service-units`, `/practitioners`
+- `/facilities/sites/$siteId` — Detalle de sede
+- `/facilities/service-units/$unitId` — Detalle de unidad de servicio
+- `/facilities/practitioners/$practitionerId` — Detalle de profesional
 - `/admin/users` — Gestión de usuarios (maneja error 403/500 sin permisos)
 - `/catalogs`, `/catalogs/$tableName` — Catálogos RIPS
 - `/chat` — Asistente médico con streaming, selección/búsqueda de paciente, panel de contexto clínico, acciones rápidas, render Markdown con Streamdown, visualización de tool calls y creación de prescripciones mediante herramientas server-side.
@@ -88,6 +105,20 @@ _Ninguno. Todos los routers planificados están implementados._
 ### Vistas frontend PENDIENTES
 - Portal del paciente (solicitudes de copia)
 - Firmas pendientes / panel de tareas regulatorias
+
+### Backend PENDIENTE (post-auditoría 2026-04-30)
+- **CRÍTICO**: Tablas transaccionales RIPS por tipo de servicio (consulta, procedimientos, medicamentos, urgencias, hospitalización, recién nacido, otros servicios) + generador FEV-RIPS estructurado
+- **CRÍTICO**: API FHIR R4 para interoperabilidad (Res. 866 de 2021)
+- **CRÍTICO**: Validación de interacciones medicamentosas (tabla local ATC o integración)
+- **ALTO**: Middleware de auth con roles/permisos (proteger admin, verificar banned)
+- **ALTO**: Firma digital en documentos clínicos (certificado + timestamp)
+- **ALTO**: Generador de bundles FHIR-compliant para IHCE/RDA
+- **ALTO**: Middleware de auditoría automática de lecturas de datos sensibles
+- **MEDIO**: Estandarizar timestamps (`createdAt`/`updatedAt`) en tablas clínicas sin ellos
+- **MEDIO**: Tablas RBAC clínico (`clinicalRole`, `permission`, `userClinicalRole`, `rolePermission`) sin routers
+- **MEDIO**: Configurar modelo de IA por variable de entorno (actualmente hardcodeado)
+- **BAJO**: Eliminar código muerto (`header.tsx`)
+- **BAJO**: Mejorar accesibilidad (ARIA) en `DataTable`, `Sidebar`, `Loader`
 
 ## Seed y Test Infrastructure
 

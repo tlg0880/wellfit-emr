@@ -100,12 +100,55 @@ const listRipsExportsProcedure = protectedProcedure
     };
   });
 
+const getByIdSchema = z.object({
+  id: nonEmptyStringSchema,
+});
+
+const getRipsExportProcedure = protectedProcedure
+  .input(getByIdSchema)
+  .output(ripsExportSchema)
+  .handler(async ({ context, input }) => {
+    const [found] = await context.db
+      .select()
+      .from(ripsExport)
+      .where(eq(ripsExport.id, input.id))
+      .limit(1);
+
+    if (!found) {
+      throw new ORPCError("NOT_FOUND", {
+        message: "RIPS export not found.",
+      });
+    }
+
+    return found;
+  });
+
+const deleteRipsExportProcedure = protectedProcedure
+  .input(getByIdSchema)
+  .output(z.boolean())
+  .handler(async ({ context, input }) => {
+    const [existing] = await context.db
+      .select()
+      .from(ripsExport)
+      .where(eq(ripsExport.id, input.id))
+      .limit(1);
+    if (!existing) {
+      throw new ORPCError("NOT_FOUND", { message: "RIPS export not found." });
+    }
+    await context.db.delete(ripsExport).where(eq(ripsExport.id, input.id));
+    return true;
+  });
+
 export interface RipsExportsRouter extends Record<string, AnyRouter> {
   create: typeof createRipsExportProcedure;
+  delete: typeof deleteRipsExportProcedure;
+  get: typeof getRipsExportProcedure;
   list: typeof listRipsExportsProcedure;
 }
 
 export const ripsExportsRouter: RipsExportsRouter = {
   create: createRipsExportProcedure,
+  delete: deleteRipsExportProcedure,
+  get: getRipsExportProcedure,
   list: listRipsExportsProcedure,
 };

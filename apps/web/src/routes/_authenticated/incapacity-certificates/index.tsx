@@ -1,3 +1,4 @@
+import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Button } from "@wellfit-emr/ui/components/button";
@@ -13,6 +14,7 @@ import { SearchSelect } from "@wellfit-emr/ui/components/search-select";
 import { ClipboardList, Plus, Search } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { z } from "zod";
 
 import { DataTable } from "@/components/data-table";
 import { PageHeader } from "@/components/page-header";
@@ -36,19 +38,24 @@ export const Route = createFileRoute(
   },
 });
 
-function CreateIncapacityForm({ onCancel }: { onCancel: () => void }) {
-  const [form, setForm] = useState({
-    patientId: "",
-    encounterId: "",
-    issuedBy: "",
-    conceptText: "",
-    destinationEntity: "",
-    startDate: new Date().toISOString().slice(0, 10),
-    endDate: new Date().toISOString().slice(0, 10),
-    issuedAt: new Date().toISOString().slice(0, 16),
-    signedAt: new Date().toISOString().slice(0, 16),
+const incapacitySchema = z
+  .object({
+    patientId: z.string().min(1, "Requerido"),
+    encounterId: z.string().min(1, "Requerido"),
+    issuedBy: z.string().min(1, "Requerido"),
+    conceptText: z.string().min(1, "Requerido"),
+    destinationEntity: z.string(),
+    startDate: z.string().min(1, "Requerido"),
+    endDate: z.string().min(1, "Requerido"),
+    issuedAt: z.string().min(1, "Requerido"),
+    signedAt: z.string().min(1, "Requerido"),
+  })
+  .refine((data) => new Date(data.endDate) >= new Date(data.startDate), {
+    message: "La fecha fin debe ser mayor o igual a la fecha inicio",
+    path: ["endDate"],
   });
 
+function CreateIncapacityForm({ onCancel }: { onCancel: () => void }) {
   const [patientSearch, setPatientSearch] = useState("");
   const [encounterSearch, setEncounterSearch] = useState("");
   const [practitionerSearch, setPractitionerSearch] = useState("");
@@ -97,20 +104,35 @@ function CreateIncapacityForm({ onCancel }: { onCancel: () => void }) {
     },
   });
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    create.mutate({
-      patientId: form.patientId,
-      encounterId: form.encounterId,
-      issuedBy: form.issuedBy,
-      conceptText: form.conceptText,
-      destinationEntity: form.destinationEntity || null,
-      startDate: new Date(form.startDate),
-      endDate: new Date(form.endDate),
-      issuedAt: new Date(form.issuedAt),
-      signedAt: new Date(form.signedAt),
-    });
-  }
+  const form = useForm({
+    defaultValues: {
+      patientId: "",
+      encounterId: "",
+      issuedBy: "",
+      conceptText: "",
+      destinationEntity: "",
+      startDate: new Date().toISOString().slice(0, 10),
+      endDate: new Date().toISOString().slice(0, 10),
+      issuedAt: new Date().toISOString().slice(0, 16),
+      signedAt: new Date().toISOString().slice(0, 16),
+    },
+    onSubmit: async ({ value }) => {
+      await create.mutateAsync({
+        patientId: value.patientId,
+        encounterId: value.encounterId,
+        issuedBy: value.issuedBy,
+        conceptText: value.conceptText,
+        destinationEntity: value.destinationEntity || null,
+        startDate: new Date(value.startDate),
+        endDate: new Date(value.endDate),
+        issuedAt: new Date(value.issuedAt),
+        signedAt: new Date(value.signedAt),
+      });
+    },
+    validators: {
+      onSubmit: incapacitySchema,
+    },
+  });
 
   return (
     <Card className="mx-6">
@@ -120,117 +142,229 @@ function CreateIncapacityForm({ onCancel }: { onCancel: () => void }) {
       <CardContent>
         <form
           className="grid grid-cols-1 gap-3 md:grid-cols-3"
-          onSubmit={handleSubmit}
+          onSubmit={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            form.handleSubmit();
+          }}
         >
-          <div className="space-y-1">
-            <Label>Paciente</Label>
-            <SearchSelect
-              emptyMessage="Escribe para buscar pacientes"
-              loading={patientsLoading}
-              onChange={(v) => setForm((f) => ({ ...f, patientId: v }))}
-              onSearchChange={setPatientSearch}
-              options={
-                patientsData?.patients.map((p) => ({
-                  value: p.id,
-                  label: `${p.firstName} ${p.lastName1}`,
-                  description: `${p.primaryDocumentType} ${p.primaryDocumentNumber}`,
-                })) ?? []
-              }
-              placeholder="Buscar paciente..."
-              required
-              search={patientSearch}
-              value={form.patientId}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label>Atención</Label>
-            <SearchSelect
-              emptyMessage="Escribe para buscar atenciones"
-              loading={encountersLoading}
-              onChange={(v) => setForm((f) => ({ ...f, encounterId: v }))}
-              onSearchChange={setEncounterSearch}
-              options={
-                encountersData?.encounters.map((e) => ({
-                  value: e.id,
-                  label: e.reasonForVisit || "Sin motivo",
-                  description: new Date(e.startedAt).toLocaleDateString(
-                    "es-CO"
-                  ),
-                })) ?? []
-              }
-              placeholder="Buscar atención..."
-              required
-              search={encounterSearch}
-              value={form.encounterId}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label>Emitido por</Label>
-            <SearchSelect
-              emptyMessage="Escribe para buscar profesionales"
-              loading={practitionersLoading}
-              onChange={(v) => setForm((f) => ({ ...f, issuedBy: v }))}
-              onSearchChange={setPractitionerSearch}
-              options={
-                practitionersData?.practitioners.map((p) => ({
-                  value: p.id,
-                  label: p.fullName,
-                  description: p.documentNumber,
-                })) ?? []
-              }
-              placeholder="Buscar profesional..."
-              required
-              search={practitionerSearch}
-              value={form.issuedBy}
-            />
-          </div>
-          <div className="space-y-1 md:col-span-2">
-            <Label>Concepto / diagnóstico</Label>
-            <Input
-              onChange={(e) =>
-                setForm({ ...form, conceptText: e.target.value })
-              }
-              required
-              value={form.conceptText}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label>Entidad destino</Label>
-            <Input
-              onChange={(e) =>
-                setForm({ ...form, destinationEntity: e.target.value })
-              }
-              placeholder="Ej: EPS"
-              value={form.destinationEntity}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label>Fecha inicio</Label>
-            <Input
-              onChange={(e) => setForm({ ...form, startDate: e.target.value })}
-              required
-              type="date"
-              value={form.startDate}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label>Fecha fin</Label>
-            <Input
-              onChange={(e) => setForm({ ...form, endDate: e.target.value })}
-              required
-              type="date"
-              value={form.endDate}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label>Fecha emisión</Label>
-            <Input
-              onChange={(e) => setForm({ ...form, issuedAt: e.target.value })}
-              required
-              type="datetime-local"
-              value={form.issuedAt}
-            />
-          </div>
+          <form.Field name="patientId">
+            {(field) => (
+              <div className="space-y-1">
+                <Label htmlFor={field.name}>Paciente</Label>
+                <SearchSelect
+                  emptyMessage="Escribe para buscar pacientes"
+                  loading={patientsLoading}
+                  onChange={(v) => field.handleChange(v)}
+                  onSearchChange={setPatientSearch}
+                  options={
+                    patientsData?.patients.map((p) => ({
+                      value: p.id,
+                      label: `${p.firstName} ${p.lastName1}`,
+                      description: `${p.primaryDocumentType} ${p.primaryDocumentNumber}`,
+                    })) ?? []
+                  }
+                  placeholder="Buscar paciente..."
+                  required
+                  search={patientSearch}
+                  value={field.state.value}
+                />
+                {field.state.meta.errors.map((error) => (
+                  <p className="text-destructive text-xs" key={String(error)}>
+                    {String(error)}
+                  </p>
+                ))}
+              </div>
+            )}
+          </form.Field>
+
+          <form.Field name="encounterId">
+            {(field) => (
+              <div className="space-y-1">
+                <Label htmlFor={field.name}>Atención</Label>
+                <SearchSelect
+                  emptyMessage="Escribe para buscar atenciones"
+                  loading={encountersLoading}
+                  onChange={(v) => field.handleChange(v)}
+                  onSearchChange={setEncounterSearch}
+                  options={
+                    encountersData?.encounters.map((e) => ({
+                      value: e.id,
+                      label: e.reasonForVisit || "Sin motivo",
+                      description: new Date(e.startedAt).toLocaleDateString(
+                        "es-CO"
+                      ),
+                    })) ?? []
+                  }
+                  placeholder="Buscar atención..."
+                  required
+                  search={encounterSearch}
+                  value={field.state.value}
+                />
+                {field.state.meta.errors.map((error) => (
+                  <p className="text-destructive text-xs" key={String(error)}>
+                    {String(error)}
+                  </p>
+                ))}
+              </div>
+            )}
+          </form.Field>
+
+          <form.Field name="issuedBy">
+            {(field) => (
+              <div className="space-y-1">
+                <Label htmlFor={field.name}>Emitido por</Label>
+                <SearchSelect
+                  emptyMessage="Escribe para buscar profesionales"
+                  loading={practitionersLoading}
+                  onChange={(v) => field.handleChange(v)}
+                  onSearchChange={setPractitionerSearch}
+                  options={
+                    practitionersData?.practitioners.map((p) => ({
+                      value: p.id,
+                      label: p.fullName,
+                      description: p.documentNumber,
+                    })) ?? []
+                  }
+                  placeholder="Buscar profesional..."
+                  required
+                  search={practitionerSearch}
+                  value={field.state.value}
+                />
+                {field.state.meta.errors.map((error) => (
+                  <p className="text-destructive text-xs" key={String(error)}>
+                    {String(error)}
+                  </p>
+                ))}
+              </div>
+            )}
+          </form.Field>
+
+          <form.Field name="conceptText">
+            {(field) => (
+              <div className="space-y-1 md:col-span-2">
+                <Label htmlFor={field.name}>Concepto / diagnóstico</Label>
+                <Input
+                  id={field.name}
+                  name={field.name}
+                  onBlur={field.handleBlur}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  required
+                  value={field.state.value}
+                />
+                {field.state.meta.errors.map((error) => (
+                  <p className="text-destructive text-xs" key={String(error)}>
+                    {String(error)}
+                  </p>
+                ))}
+              </div>
+            )}
+          </form.Field>
+
+          <form.Field name="destinationEntity">
+            {(field) => (
+              <div className="space-y-1">
+                <Label htmlFor={field.name}>Entidad destino</Label>
+                <Input
+                  id={field.name}
+                  name={field.name}
+                  onBlur={field.handleBlur}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  placeholder="Ej: EPS"
+                  value={field.state.value}
+                />
+              </div>
+            )}
+          </form.Field>
+
+          <form.Field name="startDate">
+            {(field) => (
+              <div className="space-y-1">
+                <Label htmlFor={field.name}>Fecha inicio</Label>
+                <Input
+                  id={field.name}
+                  name={field.name}
+                  onBlur={field.handleBlur}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  required
+                  type="date"
+                  value={field.state.value}
+                />
+                {field.state.meta.errors.map((error) => (
+                  <p className="text-destructive text-xs" key={String(error)}>
+                    {String(error)}
+                  </p>
+                ))}
+              </div>
+            )}
+          </form.Field>
+
+          <form.Field name="endDate">
+            {(field) => (
+              <div className="space-y-1">
+                <Label htmlFor={field.name}>Fecha fin</Label>
+                <Input
+                  id={field.name}
+                  name={field.name}
+                  onBlur={field.handleBlur}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  required
+                  type="date"
+                  value={field.state.value}
+                />
+                {field.state.meta.errors.map((error) => (
+                  <p className="text-destructive text-xs" key={String(error)}>
+                    {String(error)}
+                  </p>
+                ))}
+              </div>
+            )}
+          </form.Field>
+
+          <form.Field name="issuedAt">
+            {(field) => (
+              <div className="space-y-1">
+                <Label htmlFor={field.name}>Fecha emisión</Label>
+                <Input
+                  id={field.name}
+                  name={field.name}
+                  onBlur={field.handleBlur}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  required
+                  type="datetime-local"
+                  value={field.state.value}
+                />
+                {field.state.meta.errors.map((error) => (
+                  <p className="text-destructive text-xs" key={String(error)}>
+                    {String(error)}
+                  </p>
+                ))}
+              </div>
+            )}
+          </form.Field>
+
+          <form.Field name="signedAt">
+            {(field) => (
+              <div className="space-y-1">
+                <Label htmlFor={field.name}>Fecha firma</Label>
+                <Input
+                  id={field.name}
+                  name={field.name}
+                  onBlur={field.handleBlur}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  required
+                  type="datetime-local"
+                  value={field.state.value}
+                />
+                {field.state.meta.errors.map((error) => (
+                  <p className="text-destructive text-xs" key={String(error)}>
+                    {String(error)}
+                  </p>
+                ))}
+              </div>
+            )}
+          </form.Field>
+
           <div className="flex items-end gap-2 md:col-span-3">
             <Button
               onClick={onCancel}
@@ -240,9 +374,22 @@ function CreateIncapacityForm({ onCancel }: { onCancel: () => void }) {
             >
               Cancelar
             </Button>
-            <Button disabled={create.isPending} size="sm" type="submit">
-              {create.isPending ? "Guardando..." : "Guardar incapacidad"}
-            </Button>
+            <form.Subscribe
+              selector={(state) => ({
+                canSubmit: state.canSubmit,
+                isSubmitting: state.isSubmitting,
+              })}
+            >
+              {({ canSubmit, isSubmitting }) => (
+                <Button
+                  disabled={!canSubmit || isSubmitting}
+                  size="sm"
+                  type="submit"
+                >
+                  {isSubmitting ? "Guardando..." : "Guardar incapacidad"}
+                </Button>
+              )}
+            </form.Subscribe>
           </div>
         </form>
       </CardContent>

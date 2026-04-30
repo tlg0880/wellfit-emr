@@ -106,12 +106,55 @@ const listIhceBundlesProcedure = protectedProcedure
     };
   });
 
+const getByIdSchema = z.object({
+  id: nonEmptyStringSchema,
+});
+
+const getIhceBundleProcedure = protectedProcedure
+  .input(getByIdSchema)
+  .output(ihceBundleSchema)
+  .handler(async ({ context, input }) => {
+    const [found] = await context.db
+      .select()
+      .from(ihceBundle)
+      .where(eq(ihceBundle.id, input.id))
+      .limit(1);
+
+    if (!found) {
+      throw new ORPCError("NOT_FOUND", {
+        message: "IHCE bundle not found.",
+      });
+    }
+
+    return found;
+  });
+
+const deleteIhceBundleProcedure = protectedProcedure
+  .input(getByIdSchema)
+  .output(z.boolean())
+  .handler(async ({ context, input }) => {
+    const [existing] = await context.db
+      .select()
+      .from(ihceBundle)
+      .where(eq(ihceBundle.id, input.id))
+      .limit(1);
+    if (!existing) {
+      throw new ORPCError("NOT_FOUND", { message: "IHCE bundle not found." });
+    }
+    await context.db.delete(ihceBundle).where(eq(ihceBundle.id, input.id));
+    return true;
+  });
+
 export interface IhceBundlesRouter extends Record<string, AnyRouter> {
   create: typeof createIhceBundleProcedure;
+  delete: typeof deleteIhceBundleProcedure;
+  get: typeof getIhceBundleProcedure;
   list: typeof listIhceBundlesProcedure;
 }
 
 export const ihceBundlesRouter: IhceBundlesRouter = {
   create: createIhceBundleProcedure,
+  delete: deleteIhceBundleProcedure,
+  get: getIhceBundleProcedure,
   list: listIhceBundlesProcedure,
 };

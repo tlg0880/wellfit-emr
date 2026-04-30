@@ -248,7 +248,7 @@ export const patientIdentifier = sqliteTable(
     id: text("id").primaryKey(),
     patientId: text("patient_id")
       .notNull()
-      .references(() => patient.id),
+      .references(() => patient.id, { onDelete: "cascade" }),
     identifierSystem: text("identifier_system").notNull(),
     identifierType: text("identifier_type").notNull(),
     identifierValue: text("identifier_value").notNull(),
@@ -271,7 +271,7 @@ export const patientContact = sqliteTable(
     id: text("id").primaryKey(),
     patientId: text("patient_id")
       .notNull()
-      .references(() => patient.id),
+      .references(() => patient.id, { onDelete: "cascade" }),
     contactType: text("contact_type").notNull(),
     fullName: text("full_name"),
     relationshipCode: text("relationship_code"),
@@ -307,7 +307,7 @@ export const coverage = sqliteTable(
     id: text("id").primaryKey(),
     patientId: text("patient_id")
       .notNull()
-      .references(() => patient.id),
+      .references(() => patient.id, { onDelete: "cascade" }),
     payerId: text("payer_id")
       .notNull()
       .references(() => payer.id),
@@ -472,9 +472,10 @@ export const diagnosis = sqliteTable(
     id: text("id").primaryKey(),
     encounterId: text("encounter_id")
       .notNull()
-      .references(() => encounter.id),
+      .references(() => encounter.id, { onDelete: "cascade" }),
     documentVersionId: text("document_version_id").references(
-      () => clinicalDocumentVersion.id
+      () => clinicalDocumentVersion.id,
+      { onDelete: "cascade" }
     ),
     codeSystem: text("code_system").notNull(),
     code: text("code").notNull(),
@@ -500,7 +501,7 @@ export const allergyIntolerance = sqliteTable(
     id: text("id").primaryKey(),
     patientId: text("patient_id")
       .notNull()
-      .references(() => patient.id),
+      .references(() => patient.id, { onDelete: "cascade" }),
     substanceCode: text("substance_code").notNull(),
     codeSystem: text("code_system").notNull(),
     criticality: text("criticality"),
@@ -520,12 +521,13 @@ export const observation = sqliteTable(
     id: text("id").primaryKey(),
     patientId: text("patient_id")
       .notNull()
-      .references(() => patient.id),
+      .references(() => patient.id, { onDelete: "cascade" }),
     encounterId: text("encounter_id")
       .notNull()
-      .references(() => encounter.id),
+      .references(() => encounter.id, { onDelete: "cascade" }),
     documentVersionId: text("document_version_id").references(
-      () => clinicalDocumentVersion.id
+      () => clinicalDocumentVersion.id,
+      { onDelete: "cascade" }
     ),
     observationType: text("observation_type").notNull(),
     codeSystem: text("code_system"),
@@ -551,10 +553,10 @@ export const procedureRecord = sqliteTable(
     id: text("id").primaryKey(),
     patientId: text("patient_id")
       .notNull()
-      .references(() => patient.id),
+      .references(() => patient.id, { onDelete: "cascade" }),
     encounterId: text("encounter_id")
       .notNull()
-      .references(() => encounter.id),
+      .references(() => encounter.id, { onDelete: "cascade" }),
     cupsCode: text("cups_code").notNull(),
     description: text("description").notNull(),
     ripsReferenceName: text("rips_reference_name"),
@@ -573,11 +575,13 @@ export const medicationOrder = sqliteTable(
     id: text("id").primaryKey(),
     patientId: text("patient_id")
       .notNull()
-      .references(() => patient.id),
+      .references(() => patient.id, { onDelete: "cascade" }),
     encounterId: text("encounter_id")
       .notNull()
-      .references(() => encounter.id),
-    diagnosisId: text("diagnosis_id").references(() => diagnosis.id),
+      .references(() => encounter.id, { onDelete: "cascade" }),
+    diagnosisId: text("diagnosis_id").references(() => diagnosis.id, {
+      onDelete: "cascade",
+    }),
     prescriberId: text("prescriber_id")
       .notNull()
       .references(() => practitioner.id),
@@ -611,7 +615,7 @@ export const medicationAdministration = sqliteTable(
     id: text("id").primaryKey(),
     medicationOrderId: text("medication_order_id")
       .notNull()
-      .references(() => medicationOrder.id),
+      .references(() => medicationOrder.id, { onDelete: "cascade" }),
     administeredAt: requiredTimestamp("administered_at"),
     administeredBy: text("administered_by")
       .notNull()
@@ -634,10 +638,10 @@ export const serviceRequest = sqliteTable(
     id: text("id").primaryKey(),
     patientId: text("patient_id")
       .notNull()
-      .references(() => patient.id),
+      .references(() => patient.id, { onDelete: "cascade" }),
     encounterId: text("encounter_id")
       .notNull()
-      .references(() => encounter.id),
+      .references(() => encounter.id, { onDelete: "cascade" }),
     requestType: text("request_type").notNull(),
     requestCode: text("request_code").notNull(),
     priority: text("priority").notNull(),
@@ -662,10 +666,10 @@ export const diagnosticReport = sqliteTable(
     id: text("id").primaryKey(),
     requestId: text("request_id")
       .notNull()
-      .references(() => serviceRequest.id),
+      .references(() => serviceRequest.id, { onDelete: "cascade" }),
     encounterId: text("encounter_id")
       .notNull()
-      .references(() => encounter.id),
+      .references(() => encounter.id, { onDelete: "cascade" }),
     reportType: text("report_type").notNull(),
     issuedAt: requiredTimestamp("issued_at"),
     conclusionText: text("conclusion_text"),
@@ -686,7 +690,7 @@ export const interconsultation = sqliteTable(
     id: text("id").primaryKey(),
     encounterId: text("encounter_id")
       .notNull()
-      .references(() => encounter.id),
+      .references(() => encounter.id, { onDelete: "cascade" }),
     requestedSpecialty: text("requested_specialty").notNull(),
     requestedBy: text("requested_by")
       .notNull()
@@ -712,10 +716,10 @@ export const incapacityCertificate = sqliteTable(
     id: text("id").primaryKey(),
     patientId: text("patient_id")
       .notNull()
-      .references(() => patient.id),
+      .references(() => patient.id, { onDelete: "cascade" }),
     encounterId: text("encounter_id")
       .notNull()
-      .references(() => encounter.id),
+      .references(() => encounter.id, { onDelete: "cascade" }),
     issuedBy: text("issued_by")
       .notNull()
       .references(() => practitioner.id),
@@ -737,8 +741,10 @@ export const consentRecord = sqliteTable(
     id: text("id").primaryKey(),
     patientId: text("patient_id")
       .notNull()
-      .references(() => patient.id),
-    encounterId: text("encounter_id").references(() => encounter.id),
+      .references(() => patient.id, { onDelete: "cascade" }),
+    encounterId: text("encounter_id").references(() => encounter.id, {
+      onDelete: "cascade",
+    }),
     consentType: text("consent_type").notNull(),
     procedureCode: text("procedure_code"),
     decision: text("decision").notNull(),
@@ -747,7 +753,8 @@ export const consentRecord = sqliteTable(
     signedAt: requiredTimestamp("signed_at"),
     expiresAt: timestamp("expires_at"),
     documentVersionId: text("document_version_id").references(
-      () => clinicalDocumentVersion.id
+      () => clinicalDocumentVersion.id,
+      { onDelete: "cascade" }
     ),
     revokedAt: timestamp("revoked_at"),
   },
@@ -766,7 +773,7 @@ export const dataDisclosureAuthorization = sqliteTable(
     id: text("id").primaryKey(),
     patientId: text("patient_id")
       .notNull()
-      .references(() => patient.id),
+      .references(() => patient.id, { onDelete: "cascade" }),
     thirdPartyName: text("third_party_name").notNull(),
     purposeCode: text("purpose_code").notNull(),
     scopeJson: jsonText<JsonRecord>("scope_json").notNull(),
@@ -806,7 +813,7 @@ export const attachmentLink = sqliteTable(
     id: text("id").primaryKey(),
     binaryId: text("binary_id")
       .notNull()
-      .references(() => binaryObject.id),
+      .references(() => binaryObject.id, { onDelete: "cascade" }),
     linkedEntityType: text("linked_entity_type").notNull(),
     linkedEntityId: text("linked_entity_id").notNull(),
     title: text("title").notNull(),
@@ -849,7 +856,7 @@ export const ihceBundle = sqliteTable(
     id: text("id").primaryKey(),
     encounterId: text("encounter_id")
       .notNull()
-      .references(() => encounter.id),
+      .references(() => encounter.id, { onDelete: "cascade" }),
     bundleType: text("bundle_type").notNull(),
     bundleJson: jsonText<JsonRecord>("bundle_json").notNull(),
     generatedAt: requiredTimestamp("generated_at"),
@@ -870,8 +877,12 @@ export const auditEvent = sqliteTable(
   "audit_event",
   {
     id: integer("id").primaryKey(),
-    patientId: text("patient_id").references(() => patient.id),
-    encounterId: text("encounter_id").references(() => encounter.id),
+    patientId: text("patient_id").references(() => patient.id, {
+      onDelete: "cascade",
+    }),
+    encounterId: text("encounter_id").references(() => encounter.id, {
+      onDelete: "cascade",
+    }),
     userId: text("user_id")
       .notNull()
       .references(() => user.id),
@@ -908,7 +919,9 @@ export const appointment = sqliteTable(
     status: text("status").notNull().default("scheduled"),
     reason: text("reason").notNull(),
     notes: text("notes"),
-    encounterId: text("encounter_id").references(() => encounter.id),
+    encounterId: text("encounter_id").references(() => encounter.id, {
+      onDelete: "cascade",
+    }),
     createdBy: text("created_by")
       .notNull()
       .references(() => user.id),

@@ -1,3 +1,4 @@
+import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Button } from "@wellfit-emr/ui/components/button";
@@ -10,9 +11,10 @@ import {
 import { Input } from "@wellfit-emr/ui/components/input";
 import { Label } from "@wellfit-emr/ui/components/label";
 import { SearchSelect } from "@wellfit-emr/ui/components/search-select";
-import { FlaskConical, Plus, Search } from "lucide-react";
+import { FileCheck, FlaskConical, Plus, Search, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { z } from "zod";
 
 import { DataTable } from "@/components/data-table";
 import { PageHeader } from "@/components/page-header";
@@ -35,16 +37,6 @@ export const Route = createFileRoute("/_authenticated/service-requests/")({
 });
 
 function CreateServiceRequestForm({ onCancel }: { onCancel: () => void }) {
-  const [form, setForm] = useState({
-    patientId: "",
-    encounterId: "",
-    requestType: "laboratory",
-    requestCode: "",
-    priority: "routine",
-    requestedBy: "",
-    requestedAt: new Date().toISOString().slice(0, 16),
-  });
-
   const [patientSearch, setPatientSearch] = useState("");
   const [encounterSearch, setEncounterSearch] = useState("");
   const [practitionerSearch, setPractitionerSearch] = useState("");
@@ -104,19 +96,40 @@ function CreateServiceRequestForm({ onCancel }: { onCancel: () => void }) {
     },
   });
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    create.mutate({
-      patientId: form.patientId,
-      encounterId: form.encounterId,
-      requestType: form.requestType,
-      requestCode: form.requestCode,
-      priority: form.priority,
-      requestedBy: form.requestedBy,
-      requestedAt: new Date(form.requestedAt),
-      status: "active",
-    });
-  }
+  const form = useForm({
+    defaultValues: {
+      patientId: "",
+      encounterId: "",
+      requestType: "laboratory",
+      requestCode: "",
+      priority: "routine",
+      requestedBy: "",
+      requestedAt: new Date().toISOString().slice(0, 16),
+    },
+    onSubmit: async ({ value }) => {
+      await create.mutateAsync({
+        patientId: value.patientId,
+        encounterId: value.encounterId,
+        requestType: value.requestType,
+        requestCode: value.requestCode,
+        priority: value.priority,
+        requestedBy: value.requestedBy,
+        requestedAt: new Date(value.requestedAt),
+        status: "active",
+      });
+    },
+    validators: {
+      onSubmit: z.object({
+        patientId: z.string().min(1, "Requerido"),
+        encounterId: z.string().min(1, "Requerido"),
+        requestType: z.string().min(1, "Requerido"),
+        requestCode: z.string().min(1, "Requerido"),
+        priority: z.string().min(1, "Requerido"),
+        requestedBy: z.string().min(1, "Requerido"),
+        requestedAt: z.string().min(1, "Requerido"),
+      }),
+    },
+  });
 
   return (
     <Card className="mx-6">
@@ -126,128 +139,207 @@ function CreateServiceRequestForm({ onCancel }: { onCancel: () => void }) {
       <CardContent>
         <form
           className="grid grid-cols-1 gap-3 md:grid-cols-3"
-          onSubmit={handleSubmit}
+          onSubmit={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            form.handleSubmit();
+          }}
         >
-          <div className="space-y-1">
-            <Label>Paciente</Label>
-            <SearchSelect
-              emptyMessage="Escribe para buscar pacientes"
-              loading={patientsLoading}
-              onChange={(v) => setForm((f) => ({ ...f, patientId: v }))}
-              onSearchChange={setPatientSearch}
-              options={
-                patientsData?.patients.map((p) => ({
-                  value: p.id,
-                  label: `${p.firstName} ${p.lastName1}`,
-                  description: `${p.primaryDocumentType} ${p.primaryDocumentNumber}`,
-                })) ?? []
-              }
-              placeholder="Buscar paciente..."
-              required
-              search={patientSearch}
-              value={form.patientId}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label>Atención</Label>
-            <SearchSelect
-              emptyMessage="Escribe para buscar atenciones"
-              loading={encountersLoading}
-              onChange={(v) => setForm((f) => ({ ...f, encounterId: v }))}
-              onSearchChange={setEncounterSearch}
-              options={
-                encountersData?.encounters.map((e) => ({
-                  value: e.id,
-                  label: e.reasonForVisit || "Sin motivo",
-                  description: new Date(e.startedAt).toLocaleDateString(
-                    "es-CO"
-                  ),
-                })) ?? []
-              }
-              placeholder="Buscar atención..."
-              required
-              search={encounterSearch}
-              value={form.encounterId}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label>Tipo de solicitud</Label>
-            <select
-              className="h-8 w-full rounded-none border border-input bg-transparent px-2.5 text-xs outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50"
-              onChange={(e) =>
-                setForm({ ...form, requestType: e.target.value })
-              }
-              value={form.requestType}
-            >
-              <option value="laboratory">Laboratorio</option>
-              <option value="imaging">Imagenología</option>
-              <option value="procedure">Procedimiento</option>
-              <option value="consultation">Consulta</option>
-            </select>
-          </div>
-          <div className="space-y-1">
-            <Label>Código CUPS</Label>
-            <SearchSelect
-              emptyMessage="Escribe para buscar en CUPS"
-              loading={cupsLoading}
-              onChange={(v) => setForm((f) => ({ ...f, requestCode: v }))}
-              onSearchChange={setCupsSearch}
-              options={
-                cupsData?.entries.map((e) => ({
-                  value: e.code,
-                  label: e.name,
-                  description: e.code,
-                })) ?? []
-              }
-              placeholder="Buscar CUPS..."
-              required
-              search={cupsSearch}
-              value={form.requestCode}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label>Prioridad</Label>
-            <select
-              className="h-8 w-full rounded-none border border-input bg-transparent px-2.5 text-xs outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50"
-              onChange={(e) => setForm({ ...form, priority: e.target.value })}
-              value={form.priority}
-            >
-              <option value="routine">Rutina</option>
-              <option value="urgent">Urgente</option>
-              <option value="stat">STAT</option>
-            </select>
-          </div>
-          <div className="space-y-1">
-            <Label>Solicitado por</Label>
-            <SearchSelect
-              emptyMessage="Escribe para buscar profesionales"
-              loading={practitionersLoading}
-              onChange={(v) => setForm((f) => ({ ...f, requestedBy: v }))}
-              onSearchChange={setPractitionerSearch}
-              options={
-                practitionersData?.practitioners.map((p) => ({
-                  value: p.id,
-                  label: p.fullName,
-                  description: p.documentNumber,
-                })) ?? []
-              }
-              placeholder="Buscar profesional..."
-              required
-              search={practitionerSearch}
-              value={form.requestedBy}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label>Fecha solicitud</Label>
-            <Input
-              onChange={(e) =>
-                setForm({ ...form, requestedAt: e.target.value })
-              }
-              required
-              type="datetime-local"
-              value={form.requestedAt}
-            />
-          </div>
+          <form.Field name="patientId">
+            {(field) => (
+              <div className="space-y-1">
+                <Label htmlFor={field.name}>Paciente</Label>
+                <SearchSelect
+                  emptyMessage="Escribe para buscar pacientes"
+                  loading={patientsLoading}
+                  onChange={(v) => field.handleChange(v)}
+                  onSearchChange={setPatientSearch}
+                  options={
+                    patientsData?.patients.map((p) => ({
+                      value: p.id,
+                      label: `${p.firstName} ${p.lastName1}`,
+                      description: `${p.primaryDocumentType} ${p.primaryDocumentNumber}`,
+                    })) ?? []
+                  }
+                  placeholder="Buscar paciente..."
+                  required
+                  search={patientSearch}
+                  value={field.state.value}
+                />
+                {field.state.meta.errors.map((error) => (
+                  <p className="text-destructive text-xs" key={String(error)}>
+                    {String(error)}
+                  </p>
+                ))}
+              </div>
+            )}
+          </form.Field>
+
+          <form.Field name="encounterId">
+            {(field) => (
+              <div className="space-y-1">
+                <Label htmlFor={field.name}>Atención</Label>
+                <SearchSelect
+                  emptyMessage="Escribe para buscar atenciones"
+                  loading={encountersLoading}
+                  onChange={(v) => field.handleChange(v)}
+                  onSearchChange={setEncounterSearch}
+                  options={
+                    encountersData?.encounters.map((e) => ({
+                      value: e.id,
+                      label: e.reasonForVisit || "Sin motivo",
+                      description: new Date(e.startedAt).toLocaleDateString(
+                        "es-CO"
+                      ),
+                    })) ?? []
+                  }
+                  placeholder="Buscar atención..."
+                  required
+                  search={encounterSearch}
+                  value={field.state.value}
+                />
+                {field.state.meta.errors.map((error) => (
+                  <p className="text-destructive text-xs" key={String(error)}>
+                    {String(error)}
+                  </p>
+                ))}
+              </div>
+            )}
+          </form.Field>
+
+          <form.Field name="requestType">
+            {(field) => (
+              <div className="space-y-1">
+                <Label htmlFor={field.name}>Tipo de solicitud</Label>
+                <select
+                  className="h-8 w-full rounded-none border border-input bg-transparent px-2.5 text-xs outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50"
+                  id={field.name}
+                  name={field.name}
+                  onBlur={field.handleBlur}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  value={field.state.value}
+                >
+                  <option value="laboratory">Laboratorio</option>
+                  <option value="imaging">Imagenología</option>
+                  <option value="procedure">Procedimiento</option>
+                  <option value="consultation">Consulta</option>
+                </select>
+                {field.state.meta.errors.map((error) => (
+                  <p className="text-destructive text-xs" key={String(error)}>
+                    {String(error)}
+                  </p>
+                ))}
+              </div>
+            )}
+          </form.Field>
+
+          <form.Field name="requestCode">
+            {(field) => (
+              <div className="space-y-1">
+                <Label htmlFor={field.name}>Código CUPS</Label>
+                <SearchSelect
+                  emptyMessage="Escribe para buscar en CUPS"
+                  loading={cupsLoading}
+                  onChange={(v) => field.handleChange(v)}
+                  onSearchChange={setCupsSearch}
+                  options={
+                    cupsData?.entries.map((e) => ({
+                      value: e.code,
+                      label: e.name,
+                      description: e.code,
+                    })) ?? []
+                  }
+                  placeholder="Buscar CUPS..."
+                  required
+                  search={cupsSearch}
+                  value={field.state.value}
+                />
+                {field.state.meta.errors.map((error) => (
+                  <p className="text-destructive text-xs" key={String(error)}>
+                    {String(error)}
+                  </p>
+                ))}
+              </div>
+            )}
+          </form.Field>
+
+          <form.Field name="priority">
+            {(field) => (
+              <div className="space-y-1">
+                <Label htmlFor={field.name}>Prioridad</Label>
+                <select
+                  className="h-8 w-full rounded-none border border-input bg-transparent px-2.5 text-xs outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50"
+                  id={field.name}
+                  name={field.name}
+                  onBlur={field.handleBlur}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  value={field.state.value}
+                >
+                  <option value="routine">Rutina</option>
+                  <option value="urgent">Urgente</option>
+                  <option value="stat">STAT</option>
+                </select>
+                {field.state.meta.errors.map((error) => (
+                  <p className="text-destructive text-xs" key={String(error)}>
+                    {String(error)}
+                  </p>
+                ))}
+              </div>
+            )}
+          </form.Field>
+
+          <form.Field name="requestedBy">
+            {(field) => (
+              <div className="space-y-1">
+                <Label htmlFor={field.name}>Solicitado por</Label>
+                <SearchSelect
+                  emptyMessage="Escribe para buscar profesionales"
+                  loading={practitionersLoading}
+                  onChange={(v) => field.handleChange(v)}
+                  onSearchChange={setPractitionerSearch}
+                  options={
+                    practitionersData?.practitioners.map((p) => ({
+                      value: p.id,
+                      label: p.fullName,
+                      description: p.documentNumber,
+                    })) ?? []
+                  }
+                  placeholder="Buscar profesional..."
+                  required
+                  search={practitionerSearch}
+                  value={field.state.value}
+                />
+                {field.state.meta.errors.map((error) => (
+                  <p className="text-destructive text-xs" key={String(error)}>
+                    {String(error)}
+                  </p>
+                ))}
+              </div>
+            )}
+          </form.Field>
+
+          <form.Field name="requestedAt">
+            {(field) => (
+              <div className="space-y-1">
+                <Label htmlFor={field.name}>Fecha solicitud</Label>
+                <Input
+                  id={field.name}
+                  name={field.name}
+                  onBlur={field.handleBlur}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  required
+                  type="datetime-local"
+                  value={field.state.value}
+                />
+                {field.state.meta.errors.map((error) => (
+                  <p className="text-destructive text-xs" key={String(error)}>
+                    {String(error)}
+                  </p>
+                ))}
+              </div>
+            )}
+          </form.Field>
+
           <div className="flex items-end gap-2 md:col-span-3">
             <Button
               onClick={onCancel}
@@ -257,15 +349,285 @@ function CreateServiceRequestForm({ onCancel }: { onCancel: () => void }) {
             >
               Cancelar
             </Button>
-            <Button disabled={create.isPending} size="sm" type="submit">
-              {create.isPending ? "Guardando..." : "Guardar orden"}
-            </Button>
+            <form.Subscribe
+              selector={(state) => ({
+                canSubmit: state.canSubmit,
+                isSubmitting: state.isSubmitting,
+              })}
+            >
+              {({ canSubmit, isSubmitting }) => (
+                <Button
+                  disabled={!canSubmit || isSubmitting}
+                  size="sm"
+                  type="submit"
+                >
+                  {isSubmitting ? "Guardando..." : "Guardar orden"}
+                </Button>
+              )}
+            </form.Subscribe>
           </div>
         </form>
       </CardContent>
     </Card>
   );
 }
+
+/* ─── Diagnostic Report Modal ─── */
+
+function DiagnosticReportModal({
+  requestId,
+  encounterId,
+  onClose,
+}: {
+  requestId: string;
+  encounterId: string;
+  onClose: () => void;
+}) {
+  const { data: report, isLoading } = useQuery(
+    orpc.serviceRequests.getReport.queryOptions({
+      input: { requestId },
+    })
+  );
+
+  const createReport = useMutation({
+    ...orpc.serviceRequests.createReport.mutationOptions(),
+    onSuccess: () => {
+      toast.success("Reporte diagnóstico creado");
+      queryClient.invalidateQueries({
+        queryKey: orpc.serviceRequests.getReport.key({ type: "query" }),
+      });
+      queryClient.invalidateQueries({
+        queryKey: orpc.serviceRequests.list.key({ type: "query" }),
+      });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Error al crear reporte");
+    },
+  });
+
+  const form = useForm({
+    defaultValues: {
+      reportType: "",
+      conclusionText: "",
+      issuedAt: new Date().toISOString().slice(0, 16),
+    },
+    onSubmit: async ({ value }) => {
+      await createReport.mutateAsync({
+        requestId,
+        encounterId,
+        reportType: value.reportType,
+        conclusionText: value.conclusionText || null,
+        issuedAt: new Date(value.issuedAt),
+        status: "final",
+        performerOrgId: null,
+      });
+    },
+    validators: {
+      onSubmit: z.object({
+        reportType: z.string().min(1, "Requerido"),
+        conclusionText: z.string(),
+        issuedAt: z.string().min(1, "Requerido"),
+      }),
+    },
+  });
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+      role="dialog"
+    >
+      <Card className="mx-4 max-h-[90vh] w-full max-w-lg overflow-auto">
+        <CardHeader className="flex flex-row items-center justify-between pb-4">
+          <CardTitle>Reporte diagnóstico</CardTitle>
+          <Button onClick={onClose} size="icon" variant="ghost">
+            <X size={16} />
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <p className="text-muted-foreground text-sm">Cargando...</p>
+          ) : report ? (
+            <div className="space-y-4 text-sm">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-[10px] text-muted-foreground">Tipo</p>
+                  <p className="font-medium">{report.reportType}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-muted-foreground">Estado</p>
+                  <p className="font-medium">{report.status}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-muted-foreground">
+                    Fecha emisión
+                  </p>
+                  <p className="font-medium">
+                    {new Date(report.issuedAt).toLocaleString("es-CO")}
+                  </p>
+                </div>
+              </div>
+              <div className="border p-3">
+                <p className="text-[10px] text-muted-foreground">Conclusión</p>
+                <p className="mt-1 whitespace-pre-wrap">
+                  {report.conclusionText ?? "Sin conclusión"}
+                </p>
+              </div>
+              <div className="flex justify-end">
+                <Button onClick={onClose} size="sm" variant="outline">
+                  Cerrar
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <form
+              className="space-y-4"
+              onSubmit={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                form.handleSubmit();
+              }}
+            >
+              <form.Field name="reportType">
+                {(field) => (
+                  <div className="space-y-1">
+                    <Label htmlFor={field.name}>Tipo de reporte</Label>
+                    <Input
+                      id={field.name}
+                      name={field.name}
+                      onBlur={field.handleBlur}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      placeholder="Ej: laboratorio, imagenología"
+                      required
+                      value={field.state.value}
+                    />
+                    {field.state.meta.errors.map((error) => (
+                      <p
+                        className="text-destructive text-xs"
+                        key={String(error)}
+                      >
+                        {String(error)}
+                      </p>
+                    ))}
+                  </div>
+                )}
+              </form.Field>
+
+              <form.Field name="conclusionText">
+                {(field) => (
+                  <div className="space-y-1">
+                    <Label htmlFor={field.name}>Conclusión</Label>
+                    <Input
+                      id={field.name}
+                      name={field.name}
+                      onBlur={field.handleBlur}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      placeholder="Describa los hallazgos"
+                      value={field.state.value}
+                    />
+                  </div>
+                )}
+              </form.Field>
+
+              <form.Field name="issuedAt">
+                {(field) => (
+                  <div className="space-y-1">
+                    <Label htmlFor={field.name}>Fecha de emisión</Label>
+                    <Input
+                      id={field.name}
+                      name={field.name}
+                      onBlur={field.handleBlur}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      required
+                      type="datetime-local"
+                      value={field.state.value}
+                    />
+                    {field.state.meta.errors.map((error) => (
+                      <p
+                        className="text-destructive text-xs"
+                        key={String(error)}
+                      >
+                        {String(error)}
+                      </p>
+                    ))}
+                  </div>
+                )}
+              </form.Field>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <Button onClick={onClose} type="button" variant="outline">
+                  Cancelar
+                </Button>
+                <form.Subscribe
+                  selector={(state) => ({
+                    canSubmit: state.canSubmit,
+                    isSubmitting: state.isSubmitting,
+                  })}
+                >
+                  {({ canSubmit, isSubmitting }) => (
+                    <Button disabled={!canSubmit || isSubmitting} type="submit">
+                      {isSubmitting ? "Guardando..." : "Guardar reporte"}
+                    </Button>
+                  )}
+                </form.Subscribe>
+              </div>
+            </form>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+/* ─── Service Request Row with Report Indicator ─── */
+
+function ServiceRequestRowActions({
+  row,
+}: {
+  row: {
+    id: string;
+    encounterId: string;
+    requestType: string;
+    requestCode: string;
+    priority: string;
+    status: string;
+    requestedAt: Date;
+  };
+}) {
+  const [showModal, setShowModal] = useState(false);
+
+  const { data: report } = useQuery(
+    orpc.serviceRequests.getReport.queryOptions({
+      input: { requestId: row.id },
+    })
+  );
+
+  const hasReport = !!report;
+
+  return (
+    <>
+      <Button
+        onClick={() => setShowModal(true)}
+        size="icon-xs"
+        variant={hasReport ? "default" : "ghost"}
+      >
+        <FileCheck
+          className={hasReport ? "text-white" : "text-muted-foreground"}
+          size={14}
+        />
+      </Button>
+
+      {showModal && (
+        <DiagnosticReportModal
+          encounterId={row.encounterId}
+          onClose={() => setShowModal(false)}
+          requestId={row.id}
+        />
+      )}
+    </>
+  );
+}
+
+/* ─── Main Page ─── */
 
 function ServiceRequestsListPage() {
   const [encounterId, setEncounterId] = useState("");
@@ -333,6 +695,13 @@ function ServiceRequestsListPage() {
       header: "Fecha solicitud",
       accessor: (row: NonNullable<typeof data>["items"][0]) =>
         new Date(row.requestedAt).toLocaleString("es-CO"),
+    },
+    {
+      header: "Reporte",
+      accessor: (row: NonNullable<typeof data>["items"][0]) => (
+        <ServiceRequestRowActions row={row} />
+      ),
+      className: "w-16",
     },
   ];
 

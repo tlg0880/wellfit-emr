@@ -190,6 +190,30 @@ const listPatientsProcedure = protectedProcedure
     };
   });
 
+const deletePatientSchema = z.object({
+  id: nonEmptyStringSchema,
+});
+
+const deletePatientProcedure = protectedProcedure
+  .input(deletePatientSchema)
+  .output(z.boolean())
+  .handler(async ({ context, input }) => {
+    const [existing] = await context.db
+      .select()
+      .from(patient)
+      .where(eq(patient.id, input.id))
+      .limit(1);
+
+    if (!existing) {
+      throw new ORPCError("NOT_FOUND", {
+        message: "Patient not found.",
+      });
+    }
+
+    await context.db.delete(patient).where(eq(patient.id, input.id));
+    return true;
+  });
+
 const updatePatientProcedure = protectedProcedure
   .input(updatePatientSchema)
   .output(patientSchema)
@@ -258,6 +282,7 @@ const updatePatientProcedure = protectedProcedure
 
 export interface PatientsRouter extends Record<string, AnyRouter> {
   create: typeof createPatientProcedure;
+  delete: typeof deletePatientProcedure;
   get: typeof getPatientProcedure;
   list: typeof listPatientsProcedure;
   update: typeof updatePatientProcedure;
@@ -265,6 +290,7 @@ export interface PatientsRouter extends Record<string, AnyRouter> {
 
 export const patientsRouter: PatientsRouter = {
   create: createPatientProcedure,
+  delete: deletePatientProcedure,
   get: getPatientProcedure,
   list: listPatientsProcedure,
   update: updatePatientProcedure,

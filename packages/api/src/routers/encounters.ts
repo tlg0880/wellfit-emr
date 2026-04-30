@@ -77,6 +77,10 @@ const closeEncounterSchema = z.object({
   status: nonEmptyStringSchema.default("finished"),
 });
 
+const deleteEncounterSchema = z.object({
+  id: nonEmptyStringSchema,
+});
+
 const listEncountersResponseSchema = z.object({
   encounters: z.array(encounterSchema),
   limit: z.number(),
@@ -282,9 +286,30 @@ const closeEncounterProcedure = protectedProcedure
     return closedEncounter;
   });
 
+const deleteEncounterProcedure = protectedProcedure
+  .input(deleteEncounterSchema)
+  .output(z.boolean())
+  .handler(async ({ context, input }) => {
+    const [existing] = await context.db
+      .select()
+      .from(encounter)
+      .where(eq(encounter.id, input.id))
+      .limit(1);
+
+    if (!existing) {
+      throw new ORPCError("NOT_FOUND", {
+        message: "Encounter not found.",
+      });
+    }
+
+    await context.db.delete(encounter).where(eq(encounter.id, input.id));
+    return true;
+  });
+
 export interface EncountersRouter extends Record<string, AnyRouter> {
   close: typeof closeEncounterProcedure;
   create: typeof createEncounterProcedure;
+  delete: typeof deleteEncounterProcedure;
   get: typeof getEncounterProcedure;
   list: typeof listEncountersProcedure;
   update: typeof updateEncounterProcedure;
@@ -293,6 +318,7 @@ export interface EncountersRouter extends Record<string, AnyRouter> {
 export const encountersRouter: EncountersRouter = {
   close: closeEncounterProcedure,
   create: createEncounterProcedure,
+  delete: deleteEncounterProcedure,
   get: getEncounterProcedure,
   list: listEncountersProcedure,
   update: updateEncounterProcedure,

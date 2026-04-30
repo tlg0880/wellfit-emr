@@ -76,6 +76,14 @@ function CreateIhceBundleForm({ onCancel }: { onCancel: () => void }) {
       toast.error("JSON inválido");
       return;
     }
+    if (
+      typeof bundleJson !== "object" ||
+      bundleJson === null ||
+      Array.isArray(bundleJson)
+    ) {
+      toast.error("Bundle JSON debe ser un objeto");
+      return;
+    }
     create.mutate({
       encounterId: form.encounterId,
       bundleType: form.bundleType,

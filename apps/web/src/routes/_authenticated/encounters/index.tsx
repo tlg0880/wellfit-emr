@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@wellfit-emr/ui/components/button";
 import {
@@ -50,6 +50,7 @@ function PatientName({ patientId }: { patientId: string }) {
 }
 
 function EncountersPage() {
+  const queryClient = useQueryClient();
   const [offset, setOffset] = useState(0);
   const [limit] = useState(25);
   const [search, setSearch] = useState("");
@@ -77,7 +78,7 @@ function EncountersPage() {
     modalidadAtencionCode: "",
   });
 
-  const { data, isLoading, refetch } = useQuery(
+  const { data, isLoading } = useQuery(
     orpc.encounters.list.queryOptions({
       input: {
         limit,
@@ -174,7 +175,9 @@ function EncountersPage() {
       toast.success("Atención creada correctamente");
       setShowForm(false);
       resetForm();
-      refetch();
+      queryClient.invalidateQueries({
+        queryKey: orpc.encounters.list.key({ type: "query" }),
+      });
     },
     onError: (error: Error) => {
       toast.error(`Error al crear atención: ${error.message}`);
