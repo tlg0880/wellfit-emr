@@ -10,6 +10,7 @@ import {
 } from "@wellfit-emr/ui/components/card";
 import { Input } from "@wellfit-emr/ui/components/input";
 import { Label } from "@wellfit-emr/ui/components/label";
+import { SearchSelect } from "@wellfit-emr/ui/components/search-select";
 import {
   ChevronLeft,
   ChevronRight,
@@ -120,6 +121,51 @@ function AppointmentForm({
   const dateStr = now.toISOString().split("T")[0];
   const timeStr = `${String(now.getHours()).padStart(2, "0")}:00`;
 
+  const [patientSearch, setPatientSearch] = useState("");
+  const [practitionerSearch, setPractitionerSearch] = useState("");
+  const [siteSearch, setSiteSearch] = useState("");
+  const [serviceUnitSearch, setServiceUnitSearch] = useState("");
+
+  const { data: patientsData, isLoading: patientsLoading } = useQuery(
+    orpc.patients.list.queryOptions({
+      input: {
+        limit: 20,
+        offset: 0,
+        search: patientSearch || undefined,
+      },
+    })
+  );
+
+  const { data: practitionersData, isLoading: practitionersLoading } = useQuery(
+    orpc.facilities.listPractitioners.queryOptions({
+      input: {
+        limit: 20,
+        offset: 0,
+        search: practitionerSearch || undefined,
+      },
+    })
+  );
+
+  const { data: sitesData, isLoading: sitesLoading } = useQuery(
+    orpc.facilities.listSites.queryOptions({
+      input: {
+        limit: 20,
+        offset: 0,
+        search: siteSearch || undefined,
+      },
+    })
+  );
+
+  const { data: serviceUnitsData, isLoading: serviceUnitsLoading } = useQuery(
+    orpc.facilities.listServiceUnits.queryOptions({
+      input: {
+        limit: 20,
+        offset: 0,
+        search: serviceUnitSearch || undefined,
+      },
+    })
+  );
+
   const form = useForm({
     defaultValues: {
       durationMinutes: 30,
@@ -190,13 +236,22 @@ function AppointmentForm({
         <form.Field name="patientId">
           {(field) => (
             <div className="space-y-1.5">
-              <Label htmlFor={field.name}>Paciente ID</Label>
-              <Input
-                id={field.name}
-                name={field.name}
-                onBlur={field.handleBlur}
-                onChange={(e) => field.handleChange(e.target.value)}
-                placeholder="ID del paciente"
+              <Label htmlFor={field.name}>Paciente</Label>
+              <SearchSelect
+                emptyMessage="Escribe para buscar pacientes"
+                loading={patientsLoading}
+                onChange={(v) => field.handleChange(v)}
+                onSearchChange={setPatientSearch}
+                options={
+                  patientsData?.patients.map((p) => ({
+                    value: p.id,
+                    label: `${p.firstName} ${p.lastName1}`,
+                    description: `${p.primaryDocumentType} ${p.primaryDocumentNumber}`,
+                  })) ?? []
+                }
+                placeholder="Buscar paciente..."
+                required
+                search={patientSearch}
                 value={field.state.value}
               />
               {field.state.meta.errors.map((error) => (
@@ -211,13 +266,22 @@ function AppointmentForm({
         <form.Field name="practitionerId">
           {(field) => (
             <div className="space-y-1.5">
-              <Label htmlFor={field.name}>Profesional ID (opcional)</Label>
-              <Input
-                id={field.name}
-                name={field.name}
-                onBlur={field.handleBlur}
-                onChange={(e) => field.handleChange(e.target.value)}
-                placeholder="ID del profesional"
+              <Label htmlFor={field.name}>Profesional (opcional)</Label>
+              <SearchSelect
+                clearable
+                emptyMessage="Escribe para buscar profesionales"
+                loading={practitionersLoading}
+                onChange={(v) => field.handleChange(v)}
+                onSearchChange={setPractitionerSearch}
+                options={
+                  practitionersData?.practitioners.map((p) => ({
+                    value: p.id,
+                    label: p.fullName,
+                    description: p.documentNumber,
+                  })) ?? []
+                }
+                placeholder="Buscar profesional..."
+                search={practitionerSearch}
                 value={field.state.value}
               />
             </div>
@@ -227,13 +291,22 @@ function AppointmentForm({
         <form.Field name="siteId">
           {(field) => (
             <div className="space-y-1.5">
-              <Label htmlFor={field.name}>Sede ID</Label>
-              <Input
-                id={field.name}
-                name={field.name}
-                onBlur={field.handleBlur}
-                onChange={(e) => field.handleChange(e.target.value)}
-                placeholder="ID de la sede"
+              <Label htmlFor={field.name}>Sede</Label>
+              <SearchSelect
+                emptyMessage="Escribe para buscar sedes"
+                loading={sitesLoading}
+                onChange={(v) => field.handleChange(v)}
+                onSearchChange={setSiteSearch}
+                options={
+                  sitesData?.sites.map((s) => ({
+                    value: s.id,
+                    label: s.name,
+                    description: s.siteCode,
+                  })) ?? []
+                }
+                placeholder="Buscar sede..."
+                required
+                search={siteSearch}
                 value={field.state.value}
               />
               {field.state.meta.errors.map((error) => (
@@ -248,15 +321,22 @@ function AppointmentForm({
         <form.Field name="serviceUnitId">
           {(field) => (
             <div className="space-y-1.5">
-              <Label htmlFor={field.name}>
-                Unidad de servicio ID (opcional)
-              </Label>
-              <Input
-                id={field.name}
-                name={field.name}
-                onBlur={field.handleBlur}
-                onChange={(e) => field.handleChange(e.target.value)}
-                placeholder="ID de unidad"
+              <Label htmlFor={field.name}>Unidad de servicio (opcional)</Label>
+              <SearchSelect
+                clearable
+                emptyMessage="Escribe para buscar unidades"
+                loading={serviceUnitsLoading}
+                onChange={(v) => field.handleChange(v)}
+                onSearchChange={setServiceUnitSearch}
+                options={
+                  serviceUnitsData?.serviceUnits.map((u) => ({
+                    value: u.id,
+                    label: u.name,
+                    description: u.serviceCode,
+                  })) ?? []
+                }
+                placeholder="Buscar unidad..."
+                search={serviceUnitSearch}
                 value={field.state.value}
               />
             </div>
