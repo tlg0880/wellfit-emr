@@ -20,6 +20,7 @@ import z from "zod";
 import { DataTable } from "@/components/data-table";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
+import { PatientTimeline } from "@/components/patient-timeline";
 import { authClient } from "@/lib/auth-client";
 import { orpc, queryClient } from "@/utils/orpc";
 
@@ -705,6 +706,7 @@ function PatientDetailPage() {
               patient={patient}
             />
           )}
+          <PatientTimeline patientId={patientId} />
           <EncountersSection patientId={patientId} />
         </>
       ) : (
