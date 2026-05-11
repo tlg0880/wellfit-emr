@@ -313,6 +313,11 @@ const signDocumentProcedure = protectedProcedure
       });
     }
 
+    await context.db
+      .update(clinicalDocument)
+      .set({ status: "signed" })
+      .where(eq(clinicalDocument.id, doc.id));
+
     return version;
   });
 

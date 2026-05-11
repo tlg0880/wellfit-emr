@@ -196,7 +196,7 @@ describe("clinicalDocumentsRouter", () => {
     });
   });
 
-  test("signs a document version", async () => {
+  test("signs a document version and updates parent status to signed", async () => {
     const docLimit = mock(async () => [documentRecord]);
     const docWhere = mock(() => ({ limit: docLimit }));
     const docFrom = mock(() => ({ where: docWhere }));
@@ -221,6 +221,7 @@ describe("clinicalDocumentsRouter", () => {
     });
 
     expect(result).toEqual(signedVersion);
+    expect(update).toHaveBeenCalledTimes(2);
   });
 
   test("rejects sign when document has no current version", async () => {
