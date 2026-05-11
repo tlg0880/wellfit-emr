@@ -63,6 +63,9 @@ const mutation = useMutation({ ...orpc.patients.create.mutationOptions(), onSucc
 _Ninguno. Todos los routers planificados están implementados._
 
 ### Cambios recientes (2026-05-11)
+- **Fix título de pestaña en detalle de anexos** (`/attachments/$attachmentId`): Agregado `useEffect` que actualiza `document.title` a `'Anexo: {title}'` cuando los datos del attachment se cargan exitosamente, y restablece `'WellFit EMR'` al desmontar el componente o cuando hay error/carga. Esto corrige VAL-ATTACH-018: antes el título de la pestaña del navegador permanecía genérico porque `__root.tsx` define un título estático global y ninguna ruta lo sobrescribía.
+
+### Cambios recientes (2026-05-11)
 - **Fix detalle de anexos** (`/attachments/$attachmentId`): Reemplazado el hack roto de `listLinks`+`find` por `orpc.attachments.getLink` y `orpc.attachments.getBinaryObject`. La página ahora muestra: título en encabezado, clasificación, entidad vinculada con hipervínculo a la ruta de detalle correspondiente (paciente, atención, profesional, organización, documento clínico), fecha de captura formateada `es-CO`, tipo MIME, tamaño legible, hash SHA-256 en fuente monoespaciada, ubicación de almacenamiento, clase de retención y referencia de clave cifrada. Estados de carga con skeletons. Error "Anexo no encontrado" para IDs inválidos sin crash. Falla en carga de metadatos binarios manejada graciosamente: tarjeta de link aún visible, campos binarios muestran indicador de error. Navegación de regreso al listado sin recarga completa. Agregado `onRowClick` en tabla de anexos para navegar al detalle. Satisface VAL-ATTACH-001 a VAL-ATTACH-018.
 
 ### Cambios recientes (2026-05-11)

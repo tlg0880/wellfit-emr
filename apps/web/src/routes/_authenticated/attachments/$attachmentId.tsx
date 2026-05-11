@@ -8,6 +8,7 @@ import {
 } from "@wellfit-emr/ui/components/card";
 import { Skeleton } from "@wellfit-emr/ui/components/skeleton";
 import { AlertTriangle, ExternalLink, FileText } from "lucide-react";
+import { useEffect } from "react";
 
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
@@ -111,6 +112,16 @@ function AttachmentDetailPage() {
 
   const isLoading = linkLoading;
   const hasLinkError = !!linkError;
+
+  useEffect(() => {
+    if (!(isLoading || hasLinkError) && link?.title) {
+      document.title = `Anexo: ${link.title}`;
+    }
+
+    return () => {
+      document.title = "WellFit EMR";
+    };
+  }, [link?.title, isLoading, hasLinkError]);
 
   const title = isLoading
     ? "Cargando..."
