@@ -6,6 +6,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ClipboardList,
+  Copy,
   Eye,
   FileOutput,
   FileText,
@@ -76,6 +77,11 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     label: "Regulatorio",
     items: [
       { icon: Gavel, label: "Tareas regulatorias", to: "/regulatory-tasks" },
+      {
+        icon: Copy,
+        label: "Solicitudes del paciente",
+        to: "/patient-requests",
+      },
       { icon: FileOutput, label: "RIPS", to: "/rips-exports" },
       { icon: Share2, label: "IHCE", to: "/ihce-bundles" },
       { icon: FileText, label: "Catálogos RIPS", to: "/catalogs" },

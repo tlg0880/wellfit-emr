@@ -56,8 +56,12 @@ function SiteName({ siteId }: { siteId: string }) {
     ...orpc.facilities.getSite.queryOptions({ input: { id: siteId } }),
     enabled: !!siteId,
   });
-  if (isLoading) return <Skeleton className="h-4 w-24" />;
-  if (!data) return <span className="text-muted-foreground">{siteId}</span>;
+  if (isLoading) {
+    return <Skeleton className="h-4 w-24" />;
+  }
+  if (!data) {
+    return <span className="text-muted-foreground">{siteId}</span>;
+  }
   return <span>{data.name}</span>;
 }
 
@@ -66,8 +70,12 @@ function ServiceUnitName({ unitId }: { unitId: string }) {
     ...orpc.facilities.getServiceUnit.queryOptions({ input: { id: unitId } }),
     enabled: !!unitId,
   });
-  if (isLoading) return <Skeleton className="h-4 w-24" />;
-  if (!data) return <span className="text-muted-foreground">{unitId}</span>;
+  if (isLoading) {
+    return <Skeleton className="h-4 w-24" />;
+  }
+  if (!data) {
+    return <span className="text-muted-foreground">{unitId}</span>;
+  }
   return <span>{data.name}</span>;
 }
 
@@ -78,8 +86,12 @@ function PractitionerName({ practitionerId }: { practitionerId: string }) {
     }),
     enabled: !!practitionerId,
   });
-  if (isLoading) return <Skeleton className="h-4 w-24" />;
-  if (!data) return <span className="text-muted-foreground">{practitionerId}</span>;
+  if (isLoading) {
+    return <Skeleton className="h-4 w-24" />;
+  }
+  if (!data) {
+    return <span className="text-muted-foreground">{practitionerId}</span>;
+  }
   return <span>{data.fullName}</span>;
 }
 
@@ -89,9 +101,10 @@ function EncounterDetailPage() {
   });
   const navigate = useNavigate({ from: Route.id });
   const search = Route.useSearch();
-  const activeTab = search.tab && TABS.some((t) => t.id === search.tab)
-    ? search.tab
-    : DEFAULT_TAB;
+  const activeTab =
+    search.tab && TABS.some((t) => t.id === search.tab)
+      ? search.tab
+      : DEFAULT_TAB;
 
   const { data: encounter, isLoading: encounterLoading } = useQuery(
     orpc.encounters.get.queryOptions({ input: { id: encounterId } })
@@ -131,7 +144,7 @@ function EncounterDetailPage() {
       ? "En progreso"
       : encounter?.status === "finished"
         ? "Finalizada"
-        : encounter?.status ?? "—";
+        : (encounter?.status ?? "—");
 
   return (
     <div className="space-y-4">
@@ -150,11 +163,7 @@ function EncounterDetailPage() {
           ) : null
         }
         backTo="/encounters"
-        description={
-          encounterLoading
-            ? "..."
-            : `Estado: ${statusLabel}`
-        }
+        description={encounterLoading ? "..." : `Estado: ${statusLabel}`}
         title={
           encounterLoading
             ? "Cargando..."
@@ -196,15 +205,11 @@ function EncounterDetailPage() {
                 },
                 {
                   label: "Unidad de servicio",
-                  value: (
-                    <ServiceUnitName unitId={encounter.serviceUnitId} />
-                  ),
+                  value: <ServiceUnitName unitId={encounter.serviceUnitId} />,
                 },
                 {
                   label: "Participantes",
-                  value: (
-                    <EncounterParticipants encounterId={encounter.id} />
-                  ),
+                  value: <EncounterParticipants encounterId={encounter.id} />,
                 },
               ].map((item) => (
                 <div key={item.label}>

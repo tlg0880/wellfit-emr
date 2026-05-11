@@ -15,7 +15,12 @@ import {
   ChevronRight,
   ClipboardPlus,
   Clock,
+  Copy,
+  FileOutput,
+  Gavel,
   HeartPulse,
+  PenLine,
+  Share2,
   ShieldUser,
   Stethoscope,
   UserPlus,
@@ -39,6 +44,174 @@ export const Route = createFileRoute("/_authenticated/")({
     return null;
   },
 });
+
+function ComplianceSummaryBlock() {
+  const docsQuery = useQuery(
+    orpc.clinicalDocuments.list.queryOptions({
+      input: { limit: 1, offset: 0, status: "draft" },
+    })
+  );
+  const ripsQuery = useQuery(
+    orpc.ripsExports.list.queryOptions({
+      input: { limit: 1, offset: 0 },
+    })
+  );
+  const ihceQuery = useQuery(
+    orpc.ihceBundles.list.queryOptions({
+      input: { limit: 1, offset: 0 },
+    })
+  );
+  const interQuery = useQuery(
+    orpc.interconsultations.list.queryOptions({
+      input: { limit: 1, offset: 0, status: "requested" },
+    })
+  );
+  const ordersQuery = useQuery(
+    orpc.serviceRequests.list.queryOptions({
+      input: { limit: 1, offset: 0, status: "active" },
+    })
+  );
+
+  const isLoadingAny =
+    docsQuery.isLoading ||
+    ripsQuery.isLoading ||
+    ihceQuery.isLoading ||
+    interQuery.isLoading ||
+    ordersQuery.isLoading;
+
+  const isErrorAny =
+    docsQuery.isError ||
+    ripsQuery.isError ||
+    ihceQuery.isError ||
+    interQuery.isError ||
+    ordersQuery.isError;
+
+  const draftDocsTotal = docsQuery.data?.total ?? 0;
+  const ripsTotal = ripsQuery.data?.total ?? 0;
+  const ihceTotal = ihceQuery.data?.total ?? 0;
+  const interTotal = interQuery.data?.total ?? 0;
+  const orderTotal = ordersQuery.data?.total ?? 0;
+
+  const totalPending =
+    draftDocsTotal + ripsTotal + ihceTotal + interTotal + orderTotal;
+
+  if (isLoadingAny) {
+    return (
+      <Card>
+        <CardHeader className="pb-4">
+          <CardTitle className="font-semibold text-base">
+            Cumplimiento regulatorio
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <Skeleton className="h-8 w-full" />
+          <Skeleton className="h-8 w-full" />
+          <Skeleton className="h-8 w-full" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (isErrorAny) {
+    return (
+      <Card>
+        <CardHeader className="pb-4">
+          <CardTitle className="font-semibold text-base">
+            Cumplimiento regulatorio
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-center text-muted-foreground text-sm">
+            Error al cargar resumen de cumplimiento.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (totalPending === 0) {
+    return (
+      <Card>
+        <CardHeader className="pb-4">
+          <CardTitle className="font-semibold text-base">
+            Cumplimiento regulatorio
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="py-4 text-center text-muted-foreground text-sm">
+            No hay tareas regulatorias pendientes.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader className="pb-4">
+        <div className="flex items-center justify-between">
+          <CardTitle className="font-semibold text-base">
+            Cumplimiento regulatorio
+          </CardTitle>
+          <Link
+            className="flex items-center gap-1 text-muted-foreground text-xs transition-colors hover:text-foreground"
+            to="/regulatory-tasks"
+          >
+            Ver panel
+            <ArrowUpRight size={12} />
+          </Link>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        {draftDocsTotal > 0 && (
+          <div className="flex items-center justify-between rounded-none border p-3">
+            <div className="flex items-center gap-2">
+              <PenLine className="text-amber-600" size={14} />
+              <span className="text-sm">Firmas pendientes</span>
+            </div>
+            <span className="font-bold text-amber-700">{draftDocsTotal}</span>
+          </div>
+        )}
+        {ripsTotal > 0 && (
+          <div className="flex items-center justify-between rounded-none border p-3">
+            <div className="flex items-center gap-2">
+              <FileOutput className="text-blue-600" size={14} />
+              <span className="text-sm">RIPS pendientes</span>
+            </div>
+            <span className="font-bold text-blue-700">{ripsTotal}</span>
+          </div>
+        )}
+        {ihceTotal > 0 && (
+          <div className="flex items-center justify-between rounded-none border p-3">
+            <div className="flex items-center gap-2">
+              <Share2 className="text-indigo-600" size={14} />
+              <span className="text-sm">IHCE/RDA pendientes</span>
+            </div>
+            <span className="font-bold text-indigo-700">{ihceTotal}</span>
+          </div>
+        )}
+        {interTotal > 0 && (
+          <div className="flex items-center justify-between rounded-none border p-3">
+            <div className="flex items-center gap-2">
+              <Users className="text-emerald-600" size={14} />
+              <span className="text-sm">Interconsultas abiertas</span>
+            </div>
+            <span className="font-bold text-emerald-700">{interTotal}</span>
+          </div>
+        )}
+        {orderTotal > 0 && (
+          <div className="flex items-center justify-between rounded-none border p-3">
+            <div className="flex items-center gap-2">
+              <Activity className="text-rose-600" size={14} />
+              <span className="text-sm">Órdenes activas</span>
+            </div>
+            <span className="font-bold text-rose-700">{orderTotal}</span>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 function DashboardPage() {
   const { session } = Route.useRouteContext();
@@ -103,6 +276,7 @@ function DashboardPage() {
         className="group flex items-center justify-between rounded-none border p-3 transition-colors hover:bg-muted/60"
         key={enc.id}
         params={{ encounterId: enc.id }}
+        search={{ tab: undefined }}
         to="/encounters/$encounterId"
       >
         <div className="flex items-center gap-3">
@@ -205,6 +379,18 @@ function DashboardPage() {
       to: "/encounters",
       icon: ClipboardPlus,
       description: "Crear una atención clínica",
+    },
+    {
+      label: "Tareas regulatorias",
+      to: "/regulatory-tasks",
+      icon: Gavel,
+      description: "Panel de pendientes de cumplimiento",
+    },
+    {
+      label: "Solicitudes del paciente",
+      to: "/patient-requests",
+      icon: Copy,
+      description: "Solicitudes de copia de historia clínica",
     },
     {
       label: "Catálogos RIPS",
@@ -335,15 +521,18 @@ function DashboardPage() {
           </CardContent>
         </Card>
 
+        {/* Compliance summary */}
+        <ComplianceSummaryBlock />
+
         {/* System status */}
-        <Card className="lg:col-span-2">
+        <Card>
           <CardHeader className="pb-4">
             <CardTitle className="font-semibold text-base">
               Estado del sistema
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3">
               {[
                 { label: "API", status: "Operativa", ok: true },
                 { label: "Base de datos", status: "Conectada", ok: true },

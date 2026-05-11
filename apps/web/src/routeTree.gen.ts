@@ -14,7 +14,9 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedServiceRequestsIndexRouteImport } from './routes/_authenticated/service-requests/index'
 import { Route as AuthenticatedRipsExportsIndexRouteImport } from './routes/_authenticated/rips-exports/index'
+import { Route as AuthenticatedRegulatoryTasksIndexRouteImport } from './routes/_authenticated/regulatory-tasks/index'
 import { Route as AuthenticatedPatientsIndexRouteImport } from './routes/_authenticated/patients/index'
+import { Route as AuthenticatedPatientRequestsIndexRouteImport } from './routes/_authenticated/patient-requests/index'
 import { Route as AuthenticatedMedicationOrdersIndexRouteImport } from './routes/_authenticated/medication-orders/index'
 import { Route as AuthenticatedInterconsultationsIndexRouteImport } from './routes/_authenticated/interconsultations/index'
 import { Route as AuthenticatedIncapacityCertificatesIndexRouteImport } from './routes/_authenticated/incapacity-certificates/index'
@@ -74,10 +76,22 @@ const AuthenticatedRipsExportsIndexRoute =
     path: '/rips-exports/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedRegulatoryTasksIndexRoute =
+  AuthenticatedRegulatoryTasksIndexRouteImport.update({
+    id: '/regulatory-tasks/',
+    path: '/regulatory-tasks/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedPatientsIndexRoute =
   AuthenticatedPatientsIndexRouteImport.update({
     id: '/patients/',
     path: '/patients/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedPatientRequestsIndexRoute =
+  AuthenticatedPatientRequestsIndexRouteImport.update({
+    id: '/patient-requests/',
+    path: '/patient-requests/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedMedicationOrdersIndexRoute =
@@ -303,7 +317,9 @@ export interface FileRoutesByFullPath {
   '/incapacity-certificates/': typeof AuthenticatedIncapacityCertificatesIndexRoute
   '/interconsultations/': typeof AuthenticatedInterconsultationsIndexRoute
   '/medication-orders/': typeof AuthenticatedMedicationOrdersIndexRoute
+  '/patient-requests/': typeof AuthenticatedPatientRequestsIndexRoute
   '/patients/': typeof AuthenticatedPatientsIndexRoute
+  '/regulatory-tasks/': typeof AuthenticatedRegulatoryTasksIndexRoute
   '/rips-exports/': typeof AuthenticatedRipsExportsIndexRoute
   '/service-requests/': typeof AuthenticatedServiceRequestsIndexRoute
   '/facilities/practitioners/$practitionerId': typeof AuthenticatedFacilitiesPractitionersPractitionerIdRoute
@@ -342,7 +358,9 @@ export interface FileRoutesByTo {
   '/incapacity-certificates': typeof AuthenticatedIncapacityCertificatesIndexRoute
   '/interconsultations': typeof AuthenticatedInterconsultationsIndexRoute
   '/medication-orders': typeof AuthenticatedMedicationOrdersIndexRoute
+  '/patient-requests': typeof AuthenticatedPatientRequestsIndexRoute
   '/patients': typeof AuthenticatedPatientsIndexRoute
+  '/regulatory-tasks': typeof AuthenticatedRegulatoryTasksIndexRoute
   '/rips-exports': typeof AuthenticatedRipsExportsIndexRoute
   '/service-requests': typeof AuthenticatedServiceRequestsIndexRoute
   '/facilities/practitioners/$practitionerId': typeof AuthenticatedFacilitiesPractitionersPractitionerIdRoute
@@ -383,7 +401,9 @@ export interface FileRoutesById {
   '/_authenticated/incapacity-certificates/': typeof AuthenticatedIncapacityCertificatesIndexRoute
   '/_authenticated/interconsultations/': typeof AuthenticatedInterconsultationsIndexRoute
   '/_authenticated/medication-orders/': typeof AuthenticatedMedicationOrdersIndexRoute
+  '/_authenticated/patient-requests/': typeof AuthenticatedPatientRequestsIndexRoute
   '/_authenticated/patients/': typeof AuthenticatedPatientsIndexRoute
+  '/_authenticated/regulatory-tasks/': typeof AuthenticatedRegulatoryTasksIndexRoute
   '/_authenticated/rips-exports/': typeof AuthenticatedRipsExportsIndexRoute
   '/_authenticated/service-requests/': typeof AuthenticatedServiceRequestsIndexRoute
   '/_authenticated/facilities/practitioners/$practitionerId': typeof AuthenticatedFacilitiesPractitionersPractitionerIdRoute
@@ -424,7 +444,9 @@ export interface FileRouteTypes {
     | '/incapacity-certificates/'
     | '/interconsultations/'
     | '/medication-orders/'
+    | '/patient-requests/'
     | '/patients/'
+    | '/regulatory-tasks/'
     | '/rips-exports/'
     | '/service-requests/'
     | '/facilities/practitioners/$practitionerId'
@@ -463,7 +485,9 @@ export interface FileRouteTypes {
     | '/incapacity-certificates'
     | '/interconsultations'
     | '/medication-orders'
+    | '/patient-requests'
     | '/patients'
+    | '/regulatory-tasks'
     | '/rips-exports'
     | '/service-requests'
     | '/facilities/practitioners/$practitionerId'
@@ -503,7 +527,9 @@ export interface FileRouteTypes {
     | '/_authenticated/incapacity-certificates/'
     | '/_authenticated/interconsultations/'
     | '/_authenticated/medication-orders/'
+    | '/_authenticated/patient-requests/'
     | '/_authenticated/patients/'
+    | '/_authenticated/regulatory-tasks/'
     | '/_authenticated/rips-exports/'
     | '/_authenticated/service-requests/'
     | '/_authenticated/facilities/practitioners/$practitionerId'
@@ -553,11 +579,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRipsExportsIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/regulatory-tasks/': {
+      id: '/_authenticated/regulatory-tasks/'
+      path: '/regulatory-tasks'
+      fullPath: '/regulatory-tasks/'
+      preLoaderRoute: typeof AuthenticatedRegulatoryTasksIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/patients/': {
       id: '/_authenticated/patients/'
       path: '/patients'
       fullPath: '/patients/'
       preLoaderRoute: typeof AuthenticatedPatientsIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/patient-requests/': {
+      id: '/_authenticated/patient-requests/'
+      path: '/patient-requests'
+      fullPath: '/patient-requests/'
+      preLoaderRoute: typeof AuthenticatedPatientRequestsIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/medication-orders/': {
@@ -863,7 +903,9 @@ interface AuthenticatedRouteChildren {
   AuthenticatedIncapacityCertificatesIndexRoute: typeof AuthenticatedIncapacityCertificatesIndexRoute
   AuthenticatedInterconsultationsIndexRoute: typeof AuthenticatedInterconsultationsIndexRoute
   AuthenticatedMedicationOrdersIndexRoute: typeof AuthenticatedMedicationOrdersIndexRoute
+  AuthenticatedPatientRequestsIndexRoute: typeof AuthenticatedPatientRequestsIndexRoute
   AuthenticatedPatientsIndexRoute: typeof AuthenticatedPatientsIndexRoute
+  AuthenticatedRegulatoryTasksIndexRoute: typeof AuthenticatedRegulatoryTasksIndexRoute
   AuthenticatedRipsExportsIndexRoute: typeof AuthenticatedRipsExportsIndexRoute
   AuthenticatedServiceRequestsIndexRoute: typeof AuthenticatedServiceRequestsIndexRoute
 }
@@ -915,7 +957,11 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
     AuthenticatedInterconsultationsIndexRoute,
   AuthenticatedMedicationOrdersIndexRoute:
     AuthenticatedMedicationOrdersIndexRoute,
+  AuthenticatedPatientRequestsIndexRoute:
+    AuthenticatedPatientRequestsIndexRoute,
   AuthenticatedPatientsIndexRoute: AuthenticatedPatientsIndexRoute,
+  AuthenticatedRegulatoryTasksIndexRoute:
+    AuthenticatedRegulatoryTasksIndexRoute,
   AuthenticatedRipsExportsIndexRoute: AuthenticatedRipsExportsIndexRoute,
   AuthenticatedServiceRequestsIndexRoute:
     AuthenticatedServiceRequestsIndexRoute,

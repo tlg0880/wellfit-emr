@@ -21,6 +21,8 @@ function getPageTitle(pathname: string): string {
     "/incapacity-certificates": "Incapacidades",
     "/attachments": "Anexos",
     "/audit-events": "Auditoría",
+    "/regulatory-tasks": "Tareas regulatorias",
+    "/patient-requests": "Solicitudes del paciente",
     "/rips-exports": "RIPS",
     "/ihce-bundles": "IHCE",
     "/catalogs": "Catálogos RIPS",

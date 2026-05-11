@@ -688,6 +688,7 @@ function EncountersPage() {
         <Link
           className="inline-flex items-center gap-1 text-[10px] text-primary hover:underline"
           params={{ encounterId: row.id }}
+          search={{ tab: undefined }}
           to="/encounters/$encounterId"
         >
           Ver <ChevronRight size={12} />

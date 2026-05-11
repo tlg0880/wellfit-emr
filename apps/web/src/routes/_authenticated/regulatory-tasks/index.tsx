@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
-import { authClient } from "@/lib/auth-client";
 import { Button } from "@wellfit-emr/ui/components/button";
 import {
   Card,
@@ -24,6 +23,7 @@ import {
 } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
+import { authClient } from "@/lib/auth-client";
 import { orpc, queryClient } from "@/utils/orpc";
 
 export const Route = createFileRoute("/_authenticated/regulatory-tasks/")({
