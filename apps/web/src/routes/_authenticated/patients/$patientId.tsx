@@ -12,7 +12,7 @@ import { Input } from "@wellfit-emr/ui/components/input";
 import { Label } from "@wellfit-emr/ui/components/label";
 import { SearchSelect } from "@wellfit-emr/ui/components/search-select";
 import { Skeleton } from "@wellfit-emr/ui/components/skeleton";
-import { Pencil } from "lucide-react";
+import { ClipboardPlus, Pencil } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import z from "zod";
@@ -664,14 +664,22 @@ function PatientDetailPage() {
       <PageHeader
         actions={
           !editing && patient ? (
-            <Button
-              onClick={() => setEditing(true)}
-              size="sm"
-              variant="outline"
-            >
-              <Pencil size={14} />
-              Editar
-            </Button>
+            <div className="flex items-center gap-2">
+              <Link to="/encounters">
+                <Button size="sm" variant="outline">
+                  <ClipboardPlus size={14} />
+                  Nueva atención
+                </Button>
+              </Link>
+              <Button
+                onClick={() => setEditing(true)}
+                size="sm"
+                variant="outline"
+              >
+                <Pencil size={14} />
+                Editar
+              </Button>
+            </div>
           ) : undefined
         }
         backTo="/patients"

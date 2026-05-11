@@ -1,3 +1,4 @@
+import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@wellfit-emr/ui/components/button";
@@ -14,6 +15,8 @@ import { Skeleton } from "@wellfit-emr/ui/components/skeleton";
 import { ChevronRight, Plus, Search, User, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { z } from "zod";
+
 import { DataTable } from "@/components/data-table";
 import { PageHeader } from "@/components/page-header";
 import { orpc } from "@/utils/orpc";
@@ -28,6 +31,20 @@ const STATUS_OPTIONS = [
   { label: "Finalizadas", value: "finished" },
   { label: "Canceladas", value: "cancelled" },
 ];
+
+const encounterSchema = z.object({
+  patientId: z.string().min(1, "Paciente es obligatorio"),
+  siteId: z.string().min(1, "Sede es obligatoria"),
+  serviceUnitId: z.string().min(1, "Unidad de servicio es obligatoria"),
+  encounterClass: z.string().min(1, "Clase de atención es obligatoria"),
+  careModality: z.string().min(1, "Modalidad es obligatoria"),
+  reasonForVisit: z.string().min(1, "Motivo de consulta es obligatorio"),
+  startedAt: z.string().min(1, "Fecha de inicio es obligatoria"),
+  admissionSource: z.string().optional(),
+  causeExternalCode: z.string().optional(),
+  finalidadConsultaCode: z.string().optional(),
+  modalidadAtencionCode: z.string().optional(),
+});
 
 function PatientName({ patientId }: { patientId: string }) {
   const { data, isLoading } = useQuery({
@@ -49,45 +66,15 @@ function PatientName({ patientId }: { patientId: string }) {
   );
 }
 
-function EncountersPage() {
+function CreateEncounterForm({ onCancel }: { onCancel: () => void }) {
   const queryClient = useQueryClient();
-  const [offset, setOffset] = useState(0);
-  const [limit] = useState(25);
-  const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("");
-  const [showForm, setShowForm] = useState(false);
 
   const [patientSearch, setPatientSearch] = useState("");
-  const [selectedPatientId, setSelectedPatientId] = useState("");
-  const [selectedSiteId, setSelectedSiteId] = useState("");
-  const [selectedServiceUnitId, setSelectedServiceUnitId] = useState("");
+  const [groupSearch, setGroupSearch] = useState("");
+  const [modalitySearch, setModalitySearch] = useState("");
   const [admissionSearch, setAdmissionSearch] = useState("");
   const [causeSearch, setCauseSearch] = useState("");
   const [finalidadSearch, setFinalidadSearch] = useState("");
-  const [groupSearch, setGroupSearch] = useState("");
-  const [modalitySearch, setModalitySearch] = useState("");
-
-  const [formData, setFormData] = useState({
-    encounterClass: "",
-    careModality: "",
-    reasonForVisit: "",
-    startedAt: new Date().toISOString().slice(0, 16),
-    admissionSource: "",
-    causeExternalCode: "",
-    finalidadConsultaCode: "",
-    modalidadAtencionCode: "",
-  });
-
-  const { data, isLoading } = useQuery(
-    orpc.encounters.list.queryOptions({
-      input: {
-        limit,
-        offset,
-        search: search || undefined,
-        status: status || undefined,
-      },
-    })
-  );
 
   const { data: patientsData } = useQuery(
     orpc.patients.list.queryOptions({
@@ -108,27 +95,6 @@ function EncountersPage() {
     })
   );
 
-  const { data: serviceUnitsData } = useQuery({
-    ...orpc.facilities.listServiceUnits.queryOptions({
-      input: {
-        limit: 50,
-        offset: 0,
-        siteId: selectedSiteId || undefined,
-      },
-    }),
-    enabled: !!selectedSiteId,
-  });
-
-  const { data: admissionData, isLoading: admissionLoading } = useQuery(
-    orpc.ripsReference.listEntries.queryOptions({
-      input: {
-        tableName: "ViaIngresoUsuario",
-        limit: 20,
-        search: admissionSearch || undefined,
-      },
-    })
-  );
-
   const { data: groupData, isLoading: groupLoading } = useQuery(
     orpc.ripsReference.listEntries.queryOptions({
       input: {
@@ -145,6 +111,16 @@ function EncountersPage() {
         tableName: "ModalidadAtencion",
         limit: 20,
         search: modalitySearch || undefined,
+      },
+    })
+  );
+
+  const { data: admissionData, isLoading: admissionLoading } = useQuery(
+    orpc.ripsReference.listEntries.queryOptions({
+      input: {
+        tableName: "ViaIngresoUsuario",
+        limit: 20,
+        search: admissionSearch || undefined,
       },
     })
   );
@@ -173,8 +149,7 @@ function EncountersPage() {
     ...orpc.encounters.create.mutationOptions(),
     onSuccess: () => {
       toast.success("Atención creada correctamente");
-      setShowForm(false);
-      resetForm();
+      onCancel();
       queryClient.invalidateQueries({
         queryKey: orpc.encounters.list.key({ type: "query" }),
       });
@@ -184,17 +159,11 @@ function EncountersPage() {
     },
   });
 
-  function resetForm() {
-    setSelectedPatientId("");
-    setSelectedSiteId("");
-    setSelectedServiceUnitId("");
-    setPatientSearch("");
-    setGroupSearch("");
-    setModalitySearch("");
-    setAdmissionSearch("");
-    setCauseSearch("");
-    setFinalidadSearch("");
-    setFormData({
+  const form = useForm({
+    defaultValues: {
+      patientId: "",
+      siteId: "",
+      serviceUnitId: "",
       encounterClass: "",
       careModality: "",
       reasonForVisit: "",
@@ -203,32 +172,465 @@ function EncountersPage() {
       causeExternalCode: "",
       finalidadConsultaCode: "",
       modalidadAtencionCode: "",
-    });
-  }
+    },
+    onSubmit: async ({ value }) => {
+      await createMutation.mutateAsync({
+        patientId: value.patientId,
+        siteId: value.siteId,
+        serviceUnitId: value.serviceUnitId,
+        encounterClass: value.encounterClass,
+        careModality: value.careModality,
+        reasonForVisit: value.reasonForVisit,
+        startedAt: new Date(value.startedAt),
+        status: "in-progress",
+        admissionSource: value.admissionSource || null,
+        causeExternalCode: value.causeExternalCode || null,
+        finalidadConsultaCode: value.finalidadConsultaCode || null,
+        modalidadAtencionCode: value.modalidadAtencionCode || null,
+        vidaCode: null,
+        condicionDestinoCode: null,
+      });
+    },
+    validators: {
+      onSubmit: encounterSchema,
+    },
+  });
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!(selectedPatientId && selectedSiteId && selectedServiceUnitId)) {
-      toast.error("Paciente, sede y unidad de servicio son obligatorios");
-      return;
-    }
-    createMutation.mutate({
-      patientId: selectedPatientId,
-      siteId: selectedSiteId,
-      serviceUnitId: selectedServiceUnitId,
-      encounterClass: formData.encounterClass,
-      careModality: formData.careModality,
-      reasonForVisit: formData.reasonForVisit,
-      startedAt: new Date(formData.startedAt),
-      status: "in-progress",
-      admissionSource: formData.admissionSource || null,
-      causeExternalCode: formData.causeExternalCode || null,
-      finalidadConsultaCode: formData.finalidadConsultaCode || null,
-      modalidadAtencionCode: formData.modalidadAtencionCode || null,
-      vidaCode: null,
-      condicionDestinoCode: null,
-    });
-  }
+  const selectedSiteId = form.getFieldValue("siteId");
+
+  const { data: serviceUnitsData } = useQuery({
+    ...orpc.facilities.listServiceUnits.queryOptions({
+      input: {
+        limit: 50,
+        offset: 0,
+        siteId: selectedSiteId || undefined,
+      },
+    }),
+    enabled: !!selectedSiteId,
+  });
+
+  const fieldGrid = "space-y-1";
+
+  return (
+    <Card className="mx-6">
+      <CardHeader>
+        <CardTitle>Nueva atención</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            form.handleSubmit();
+          }}
+        >
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <form.Field name="patientId">
+              {(field) => (
+                <div className={fieldGrid}>
+                  <Label htmlFor={field.name}>Paciente</Label>
+                  <SearchSelect
+                    emptyMessage="Escribe para buscar pacientes"
+                    id={field.name}
+                    name={field.name}
+                    onBlur={field.handleBlur}
+                    onChange={(v) => field.handleChange(v)}
+                    onSearchChange={setPatientSearch}
+                    options={
+                      patientsData?.patients.map((p) => ({
+                        value: p.id,
+                        label: `${p.firstName} ${p.lastName1}`,
+                        description: `${p.primaryDocumentType} ${p.primaryDocumentNumber}`,
+                      })) ?? []
+                    }
+                    placeholder="Buscar paciente..."
+                    search={patientSearch}
+                    value={field.state.value}
+                  />
+                  {field.state.meta.errors.map((error) => (
+                    <p
+                      className="text-destructive text-xs"
+                      key={error?.message}
+                    >
+                      {error?.message}
+                    </p>
+                  ))}
+                </div>
+              )}
+            </form.Field>
+
+            <form.Field name="siteId">
+              {(field) => (
+                <div className={fieldGrid}>
+                  <Label htmlFor={field.name}>Sede</Label>
+                  <select
+                    className="h-8 w-full rounded-none border border-input bg-transparent px-2.5 text-xs outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50"
+                    id={field.name}
+                    name={field.name}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => {
+                      field.handleChange(e.target.value);
+                      form.setFieldValue("serviceUnitId", "");
+                    }}
+                    value={field.state.value}
+                  >
+                    <option value="">Seleccione sede</option>
+                    {sitesData?.sites.map((s: (typeof sitesData.sites)[0]) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+                  {field.state.meta.errors.map((error) => (
+                    <p
+                      className="text-destructive text-xs"
+                      key={error?.message}
+                    >
+                      {error?.message}
+                    </p>
+                  ))}
+                </div>
+              )}
+            </form.Field>
+
+            <form.Field name="serviceUnitId">
+              {(field) => (
+                <div className={fieldGrid}>
+                  <Label htmlFor={field.name}>Unidad de servicio</Label>
+                  <select
+                    className="h-8 w-full rounded-none border border-input bg-transparent px-2.5 text-xs outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50 disabled:opacity-50"
+                    disabled={!(selectedSiteId && serviceUnitsData)}
+                    id={field.name}
+                    name={field.name}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    value={field.state.value}
+                  >
+                    <option value="">
+                      {selectedSiteId
+                        ? serviceUnitsData?.serviceUnits.length === 0
+                          ? "Sin unidades"
+                          : "Seleccione unidad"
+                        : "Seleccione sede primero"}
+                    </option>
+                    {serviceUnitsData?.serviceUnits.map(
+                      (u: (typeof serviceUnitsData.serviceUnits)[0]) => (
+                        <option key={u.id} value={u.id}>
+                          {u.name}
+                        </option>
+                      )
+                    )}
+                  </select>
+                  {field.state.meta.errors.map((error) => (
+                    <p
+                      className="text-destructive text-xs"
+                      key={error?.message}
+                    >
+                      {error?.message}
+                    </p>
+                  ))}
+                </div>
+              )}
+            </form.Field>
+
+            <form.Field name="encounterClass">
+              {(field) => (
+                <div className={fieldGrid}>
+                  <Label htmlFor={field.name}>
+                    Clase de atención (grupo servicios)
+                  </Label>
+                  <SearchSelect
+                    emptyMessage="Escribe para buscar grupo"
+                    id={field.name}
+                    loading={groupLoading}
+                    name={field.name}
+                    onBlur={field.handleBlur}
+                    onChange={(v) => field.handleChange(v)}
+                    onSearchChange={setGroupSearch}
+                    options={
+                      groupData?.entries.map((e) => ({
+                        value: e.code,
+                        label: e.name,
+                        description: e.code,
+                      })) ?? []
+                    }
+                    placeholder="Buscar grupo de servicios..."
+                    search={groupSearch}
+                    value={field.state.value}
+                  />
+                  {field.state.meta.errors.map((error) => (
+                    <p
+                      className="text-destructive text-xs"
+                      key={error?.message}
+                    >
+                      {error?.message}
+                    </p>
+                  ))}
+                </div>
+              )}
+            </form.Field>
+
+            <form.Field name="careModality">
+              {(field) => (
+                <div className={fieldGrid}>
+                  <Label htmlFor={field.name}>Modalidad de atención</Label>
+                  <SearchSelect
+                    emptyMessage="Escribe para buscar modalidad"
+                    id={field.name}
+                    loading={modalityLoading}
+                    name={field.name}
+                    onBlur={field.handleBlur}
+                    onChange={(v) => {
+                      field.handleChange(v);
+                      const currentModalidad = form.getFieldValue(
+                        "modalidadAtencionCode"
+                      );
+                      if (!currentModalidad) {
+                        form.setFieldValue("modalidadAtencionCode", v);
+                      }
+                    }}
+                    onSearchChange={setModalitySearch}
+                    options={
+                      modalityData?.entries.map((e) => ({
+                        value: e.code,
+                        label: e.name,
+                        description: e.code,
+                      })) ?? []
+                    }
+                    placeholder="Buscar modalidad..."
+                    search={modalitySearch}
+                    value={field.state.value}
+                  />
+                  {field.state.meta.errors.map((error) => (
+                    <p
+                      className="text-destructive text-xs"
+                      key={error?.message}
+                    >
+                      {error?.message}
+                    </p>
+                  ))}
+                </div>
+              )}
+            </form.Field>
+
+            <form.Field name="reasonForVisit">
+              {(field) => (
+                <div className={`${fieldGrid} md:col-span-2`}>
+                  <Label htmlFor={field.name}>Motivo de consulta</Label>
+                  <Input
+                    className="text-xs"
+                    id={field.name}
+                    name={field.name}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    placeholder="Describa el motivo de consulta"
+                    value={field.state.value}
+                  />
+                  {field.state.meta.errors.map((error) => (
+                    <p
+                      className="text-destructive text-xs"
+                      key={error?.message}
+                    >
+                      {error?.message}
+                    </p>
+                  ))}
+                </div>
+              )}
+            </form.Field>
+
+            <form.Field name="startedAt">
+              {(field) => (
+                <div className={fieldGrid}>
+                  <Label htmlFor={field.name}>Fecha y hora de inicio</Label>
+                  <Input
+                    className="text-xs"
+                    id={field.name}
+                    name={field.name}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    type="datetime-local"
+                    value={field.state.value}
+                  />
+                  {field.state.meta.errors.map((error) => (
+                    <p
+                      className="text-destructive text-xs"
+                      key={error?.message}
+                    >
+                      {error?.message}
+                    </p>
+                  ))}
+                </div>
+              )}
+            </form.Field>
+
+            <form.Field name="admissionSource">
+              {(field) => (
+                <div className={fieldGrid}>
+                  <Label htmlFor={field.name}>Vía de ingreso (RIPS)</Label>
+                  <SearchSelect
+                    clearable
+                    emptyMessage="Escribe para buscar"
+                    id={field.name}
+                    loading={admissionLoading}
+                    name={field.name}
+                    onBlur={field.handleBlur}
+                    onChange={(v) => field.handleChange(v)}
+                    onSearchChange={setAdmissionSearch}
+                    options={
+                      admissionData?.entries.map((e) => ({
+                        value: e.code,
+                        label: e.name,
+                        description: e.code,
+                      })) ?? []
+                    }
+                    placeholder="Buscar vía de ingreso..."
+                    search={admissionSearch}
+                    value={field.state.value}
+                  />
+                </div>
+              )}
+            </form.Field>
+
+            <form.Field name="causeExternalCode">
+              {(field) => (
+                <div className={fieldGrid}>
+                  <Label htmlFor={field.name}>Causa externa (RIPS)</Label>
+                  <SearchSelect
+                    clearable
+                    emptyMessage="Escribe para buscar"
+                    id={field.name}
+                    loading={causeLoading}
+                    name={field.name}
+                    onBlur={field.handleBlur}
+                    onChange={(v) => field.handleChange(v)}
+                    onSearchChange={setCauseSearch}
+                    options={
+                      causeData?.entries.map((e) => ({
+                        value: e.code,
+                        label: e.name,
+                        description: e.code,
+                      })) ?? []
+                    }
+                    placeholder="Buscar causa externa..."
+                    search={causeSearch}
+                    value={field.state.value}
+                  />
+                </div>
+              )}
+            </form.Field>
+
+            <form.Field name="finalidadConsultaCode">
+              {(field) => (
+                <div className={fieldGrid}>
+                  <Label htmlFor={field.name}>Finalidad consulta (RIPS)</Label>
+                  <SearchSelect
+                    clearable
+                    emptyMessage="Escribe para buscar"
+                    id={field.name}
+                    loading={finalidadLoading}
+                    name={field.name}
+                    onBlur={field.handleBlur}
+                    onChange={(v) => field.handleChange(v)}
+                    onSearchChange={setFinalidadSearch}
+                    options={
+                      finalidadData?.entries.map((e) => ({
+                        value: e.code,
+                        label: e.name,
+                        description: e.code,
+                      })) ?? []
+                    }
+                    placeholder="Buscar finalidad..."
+                    search={finalidadSearch}
+                    value={field.state.value}
+                  />
+                </div>
+              )}
+            </form.Field>
+
+            <form.Field name="modalidadAtencionCode">
+              {(field) => (
+                <div className={fieldGrid}>
+                  <Label htmlFor={field.name}>Modalidad atención (RIPS)</Label>
+                  <SearchSelect
+                    clearable
+                    emptyMessage="Escribe para buscar modalidad"
+                    id={field.name}
+                    loading={modalityLoading}
+                    name={field.name}
+                    onBlur={field.handleBlur}
+                    onChange={(v) => {
+                      field.handleChange(v);
+                      const currentCare = form.getFieldValue("careModality");
+                      if (!currentCare) {
+                        form.setFieldValue("careModality", v);
+                      }
+                    }}
+                    onSearchChange={setModalitySearch}
+                    options={
+                      modalityData?.entries.map((e) => ({
+                        value: e.code,
+                        label: e.name,
+                        description: e.code,
+                      })) ?? []
+                    }
+                    placeholder="Buscar modalidad RIPS..."
+                    search={modalitySearch}
+                    value={field.state.value}
+                  />
+                </div>
+              )}
+            </form.Field>
+          </div>
+
+          <div className="mt-4 flex justify-end gap-2">
+            <Button
+              onClick={onCancel}
+              size="sm"
+              type="button"
+              variant="outline"
+            >
+              Cancelar
+            </Button>
+            <form.Subscribe
+              selector={(state) => ({
+                canSubmit: state.canSubmit,
+                isSubmitting: state.isSubmitting,
+              })}
+            >
+              {({ canSubmit, isSubmitting }) => (
+                <Button
+                  disabled={!canSubmit || isSubmitting}
+                  size="sm"
+                  type="submit"
+                >
+                  {isSubmitting ? "Guardando..." : "Guardar atención"}
+                </Button>
+              )}
+            </form.Subscribe>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}
+
+function EncountersPage() {
+  const [offset, setOffset] = useState(0);
+  const [limit] = useState(25);
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("");
+  const [showForm, setShowForm] = useState(false);
+
+  const { data, isLoading } = useQuery(
+    orpc.encounters.list.queryOptions({
+      input: {
+        limit,
+        offset,
+        search: search || undefined,
+        status: status || undefined,
+      },
+    })
+  );
 
   const columns = [
     {
@@ -307,265 +709,7 @@ function EncountersPage() {
         title="Atenciones"
       />
 
-      {showForm && (
-        <Card className="mx-6">
-          <CardHeader>
-            <CardTitle>Nueva atención</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form
-              className="grid grid-cols-1 gap-4 md:grid-cols-2"
-              onSubmit={handleSubmit}
-            >
-              <div className="space-y-1">
-                <Label>Paciente</Label>
-                <SearchSelect
-                  emptyMessage="Escribe para buscar pacientes"
-                  onChange={setSelectedPatientId}
-                  onSearchChange={setPatientSearch}
-                  options={
-                    patientsData?.patients.map((p) => ({
-                      value: p.id,
-                      label: `${p.firstName} ${p.lastName1}`,
-                      description: `${p.primaryDocumentType} ${p.primaryDocumentNumber}`,
-                    })) ?? []
-                  }
-                  placeholder="Buscar paciente..."
-                  required
-                  search={patientSearch}
-                  value={selectedPatientId}
-                />
-              </div>
-
-              <div className="space-y-1">
-                <Label>Sede</Label>
-                <select
-                  className="h-8 w-full rounded-none border border-input bg-transparent px-2.5 text-xs outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50"
-                  onChange={(e) => {
-                    setSelectedSiteId(e.target.value);
-                    setSelectedServiceUnitId("");
-                  }}
-                  value={selectedSiteId}
-                >
-                  <option value="">Seleccione sede</option>
-                  {sitesData?.sites.map((s: (typeof sitesData.sites)[0]) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-1">
-                <Label>Unidad de servicio</Label>
-                <select
-                  className="h-8 w-full rounded-none border border-input bg-transparent px-2.5 text-xs outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50 disabled:opacity-50"
-                  disabled={!(selectedSiteId && serviceUnitsData)}
-                  onChange={(e) => setSelectedServiceUnitId(e.target.value)}
-                  value={selectedServiceUnitId}
-                >
-                  <option value="">
-                    {selectedSiteId
-                      ? serviceUnitsData?.serviceUnits.length === 0
-                        ? "Sin unidades"
-                        : "Seleccione unidad"
-                      : "Seleccione sede primero"}
-                  </option>
-                  {serviceUnitsData?.serviceUnits.map(
-                    (u: (typeof serviceUnitsData.serviceUnits)[0]) => (
-                      <option key={u.id} value={u.id}>
-                        {u.name}
-                      </option>
-                    )
-                  )}
-                </select>
-              </div>
-
-              <div className="space-y-1">
-                <Label>Clase de atención (grupo servicios)</Label>
-                <SearchSelect
-                  emptyMessage="Escribe para buscar grupo"
-                  loading={groupLoading}
-                  onChange={(v) =>
-                    setFormData((f) => ({ ...f, encounterClass: v }))
-                  }
-                  onSearchChange={setGroupSearch}
-                  options={
-                    groupData?.entries.map((e) => ({
-                      value: e.code,
-                      label: e.name,
-                      description: e.code,
-                    })) ?? []
-                  }
-                  placeholder="Buscar grupo de servicios..."
-                  required
-                  search={groupSearch}
-                  value={formData.encounterClass}
-                />
-              </div>
-
-              <div className="space-y-1">
-                <Label>Modalidad de atención</Label>
-                <SearchSelect
-                  emptyMessage="Escribe para buscar modalidad"
-                  loading={modalityLoading}
-                  onChange={(v) =>
-                    setFormData((f) => ({
-                      ...f,
-                      careModality: v,
-                      modalidadAtencionCode: v,
-                    }))
-                  }
-                  onSearchChange={setModalitySearch}
-                  options={
-                    modalityData?.entries.map((e) => ({
-                      value: e.code,
-                      label: e.name,
-                      description: e.code,
-                    })) ?? []
-                  }
-                  placeholder="Buscar modalidad..."
-                  required
-                  search={modalitySearch}
-                  value={formData.careModality}
-                />
-              </div>
-
-              <div className="space-y-1 md:col-span-2">
-                <Label>Motivo de consulta</Label>
-                <Input
-                  onChange={(e) =>
-                    setFormData({ ...formData, reasonForVisit: e.target.value })
-                  }
-                  placeholder="Describa el motivo de consulta"
-                  required
-                  value={formData.reasonForVisit}
-                />
-              </div>
-
-              <div className="space-y-1">
-                <Label>Fecha y hora de inicio</Label>
-                <Input
-                  onChange={(e) =>
-                    setFormData({ ...formData, startedAt: e.target.value })
-                  }
-                  required
-                  type="datetime-local"
-                  value={formData.startedAt}
-                />
-              </div>
-
-              <div className="space-y-1">
-                <Label>Vía de ingreso (RIPS)</Label>
-                <SearchSelect
-                  clearable
-                  emptyMessage="Escribe para buscar"
-                  loading={admissionLoading}
-                  onChange={(v) =>
-                    setFormData((f) => ({ ...f, admissionSource: v }))
-                  }
-                  onSearchChange={setAdmissionSearch}
-                  options={
-                    admissionData?.entries.map((e) => ({
-                      value: e.code,
-                      label: e.name,
-                      description: e.code,
-                    })) ?? []
-                  }
-                  placeholder="Buscar vía de ingreso..."
-                  search={admissionSearch}
-                  value={formData.admissionSource}
-                />
-              </div>
-
-              <div className="space-y-1">
-                <Label>Causa externa (RIPS)</Label>
-                <SearchSelect
-                  clearable
-                  emptyMessage="Escribe para buscar"
-                  loading={causeLoading}
-                  onChange={(v) =>
-                    setFormData((f) => ({ ...f, causeExternalCode: v }))
-                  }
-                  onSearchChange={setCauseSearch}
-                  options={
-                    causeData?.entries.map((e) => ({
-                      value: e.code,
-                      label: e.name,
-                      description: e.code,
-                    })) ?? []
-                  }
-                  placeholder="Buscar causa externa..."
-                  search={causeSearch}
-                  value={formData.causeExternalCode}
-                />
-              </div>
-
-              <div className="space-y-1">
-                <Label>Finalidad consulta (RIPS)</Label>
-                <SearchSelect
-                  clearable
-                  emptyMessage="Escribe para buscar"
-                  loading={finalidadLoading}
-                  onChange={(v) =>
-                    setFormData((f) => ({ ...f, finalidadConsultaCode: v }))
-                  }
-                  onSearchChange={setFinalidadSearch}
-                  options={
-                    finalidadData?.entries.map((e) => ({
-                      value: e.code,
-                      label: e.name,
-                      description: e.code,
-                    })) ?? []
-                  }
-                  placeholder="Buscar finalidad..."
-                  search={finalidadSearch}
-                  value={formData.finalidadConsultaCode}
-                />
-              </div>
-
-              <div className="space-y-1">
-                <Label>Modalidad atención (RIPS)</Label>
-                <SearchSelect
-                  clearable
-                  emptyMessage="Escribe para buscar modalidad"
-                  loading={modalityLoading}
-                  onChange={(v) =>
-                    setFormData((f) => ({
-                      ...f,
-                      modalidadAtencionCode: v,
-                      careModality: f.careModality || v,
-                    }))
-                  }
-                  onSearchChange={setModalitySearch}
-                  options={
-                    modalityData?.entries.map((e) => ({
-                      value: e.code,
-                      label: e.name,
-                      description: e.code,
-                    })) ?? []
-                  }
-                  placeholder="Buscar modalidad RIPS..."
-                  search={modalitySearch}
-                  value={formData.modalidadAtencionCode}
-                />
-              </div>
-
-              <div className="flex justify-end md:col-span-2">
-                <Button
-                  disabled={createMutation.isPending}
-                  size="sm"
-                  type="submit"
-                >
-                  {createMutation.isPending
-                    ? "Guardando..."
-                    : "Guardar atención"}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      )}
+      {showForm && <CreateEncounterForm onCancel={() => setShowForm(false)} />}
 
       <div className="px-6">
         <div className="mb-3 flex flex-wrap items-center gap-2">

@@ -62,6 +62,14 @@ const mutation = useMutation({ ...orpc.patients.create.mutationOptions(), onSucc
 ### Backend routers PENDIENTES
 _Ninguno. Todos los routers planificados están implementados._
 
+### Cambios recientes (2026-05-07)
+- **Refactor flujo clínico central**: Los 4 tabs de `$encounterId` (diagnósticos, alergias, observaciones, procedimientos) fueron extraídos a componentes independientes en `encounters/-components/` y migrados de `useState` a `@tanstack/react-form` + Zod, con validación declarativa y manejo de errores consistente.
+- **Tab "Evolución" (SOAP)**: Nuevo tab en `$encounterId` con editor estructurado por secciones (Subjetivo/Objetivo/Análisis/Plan) que crea automáticamente un `clinical_document` de tipo `evolucion_medica` vinculado a la atención, con secciones versionadas y texto renderizado.
+- **Persistencia de tabs en URL**: Los tabs de `$encounterId` ahora se persisten mediante `?tab=diagnoses` (TanStack Router `validateSearch` + `useNavigate`), evitando que se pierdan al refrescar la página.
+- **Info cards enriquecidas**: Las cards de información de la atención ahora resuelven IDs de sede y unidad de servicio a nombres legibles mediante queries a `facilities.getSite` y `facilities.getServiceUnit`.
+- **Migración formulario de atenciones**: `encounters/index.tsx` migrado de `useState` a `@tanstack/react-form` + Zod para la creación de atenciones, con validación en tiempo real y manejo de errores declarativo.
+- **CTA "Nueva atención" en paciente**: El detalle de paciente (`$patientId`) ahora incluye un botón de acceso rápido para crear una nueva atención.
+
 ### Cambios recientes (2026-04-30)
 - **DELETE endpoints**: Agregados a `patients`, `encounters`, `clinicalRecords` (diagnosis/allergy/observation/procedure), `clinicalDocuments`, `medicationOrders`, `medicationAdministrations`, `serviceRequests`, `diagnosticReports`, `interconsultations`, `incapacityCertificates`, `attachments` (binary/link), `facilities` (org/site/unit/practitioner), `ripsExports`, `ihceBundles`, `consents` (consent/dataDisclosure).
 - **GET endpoints**: Agregados a `medicationOrders`, `serviceRequests`, `interconsultations`, `incapacityCertificates`, `attachments` (binary/link), `ripsExports`, `ihceBundles`, `facilities` (org/site/unit/practitioner).
@@ -76,7 +84,7 @@ _Ninguno. Todos los routers planificados están implementados._
 - `/patients` — Listado, búsqueda, registro
 - `/patients/$patientId` — Detalle, edición, historial de atenciones
 - `/encounters` — Listado, filtros, nueva atención
-- `/encounters/$encounterId` — Detalle con tabs: diagnósticos, alergias, observaciones, procedimientos
+- `/encounters/$encounterId` — Detalle con tabs: diagnósticos, alergias, observaciones, procedimientos, evolución (SOAP). Todos los tabs usan `@tanstack/react-form` + Zod. Los tabs se persisten en URL (`?tab=`). Las info cards resuelven nombres de sede/unidad en tiempo real.
 - `/clinical-documents` — Listado y creación de documentos clínicos
 - `/clinical-documents/$documentId` — Detalle con versión actual y secciones
 - `/consents` — Consentimientos informados y autorizaciones de divulgación de datos
