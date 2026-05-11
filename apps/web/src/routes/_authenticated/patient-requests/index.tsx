@@ -25,41 +25,17 @@ import { z } from "zod";
 import { DataTable } from "@/components/data-table";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
-import { authClient } from "@/lib/auth-client";
+import {
+  computeStatus,
+  createRequest,
+  type PatientCopyRequest,
+  usePatientRequests,
+} from "@/contexts/patient-requests-context";
 import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/_authenticated/patient-requests/")({
   component: PatientRequestsPage,
-  beforeLoad: async () => {
-    const session = await authClient.getSession();
-    if (!session.data) {
-      throw new Error("UNAUTHORIZED");
-    }
-    return { session };
-  },
-  errorComponent: () => {
-    window.location.href = "/login";
-    return null;
-  },
 });
-
-/* ─── types ─── */
-
-type RequestStatus = "Recibida" | "En preparación" | "Entregada" | "Vencida";
-
-interface PatientCopyRequest {
-  createdAt: Date;
-  deadline: Date;
-  deliveryChannel: string;
-  id: string;
-  legalBasis: string;
-  notes: string;
-  patientId: string;
-  patientName: string;
-  requester: string;
-  scope: string;
-  status: RequestStatus;
-}
 
 /* ─── helpers ─── */
 
@@ -81,26 +57,9 @@ function formatEsCODatetime(date: Date): string {
   });
 }
 
-function addDays(date: Date, days: number): Date {
-  const result = new Date(date);
-  result.setDate(result.getDate() + days);
-  return result;
-}
-
-function computeStatus(
-  request: PatientCopyRequest,
-  now = new Date()
-): RequestStatus {
-  if (request.status === "Entregada") {
-    return "Entregada";
-  }
-  if (request.deadline < now) {
-    return "Vencida";
-  }
-  return request.status;
-}
-
-function getStatusBadgeClasses(status: RequestStatus): string {
+function getStatusBadgeClasses(
+  status: "Recibida" | "En preparación" | "Entregada" | "Vencida"
+): string {
   switch (status) {
     case "Recibida":
       return "border-slate-200 bg-slate-50 text-slate-700";
@@ -113,35 +72,6 @@ function getStatusBadgeClasses(status: RequestStatus): string {
     default:
       return "border-slate-200 bg-slate-50 text-slate-700";
   }
-}
-
-/* ─── in-memory store ─── */
-
-let globalRequestId = 1;
-
-function createRequest(data: {
-  patientId: string;
-  patientName: string;
-  scope: string;
-  deliveryChannel: string;
-  requester: string;
-  legalBasis: string;
-  notes: string;
-}): PatientCopyRequest {
-  const createdAt = new Date();
-  return {
-    id: `patreq-${globalRequestId++}`,
-    patientId: data.patientId,
-    patientName: data.patientName,
-    scope: data.scope,
-    deliveryChannel: data.deliveryChannel,
-    requester: data.requester,
-    legalBasis: data.legalBasis,
-    notes: data.notes,
-    createdAt,
-    deadline: addDays(createdAt, 5),
-    status: "Recibida",
-  };
 }
 
 /* ─── schema ─── */
@@ -162,7 +92,7 @@ function CreateRequestForm({
   onSubmit,
 }: {
   onCancel: () => void;
-  onSubmit: (request: PatientCopyRequest) => void;
+  onSubmit: () => void;
 }) {
   const [patientSearch, setPatientSearch] = useState("");
 
@@ -182,6 +112,8 @@ function CreateRequestForm({
       label: `${p.firstName} ${p.lastName1}`,
       description: `${p.primaryDocumentType} ${p.primaryDocumentNumber}`,
     })) ?? [];
+
+  const { addRequest } = usePatientRequests();
 
   const form = useForm({
     defaultValues: {
@@ -205,7 +137,8 @@ function CreateRequestForm({
         legalBasis: value.legalBasis,
         notes: value.notes,
       });
-      onSubmit(request);
+      addRequest(request);
+      onSubmit();
     },
     validators: {
       onSubmit: patientRequestSchema,
@@ -414,7 +347,11 @@ function CreateRequestForm({
 
 /* ─── status badge ─── */
 
-function StatusBadge({ status }: { status: RequestStatus }) {
+function StatusBadge({
+  status,
+}: {
+  status: "Recibida" | "En preparación" | "Entregada" | "Vencida";
+}) {
   return (
     <span
       className={`inline-flex border px-1.5 py-0.5 font-medium text-[10px] ${getStatusBadgeClasses(status)}`}
@@ -427,22 +364,12 @@ function StatusBadge({ status }: { status: RequestStatus }) {
 /* ─── page ─── */
 
 function PatientRequestsPage() {
-  const [requests, setRequests] = useState<PatientCopyRequest[]>([]);
+  const { requests, expandedId, setExpandedId, updateRequestStatus } =
+    usePatientRequests();
   const [showForm, setShowForm] = useState(false);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  function handleCreate(request: PatientCopyRequest) {
-    setRequests((prev) => [request, ...prev]);
+  function handleCreate() {
     setShowForm(false);
-  }
-
-  function handleStatusTransition(
-    request: PatientCopyRequest,
-    nextStatus: "Recibida" | "En preparación" | "Entregada"
-  ) {
-    setRequests((prev) =>
-      prev.map((r) => (r.id === request.id ? { ...r, status: nextStatus } : r))
-    );
   }
 
   function handleCancelForm() {
@@ -495,7 +422,7 @@ function PatientRequestsPage() {
           <div className="flex items-center gap-1">
             {currentStatus === "Recibida" && (
               <Button
-                onClick={() => handleStatusTransition(row, "En preparación")}
+                onClick={() => updateRequestStatus(row.id, "En preparación")}
                 size="xs"
                 variant="outline"
               >
@@ -504,7 +431,7 @@ function PatientRequestsPage() {
             )}
             {currentStatus === "En preparación" && (
               <Button
-                onClick={() => handleStatusTransition(row, "Entregada")}
+                onClick={() => updateRequestStatus(row.id, "Entregada")}
                 size="xs"
                 variant="outline"
               >

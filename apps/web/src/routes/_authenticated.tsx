@@ -1,6 +1,7 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 
 import { AppShell } from "@/components/layout/app-shell";
+import { PatientRequestsProvider } from "@/contexts/patient-requests-context";
 import { authClient } from "@/lib/auth-client";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -21,8 +22,10 @@ export const Route = createFileRoute("/_authenticated")({
 
 function AuthenticatedLayout() {
   return (
-    <AppShell>
-      <Outlet />
-    </AppShell>
+    <PatientRequestsProvider>
+      <AppShell>
+        <Outlet />
+      </AppShell>
+    </PatientRequestsProvider>
   );
 }

@@ -63,6 +63,9 @@ const mutation = useMutation({ ...orpc.patients.create.mutationOptions(), onSucc
 _Ninguno. Todos los routers planificados están implementados._
 
 ### Cambios recientes (2026-05-11)
+- **Fix persistencia de solicitudes del paciente** (`/patient-requests`): Movido el estado de `useState` local del componente a un `PatientRequestsContext` (`apps/web/src/contexts/patient-requests-context.tsx`) envuelto en el layout `_authenticated.tsx`. El contexto provee estado de requests (`requests`), expand/collapse (`expandedId`), creación (`addRequest`) y transiciones de estado (`updateRequestStatus`), con hooks `useCallback` para estabilidad. La página `/patient-requests` consume el contexto mediante `usePatientRequests()`. Esto corrige VAL-PATREQ-024: las solicitudes ahora sobreviven a la navegación intra-sesión (por ejemplo, ir a `/patients` y volver) y solo se pierden al recargar la página, como estaba originalmente diseñado. Se preserva toda la funcionalidad existente: formulario de creación, validación Zod, transiciones de estado, cálculo de fecha límite, orden descendente y disclaimer de sesión.
+
+### Cambios recientes (2026-05-11)
 - **Nueva vista: Solicitudes del paciente** (`/patient-requests`): Workflow de demostración en memoria para solicitudes de copia de historia clínica. Incluye: selección de paciente mediante `SearchSelect` con búsqueda debounced contra `patients.list`; formulario con alcance (Completa/Parcial/Resumen), canal de entrega (Físico/Correo electrónico/Portal del paciente), solicitante, base legal (Ley 23 de 1981, Ley 1581 de 2012, Resolución 1995 de 1999, etc.) y notas opcionales; validación con `@tanstack/react-form` + Zod en español; fecha límite auto-calculada como fecha de creación + 5 días calendario; ciclo de estados (Recibida → En preparación → Entregada, con Vencida computada reactivamente cuando la fecha límite pasa la fecha actual); tabla/listado con columnas (Paciente, Alcance, Canal, Fecha límite, Estado, Solicitante, Base legal); orden por timestamp descendente (más reciente primero); fila expandible con detalle completo; persistencia en memoria durante la sesión con disclaimer visible en español que explica que los datos se perderán al recargar la página. Agregado item "Solicitudes del paciente" al sidebar bajo grupo Regulatorio.
 
 ### Cambios recientes (2026-05-11)
@@ -123,7 +126,7 @@ _Ninguno. Todos los routers planificados están implementados._
 - La pantalla `/chat` incluye acción de nuevo chat en el encabezado para detener cualquier stream activo y limpiar el historial local sin cambiar el paciente seleccionado. El transporte de AI SDK se mantiene estable y usa `prepareSendMessagesRequest` con un `ref` del paciente seleccionado para enviar siempre el `selectedPatientId` vigente, evitando que el chat conserve el valor inicial `null`.
 
 ### Vistas frontend PENDIENTES
-- Portal del paciente (solicitudes de copia)
+- Portal del paciente (solicitudes de copia) — parcialmente implementado como demo frontend-only en `/patient-requests`
 
 ### Backend PENDIENTE (post-auditoría 2026-04-30)
 - **CRÍTICO**: Tablas transaccionales RIPS por tipo de servicio (consulta, procedimientos, medicamentos, urgencias, hospitalización, recién nacido, otros servicios) + generador FEV-RIPS estructurado
