@@ -40,10 +40,10 @@ const encounterSchema = z.object({
   careModality: z.string().min(1, "Modalidad es obligatoria"),
   reasonForVisit: z.string().min(1, "Motivo de consulta es obligatorio"),
   startedAt: z.string().min(1, "Fecha de inicio es obligatoria"),
-  admissionSource: z.string().optional(),
-  causeExternalCode: z.string().optional(),
-  finalidadConsultaCode: z.string().optional(),
-  modalidadAtencionCode: z.string().optional(),
+  admissionSource: z.string(),
+  causeExternalCode: z.string(),
+  finalidadConsultaCode: z.string(),
+  modalidadAtencionCode: z.string(),
 });
 
 function PatientName({ patientId }: { patientId: string }) {
@@ -248,11 +248,8 @@ function CreateEncounterForm({ onCancel }: { onCancel: () => void }) {
                     value={field.state.value}
                   />
                   {field.state.meta.errors.map((error) => (
-                    <p
-                      className="text-destructive text-xs"
-                      key={error?.message}
-                    >
-                      {error?.message}
+                    <p className="text-destructive text-xs" key={String(error)}>
+                      {String(error)}
                     </p>
                   ))}
                 </div>
@@ -282,11 +279,8 @@ function CreateEncounterForm({ onCancel }: { onCancel: () => void }) {
                     ))}
                   </select>
                   {field.state.meta.errors.map((error) => (
-                    <p
-                      className="text-destructive text-xs"
-                      key={error?.message}
-                    >
-                      {error?.message}
+                    <p className="text-destructive text-xs" key={String(error)}>
+                      {String(error)}
                     </p>
                   ))}
                 </div>
@@ -322,11 +316,8 @@ function CreateEncounterForm({ onCancel }: { onCancel: () => void }) {
                     )}
                   </select>
                   {field.state.meta.errors.map((error) => (
-                    <p
-                      className="text-destructive text-xs"
-                      key={error?.message}
-                    >
-                      {error?.message}
+                    <p className="text-destructive text-xs" key={String(error)}>
+                      {String(error)}
                     </p>
                   ))}
                 </div>
@@ -359,11 +350,8 @@ function CreateEncounterForm({ onCancel }: { onCancel: () => void }) {
                     value={field.state.value}
                   />
                   {field.state.meta.errors.map((error) => (
-                    <p
-                      className="text-destructive text-xs"
-                      key={error?.message}
-                    >
-                      {error?.message}
+                    <p className="text-destructive text-xs" key={String(error)}>
+                      {String(error)}
                     </p>
                   ))}
                 </div>
@@ -402,11 +390,8 @@ function CreateEncounterForm({ onCancel }: { onCancel: () => void }) {
                     value={field.state.value}
                   />
                   {field.state.meta.errors.map((error) => (
-                    <p
-                      className="text-destructive text-xs"
-                      key={error?.message}
-                    >
-                      {error?.message}
+                    <p className="text-destructive text-xs" key={String(error)}>
+                      {String(error)}
                     </p>
                   ))}
                 </div>
@@ -427,11 +412,8 @@ function CreateEncounterForm({ onCancel }: { onCancel: () => void }) {
                     value={field.state.value}
                   />
                   {field.state.meta.errors.map((error) => (
-                    <p
-                      className="text-destructive text-xs"
-                      key={error?.message}
-                    >
-                      {error?.message}
+                    <p className="text-destructive text-xs" key={String(error)}>
+                      {String(error)}
                     </p>
                   ))}
                 </div>
@@ -452,11 +434,8 @@ function CreateEncounterForm({ onCancel }: { onCancel: () => void }) {
                     value={field.state.value}
                   />
                   {field.state.meta.errors.map((error) => (
-                    <p
-                      className="text-destructive text-xs"
-                      key={error?.message}
-                    >
-                      {error?.message}
+                    <p className="text-destructive text-xs" key={String(error)}>
+                      {String(error)}
                     </p>
                   ))}
                 </div>

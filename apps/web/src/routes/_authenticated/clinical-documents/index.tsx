@@ -10,7 +10,7 @@ import {
 import { Input } from "@wellfit-emr/ui/components/input";
 import { Label } from "@wellfit-emr/ui/components/label";
 import { SearchSelect } from "@wellfit-emr/ui/components/search-select";
-import { Eye, FileText, PenLine, Plus } from "lucide-react";
+import { Eye, FileText, FilterX, PenLine, Plus } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -18,6 +18,49 @@ import { DataTable } from "@/components/data-table";
 import { PageHeader } from "@/components/page-header";
 import { authClient } from "@/lib/auth-client";
 import { orpc, queryClient } from "@/utils/orpc";
+
+/* ─── helpers ─── */
+
+const documentTypeLabels: Record<string, string> = {
+  evolucion_medica: "Evolución médica",
+  nota_enfermeria: "Nota de enfermería",
+  consentimiento_informado: "Consentimiento informado",
+  epicrisis: "Epicrisis",
+  historia_clinica: "Historia clínica",
+  informe_quirurgico: "Informe quirúrgico",
+  orden_medica: "Orden médica",
+  otros: "Otro documento",
+};
+
+function getDocumentTypeLabel(type: string): string {
+  return documentTypeLabels[type] ?? type;
+}
+
+const documentStatusMap: Record<string, { label: string; colorClass: string }> =
+  {
+    draft: {
+      label: "Borrador",
+      colorClass: "border-amber-200 bg-amber-50 text-amber-700",
+    },
+    signed: {
+      label: "Firmado",
+      colorClass: "border-emerald-200 bg-emerald-50 text-emerald-700",
+    },
+  };
+
+function getStatusBadge(status: string): React.ReactNode {
+  const mapped = documentStatusMap[status] ?? {
+    label: status,
+    colorClass: "border-slate-200 bg-slate-50 text-slate-700",
+  };
+  return (
+    <span
+      className={`inline-flex items-center border px-1.5 py-0.5 font-medium text-[10px] ${mapped.colorClass}`}
+    >
+      {mapped.label}
+    </span>
+  );
+}
 
 export const Route = createFileRoute("/_authenticated/clinical-documents/")({
   component: ClinicalDocumentsListPage,
@@ -312,6 +355,8 @@ function ClinicalDocumentsListPage() {
   const [offset, setOffset] = useState(0);
   const [limit] = useState(25);
   const [showForm, setShowForm] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [typeFilter, setTypeFilter] = useState<string>("");
 
   const { data, isLoading } = useQuery(
     orpc.clinicalDocuments.list.queryOptions({
@@ -319,6 +364,8 @@ function ClinicalDocumentsListPage() {
         limit,
         offset,
         sortDirection: "desc",
+        status: statusFilter || undefined,
+        patientId: typeFilter ? undefined : undefined,
       },
     })
   );
@@ -336,39 +383,52 @@ function ClinicalDocumentsListPage() {
     },
   });
 
+  const filteredDocuments =
+    typeFilter && data
+      ? data.documents.filter((d) => d.documentType === typeFilter)
+      : (data?.documents ?? []);
+
+  const filteredTotal =
+    typeFilter && data ? filteredDocuments.length : (data?.total ?? 0);
+
   const columns = [
     {
       header: "Tipo",
       accessor: (row: NonNullable<typeof data>["documents"][0]) => (
         <span className="inline-flex items-center gap-1.5">
           <FileText size={14} />
-          {row.documentType}
+          <span className="font-medium">
+            {getDocumentTypeLabel(row.documentType)}
+          </span>
         </span>
       ),
     },
     {
       header: "Estado",
+      accessor: (row: NonNullable<typeof data>["documents"][0]) =>
+        getStatusBadge(row.status),
+    },
+    {
+      header: "Paciente",
       accessor: (row: NonNullable<typeof data>["documents"][0]) => (
         <span
-          className={`inline-flex border px-1.5 py-0.5 font-medium text-[10px] ${
-            row.status === "draft"
-              ? "border-amber-200 bg-amber-50 text-amber-700"
-              : "border-emerald-200 bg-emerald-50 text-emerald-700"
-          }`}
+          className="text-[10px] text-muted-foreground"
+          title={row.patientId}
         >
-          {row.status}
+          {row.patientId.slice(0, 8)}…
         </span>
       ),
     },
     {
-      header: "Paciente ID",
-      accessor: (row: NonNullable<typeof data>["documents"][0]) =>
-        row.patientId,
-    },
-    {
-      header: "Atención ID",
-      accessor: (row: NonNullable<typeof data>["documents"][0]) =>
-        row.encounterId,
+      header: "Atención",
+      accessor: (row: NonNullable<typeof data>["documents"][0]) => (
+        <span
+          className="text-[10px] text-muted-foreground"
+          title={row.encounterId}
+        >
+          {row.encounterId.slice(0, 8)}…
+        </span>
+      ),
     },
     {
       header: "Fecha creación",
@@ -421,10 +481,58 @@ function ClinicalDocumentsListPage() {
 
       {showForm && <CreateDocumentForm onCancel={() => setShowForm(false)} />}
 
-      <div className="px-6">
+      <div className="space-y-3 px-6">
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            className="h-8 rounded-none border border-input bg-transparent px-2.5 text-xs outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50"
+            onChange={(e) => {
+              setStatusFilter(e.target.value);
+              setOffset(0);
+            }}
+            value={statusFilter}
+          >
+            <option value="">Todos los estados</option>
+            <option value="draft">Borrador</option>
+            <option value="signed">Firmado</option>
+          </select>
+          <select
+            className="h-8 rounded-none border border-input bg-transparent px-2.5 text-xs outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50"
+            onChange={(e) => {
+              setTypeFilter(e.target.value);
+              setOffset(0);
+            }}
+            value={typeFilter}
+          >
+            <option value="">Todos los tipos</option>
+            <option value="evolucion_medica">Evolución médica</option>
+            <option value="nota_enfermeria">Nota de enfermería</option>
+            <option value="epicrisis">Epicrisis</option>
+            <option value="informe_quirurgico">Informe quirúrgico</option>
+            <option value="orden_medica">Orden médica</option>
+            <option value="consentimiento_informado">
+              Consentimiento informado
+            </option>
+            <option value="historia_clinica">Historia clínica</option>
+          </select>
+          {(statusFilter || typeFilter) && (
+            <Button
+              onClick={() => {
+                setStatusFilter("");
+                setTypeFilter("");
+                setOffset(0);
+              }}
+              size="sm"
+              variant="ghost"
+            >
+              <FilterX size={14} />
+              Limpiar filtros
+            </Button>
+          )}
+        </div>
+
         <DataTable
           columns={columns}
-          data={data?.documents ?? []}
+          data={filteredDocuments}
           emptyDescription="No se encontraron documentos clínicos."
           emptyTitle="Sin documentos"
           isLoading={isLoading}
@@ -434,7 +542,7 @@ function ClinicalDocumentsListPage() {
               ? {
                   limit,
                   offset,
-                  total: data.total,
+                  total: filteredTotal,
                   onPageChange: setOffset,
                 }
               : undefined

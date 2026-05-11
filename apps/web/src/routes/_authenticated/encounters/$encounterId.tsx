@@ -79,27 +79,11 @@ function ServiceUnitName({ unitId }: { unitId: string }) {
   return <span>{data.name}</span>;
 }
 
-function PractitionerName({ practitionerId }: { practitionerId: string }) {
-  const { data, isLoading } = useQuery({
-    ...orpc.facilities.getPractitioner.queryOptions({
-      input: { id: practitionerId },
-    }),
-    enabled: !!practitionerId,
-  });
-  if (isLoading) {
-    return <Skeleton className="h-4 w-24" />;
-  }
-  if (!data) {
-    return <span className="text-muted-foreground">{practitionerId}</span>;
-  }
-  return <span>{data.fullName}</span>;
-}
-
 function EncounterDetailPage() {
   const { encounterId } = useParams({
     from: "/_authenticated/encounters/$encounterId",
   });
-  const navigate = useNavigate({ from: Route.id });
+  const navigate = useNavigate({ from: "/encounters/$encounterId" });
   const search = Route.useSearch();
   const activeTab =
     search.tab && TABS.some((t) => t.id === search.tab)
@@ -136,7 +120,7 @@ function EncounterDetailPage() {
   }
 
   function setTab(tabId: string) {
-    navigate({ search: { tab: tabId } });
+    navigate({ search: (prev) => ({ ...prev, tab: tabId }) });
   }
 
   const statusLabel =
@@ -208,8 +192,18 @@ function EncounterDetailPage() {
                   value: <ServiceUnitName unitId={encounter.serviceUnitId} />,
                 },
                 {
-                  label: "Participantes",
-                  value: <EncounterParticipants encounterId={encounter.id} />,
+                  label: "Paciente",
+                  value: patient ? (
+                    <Link
+                      className="text-primary hover:underline"
+                      params={{ patientId: patient.id }}
+                      to="/patients/$patientId"
+                    >
+                      {patient.firstName} {patient.lastName1}
+                    </Link>
+                  ) : (
+                    <Skeleton className="h-4 w-24" />
+                  ),
                 },
               ].map((item) => (
                 <div key={item.label}>

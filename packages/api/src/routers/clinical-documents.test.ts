@@ -196,6 +196,46 @@ describe("clinicalDocumentsRouter", () => {
     });
   });
 
+  test("lists documents filtered by status", async () => {
+    const docOffset = mock(async () => [documentRecord]);
+    const docLimit = mock(() => ({ offset: docOffset }));
+    const orderBy = mock(() => ({ limit: docLimit }));
+    const docWhere = mock(() => ({ orderBy }));
+    const docFrom = mock(() => ({ where: docWhere }));
+
+    const totalWhere = mock(async () => [{ value: 1 }]);
+    const totalFrom = mock(() => ({ where: totalWhere }));
+
+    const select = mock((projection?: unknown) => {
+      if (projection) {
+        return { from: totalFrom };
+      }
+      return { from: docFrom };
+    });
+
+    const db = {
+      insert: mock(),
+      select,
+      transaction: mock(),
+      update: mock(),
+    };
+    const client = createClinicalDocumentsClient(db);
+
+    const result = await client.clinicalDocuments.list({
+      limit: 10,
+      offset: 0,
+      status: "draft",
+      sortDirection: "desc",
+    });
+
+    expect(result).toEqual({
+      documents: [documentRecord],
+      limit: 10,
+      offset: 0,
+      total: 1,
+    });
+  });
+
   test("signs a document version and updates parent status to signed", async () => {
     const docLimit = mock(async () => [documentRecord]);
     const docWhere = mock(() => ({ limit: docLimit }));
