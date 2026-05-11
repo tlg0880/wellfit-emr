@@ -42,6 +42,7 @@ const listServiceRequestsSchema = z.object({
   patientId: z.string().min(1).optional(),
   sortBy: z.enum(["requestedAt"]).default("requestedAt"),
   sortDirection: z.enum(["asc", "desc"]).default("desc"),
+  status: z.string().min(1).optional(),
 });
 
 const diagnosticReportSchema = z.object({
@@ -108,6 +109,7 @@ const listServiceRequestsProcedure = protectedProcedure
       input.encounterId
         ? eq(serviceRequest.encounterId, input.encounterId)
         : undefined,
+      input.status ? eq(serviceRequest.status, input.status) : undefined,
     ].filter((filter) => filter !== undefined);
 
     const where = filters.length > 0 ? and(...filters) : undefined;

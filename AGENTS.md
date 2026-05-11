@@ -62,6 +62,10 @@ const mutation = useMutation({ ...orpc.patients.create.mutationOptions(), onSucc
 ### Backend routers PENDIENTES
 _Ninguno. Todos los routers planificados están implementados._
 
+### Cambios recientes (2026-05-11)
+- **Dashboard de tareas regulatorias**: Nueva ruta `/regulatory-tasks` con panel operativo de pendientes de cumplimiento en español. Incluye: strip de 5 métricas (firmas pendientes, RIPS pendientes, IHCE/RDA pendientes, interconsultas abiertas, órdenes activas) con datos reales del backend; 5 secciones card con listados compactos (documentos clínicos borrador, exportaciones RIPS por estado, bundles IHCE/RDA, interconsultas solicitadas, órdenes de servicio activas); cada fila enlaza a su ruta de detalle; alertas de cumplimiento condicionales con lógica SLA (documentos >24h, RIPS/IHCE >7d, órdenes STAT >24h); estados vacíos en español; skeletons de carga; manejo tolerante de errores parciales con botón de reintentar; layout responsive (1 col móvil, 2 col tablet, 3 col desktop); fechas en locale `es-CO`; CTAs a rutas de creación. Agregado item "Tareas regulatorias" al sidebar bajo grupo Regulatorio.
+- **Filtros backend**: `clinicalDocuments.list` ahora acepta filtro opcional `status`; `serviceRequests.list` ahora acepta filtro opcional `status`.
+
 ### Cambios recientes (2026-05-07)
 - **Refactor flujo clínico central**: Los 4 tabs de `$encounterId` (diagnósticos, alergias, observaciones, procedimientos) fueron extraídos a componentes independientes en `encounters/-components/` y migrados de `useState` a `@tanstack/react-form` + Zod, con validación declarativa y manejo de errores consistente.
 - **Tab "Evolución" (SOAP)**: Nuevo tab en `$encounterId` con editor estructurado por secciones (Subjetivo/Objetivo/Análisis/Plan) que crea automáticamente un `clinical_document` de tipo `evolucion_medica` vinculado a la atención, con secciones versionadas y texto renderizado.
@@ -99,6 +103,7 @@ _Ninguno. Todos los routers planificados están implementados._
 - `/audit-events` — Bitácora de auditoría y acceso
 - `/rips-exports` — Panel regulatorio RIPS
 - `/rips-exports/$exportId` — Detalle de exportación RIPS
+- `/regulatory-tasks` — Dashboard de tareas regulatorias con métricas, alertas SLA y listados operativos
 - `/ihce-bundles` — Bundles IHCE/RDA para interoperabilidad
 - `/ihce-bundles/$bundleId` — Detalle de bundle IHCE
 - `/facilities/organizations`, `/sites`, `/service-units`, `/practitioners`
@@ -112,7 +117,6 @@ _Ninguno. Todos los routers planificados están implementados._
 
 ### Vistas frontend PENDIENTES
 - Portal del paciente (solicitudes de copia)
-- Firmas pendientes / panel de tareas regulatorias
 
 ### Backend PENDIENTE (post-auditoría 2026-04-30)
 - **CRÍTICO**: Tablas transaccionales RIPS por tipo de servicio (consulta, procedimientos, medicamentos, urgencias, hospitalización, recién nacido, otros servicios) + generador FEV-RIPS estructurado

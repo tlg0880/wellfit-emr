@@ -10,6 +10,7 @@ import {
   FileOutput,
   FileText,
   FlaskConical,
+  Gavel,
   Home,
   Mail,
   MessageSquare,
@@ -74,6 +75,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
   {
     label: "Regulatorio",
     items: [
+      { icon: Gavel, label: "Tareas regulatorias", to: "/regulatory-tasks" },
       { icon: FileOutput, label: "RIPS", to: "/rips-exports" },
       { icon: Share2, label: "IHCE", to: "/ihce-bundles" },
       { icon: FileText, label: "Catálogos RIPS", to: "/catalogs" },

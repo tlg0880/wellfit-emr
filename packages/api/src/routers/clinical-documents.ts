@@ -82,6 +82,7 @@ const listDocumentsSchema = z.object({
   patientId: z.string().min(1).optional(),
   sortBy: z.enum(["createdAt"]).default("createdAt"),
   sortDirection: z.enum(["asc", "desc"]).default("desc"),
+  status: z.string().min(1).optional(),
 });
 
 const signDocumentSchema = z.object({
@@ -242,6 +243,7 @@ const listDocumentsProcedure = protectedProcedure
       input.encounterId
         ? eq(clinicalDocument.encounterId, input.encounterId)
         : undefined,
+      input.status ? eq(clinicalDocument.status, input.status) : undefined,
     ].filter((filter) => filter !== undefined);
 
     const where = filters.length > 0 ? and(...filters) : undefined;
