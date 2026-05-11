@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Button } from "@wellfit-emr/ui/components/button";
 import {
   Card,
@@ -372,6 +372,8 @@ function CreateAttachmentLinkForm({ onCancel }: { onCancel: () => void }) {
 }
 
 function AttachmentsListPage() {
+  const navigate = useNavigate();
+
   const [linkedEntityId, setLinkedEntityId] = useState("");
   const [linkedEntityType, setLinkedEntityType] = useState("encounter");
   const [entitySearch, setEntitySearch] = useState("");
@@ -550,6 +552,12 @@ function AttachmentsListPage() {
           emptyTitle="Sin anexos"
           isLoading={isLoading}
           keyExtractor={(row) => row.id}
+          onRowClick={(row) => {
+            navigate({
+              to: "/attachments/$attachmentId",
+              params: { attachmentId: row.id },
+            });
+          }}
           pagination={
             data
               ? {
