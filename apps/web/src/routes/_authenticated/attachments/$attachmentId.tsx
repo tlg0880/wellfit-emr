@@ -114,8 +114,14 @@ function AttachmentDetailPage() {
   const hasLinkError = !!linkError;
 
   useEffect(() => {
-    if (!(isLoading || hasLinkError) && link?.title) {
+    if (isLoading) {
+      document.title = "WellFit EMR";
+    } else if (hasLinkError) {
+      document.title = "Anexo no encontrado | WellFit EMR";
+    } else if (link?.title) {
       document.title = `Anexo: ${link.title}`;
+    } else {
+      document.title = "WellFit EMR";
     }
 
     return () => {
