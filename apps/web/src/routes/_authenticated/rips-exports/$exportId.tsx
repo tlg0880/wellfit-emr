@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from "@wellfit-emr/ui/components/card";
 import { Skeleton } from "@wellfit-emr/ui/components/skeleton";
-import { Trash2 } from "lucide-react";
+import { FileOutput, Trash2 } from "lucide-react";
 import { useEffect } from "react";
 import { toast } from "sonner";
 
@@ -90,6 +90,8 @@ function RipsExportDetailPage() {
         }
         backTo="/rips-exports"
         description="Información de la exportación RIPS"
+        icon={FileOutput}
+        iconBgClass="bg-emerald-100 text-emerald-600"
         title={title}
       />
 
