@@ -615,12 +615,12 @@ function DashboardPage() {
                 },
               ].map((item) => (
                 <div
-                  className="rounded-lg border bg-card/80 p-4 transition-all duration-150 hover:bg-card hover:shadow-sm"
+                  className="rounded-sm border bg-card/80 p-4 transition-all duration-150 hover:bg-card hover:shadow-sm"
                   key={item.label}
                 >
                   <div className="flex items-center gap-2">
                     <div
-                      className={`flex size-6 items-center justify-center rounded-md ${item.iconBg} ${item.iconColor}`}
+                      className={`flex size-6 items-center justify-center rounded-sm shadow-sm ${item.iconBg} ${item.iconColor}`}
                     >
                       <item.icon size={12} />
                     </div>

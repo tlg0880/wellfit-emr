@@ -305,12 +305,16 @@
           "end": 614
         },
         {
+          "start": 618,
+          "end": 618
+        },
+        {
           "start": 621,
           "end": 630
         }
       ],
       "importsChanged": false,
-      "lastEdit": "2026-05-12T23:12:22.997Z"
+      "lastEdit": "2026-05-12T23:12:47.226Z"
     },
     "src/components/data-table.tsx": {
       "modifiedRanges": [
@@ -851,6 +855,6 @@
   },
   "turnCycles": 0,
   "maxCycles": 3,
-  "lastUpdated": "2026-05-12T23:12:22.997Z",
+  "lastUpdated": "2026-05-12T23:12:47.226Z",
   "sessionId": "lens-mp32rgkz-3e9ca4af"
 }
