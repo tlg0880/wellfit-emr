@@ -541,11 +541,11 @@ function DashboardPage() {
           <CardContent className="space-y-2">
             {quickAccess.map((item) => (
               <Link
-                className="group flex items-center gap-3.5 rounded-lg border p-3.5 transition-all duration-200 hover:-translate-y-px hover:border-primary/20 hover:bg-primary/5 hover:shadow-md"
+                className="group flex items-center gap-3.5 rounded-sm border p-3.5 transition-all duration-200 hover:-translate-y-px hover:border-primary/20 hover:bg-primary/5 hover:shadow-md"
                 key={item.to}
                 to={item.to}
               >
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary shadow-sm">
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-sm bg-primary/10 text-primary shadow-sm">
                   <item.icon size={16} />
                 </div>
                 <div className="min-w-0 flex-1">

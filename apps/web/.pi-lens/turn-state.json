@@ -277,6 +277,10 @@
           "end": 542
         },
         {
+          "start": 544,
+          "end": 544
+        },
+        {
           "start": 548,
           "end": 548
         },
@@ -318,7 +322,7 @@
         }
       ],
       "importsChanged": false,
-      "lastEdit": "2026-05-12T23:13:08.301Z"
+      "lastEdit": "2026-05-12T23:13:30.950Z"
     },
     "src/components/data-table.tsx": {
       "modifiedRanges": [
@@ -859,6 +863,6 @@
   },
   "turnCycles": 0,
   "maxCycles": 3,
-  "lastUpdated": "2026-05-12T23:13:08.301Z",
+  "lastUpdated": "2026-05-12T23:13:30.950Z",
   "sessionId": "lens-mp32rgkz-3e9ca4af"
 }
