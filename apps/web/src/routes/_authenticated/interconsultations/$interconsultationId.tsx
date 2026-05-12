@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from "@wellfit-emr/ui/components/card";
 import { Skeleton } from "@wellfit-emr/ui/components/skeleton";
-import { AlertTriangle, RefreshCw, Trash2 } from "lucide-react";
+import { AlertTriangle, MessageCircle, RefreshCw, Trash2 } from "lucide-react";
 import { useEffect } from "react";
 import { toast } from "sonner";
 
@@ -127,6 +127,8 @@ function InterconsultationDetailPage() {
         }
         backTo="/interconsultations"
         description="Información de la interconsulta"
+        icon={MessageCircle}
+        iconBgClass="bg-violet-100 text-violet-600"
         title={title}
       />
 
