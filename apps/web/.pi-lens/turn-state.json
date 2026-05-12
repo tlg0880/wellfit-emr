@@ -66,7 +66,7 @@
         },
         {
           "start": 196,
-          "end": 197
+          "end": 198
         },
         {
           "start": 200,
@@ -77,12 +77,24 @@
           "end": 206
         },
         {
+          "start": 209,
+          "end": 209
+        },
+        {
           "start": 211,
           "end": 211
         },
         {
           "start": 213,
           "end": 216
+        },
+        {
+          "start": 222,
+          "end": 222
+        },
+        {
+          "start": 224,
+          "end": 224
         },
         {
           "start": 240,
@@ -298,7 +310,7 @@
         }
       ],
       "importsChanged": false,
-      "lastEdit": "2026-05-12T21:02:00.826Z"
+      "lastEdit": "2026-05-12T23:12:22.997Z"
     },
     "src/components/data-table.tsx": {
       "modifiedRanges": [
@@ -839,6 +851,6 @@
   },
   "turnCycles": 0,
   "maxCycles": 3,
-  "lastUpdated": "2026-05-12T23:11:12.638Z",
+  "lastUpdated": "2026-05-12T23:12:22.997Z",
   "sessionId": "lens-mp32rgkz-3e9ca4af"
 }
