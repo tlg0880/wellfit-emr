@@ -190,7 +190,7 @@ export function Sidebar() {
           <div key={group.label}>
             {!collapsed && (
               <div className="mb-2 px-4">
-                <span className="inline-block rounded-sm border border-sidebar-border/60 bg-sidebar-accent/40 px-2 py-0.5 font-bold text-[10px] text-sidebar-foreground/50 uppercase tracking-widest">
+                <span className="inline-block rounded-sm border border-sidebar-border/60 bg-sidebar-accent/40 px-2 py-0.5 font-bold text-[10px] text-sidebar-foreground/60 uppercase tracking-widest">
                   {group.label}
                 </span>
               </div>
