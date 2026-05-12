@@ -1083,9 +1083,9 @@ function AppointmentsPage() {
                           );
                         })}
                         {dayAppointments.length > 3 && (
-                          <p className="px-1.5 text-[10px] text-muted-foreground">
+                          <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground shadow-sm">
                             +{dayAppointments.length - 3} más
-                          </p>
+                          </span>
                         )}
                       </div>
                     </button>
@@ -1234,13 +1234,17 @@ function AppointmentsPage() {
                       selectedAppointment.status}
                   </span>
                 </div>
-                <div className="border p-3 text-sm">
-                  <p className="font-medium text-xs">Motivo</p>
+                <div className="rounded-sm border bg-card p-3 text-sm shadow-sm">
+                  <p className="font-medium text-muted-foreground text-xs">
+                    Motivo
+                  </p>
                   <p className="mt-1">{selectedAppointment.reason}</p>
                 </div>
                 {selectedAppointment.notes && (
-                  <div className="border p-3 text-sm">
-                    <p className="font-medium text-xs">Notas</p>
+                  <div className="rounded-sm border bg-card p-3 text-sm shadow-sm">
+                    <p className="font-medium text-muted-foreground text-xs">
+                      Notas
+                    </p>
                     <p className="mt-1 text-muted-foreground">
                       {selectedAppointment.notes}
                     </p>
