@@ -207,7 +207,7 @@ export function Sidebar() {
                         collapsed && "justify-center px-2",
                         isActive
                           ? "bg-sidebar-primary/20 font-medium text-sidebar-primary shadow-md"
-                          : "text-sidebar-foreground/70 hover:bg-primary/5 hover:text-sidebar-primary hover:shadow-sm"
+                          : "text-sidebar-foreground/70 hover:bg-primary/10 hover:text-sidebar-primary hover:shadow-sm"
                       )}
                       to={item.to}
                     >
