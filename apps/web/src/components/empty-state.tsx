@@ -25,7 +25,7 @@ export function EmptyState({
       )}
     >
       <div className="mb-3 inline-flex size-14 items-center justify-center rounded-sm bg-primary/10 text-primary shadow-md">
-        <FolderOpen size={24} />
+        <FolderOpen size={28} />
       </div>
       <p className="font-semibold text-foreground/90 text-sm">{title}</p>
       <p className="mt-1.5 max-w-xs text-muted-foreground text-xs leading-relaxed">
