@@ -1117,6 +1117,8 @@ function ConsentsListPage() {
     <div className="space-y-4">
       <PageHeader
         description="Consentimientos informados y autorizaciones"
+        icon={ShieldCheck}
+        iconBgClass="bg-teal-50 text-teal-600"
         title="Consentimientos"
       />
 

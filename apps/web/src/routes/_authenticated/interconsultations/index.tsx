@@ -23,7 +23,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@wellfit-emr/ui/components/select";
-import { Eye, FilterX, Mail, Plus, Search, Trash2 } from "lucide-react";
+import {
+  Eye,
+  FilterX,
+  Mail,
+  MessageSquare,
+  Plus,
+  Search,
+  Trash2,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -488,6 +496,8 @@ function InterconsultationsListPage() {
           </Button>
         }
         description="Solicitudes de interconsulta y remisión entre especialidades"
+        icon={MessageSquare}
+        iconBgClass="bg-teal-50 text-teal-600"
         title="Interconsultas"
       />
 

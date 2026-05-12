@@ -22,6 +22,7 @@ import {
   ChevronDown,
   ChevronUp,
   Clock,
+  Copy,
   Eye,
   FilterX,
   Pencil,
@@ -723,6 +724,8 @@ function PatientRequestsPage() {
           </Button>
         }
         description="Solicitudes de copia de historia clínica del paciente"
+        icon={Copy}
+        iconBgClass="bg-sky-50 text-sky-600"
         title="Solicitudes del paciente"
       />
 

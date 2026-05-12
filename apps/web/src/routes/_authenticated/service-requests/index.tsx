@@ -869,6 +869,8 @@ function ServiceRequestsListPage() {
           </Button>
         }
         description="Órdenes de laboratorio, imagenología y procedimientos"
+        icon={FlaskConical}
+        iconBgClass="bg-teal-50 text-teal-600"
         title="Órdenes de servicio"
       />
 

@@ -673,10 +673,82 @@
       ],
       "importsChanged": false,
       "lastEdit": "2026-05-12T20:53:30.735Z"
+    },
+    "src/routes/_authenticated/consents/index.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 1120,
+          "end": 1121
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-12T20:59:10.103Z"
+    },
+    "src/routes/_authenticated/medication-orders/index.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 1250,
+          "end": 1251
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-12T20:59:15.419Z"
+    },
+    "src/routes/_authenticated/service-requests/index.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 872,
+          "end": 873
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-12T20:59:19.332Z"
+    },
+    "src/routes/_authenticated/interconsultations/index.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 26,
+          "end": 26
+        },
+        {
+          "start": 491,
+          "end": 492
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-12T20:59:30.924Z"
+    },
+    "src/routes/_authenticated/regulatory-tasks/index.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 18,
+          "end": 18
+        },
+        {
+          "start": 374,
+          "end": 375
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-12T20:59:41.742Z"
+    },
+    "src/routes/_authenticated/patient-requests/index.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 25,
+          "end": 25
+        },
+        {
+          "start": 727,
+          "end": 728
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-12T21:00:01.405Z"
     }
   },
   "turnCycles": 0,
   "maxCycles": 3,
-  "lastUpdated": "2026-05-12T20:57:18.371Z",
+  "lastUpdated": "2026-05-12T21:00:01.405Z",
   "sessionId": "lens-mp32rgkz-3e9ca4af"
 }

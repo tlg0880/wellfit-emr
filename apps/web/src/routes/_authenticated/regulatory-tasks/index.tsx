@@ -15,6 +15,7 @@ import {
   FileOutput,
   FileText,
   FlaskConical,
+  Gavel,
   Mail,
   PenLine,
   Plus,
@@ -370,6 +371,8 @@ function RegulatoryTasksPage() {
     <div className="space-y-6 p-6">
       <PageHeader
         description="Panel operativo de pendientes de cumplimiento"
+        icon={Gavel}
+        iconBgClass="bg-amber-50 text-amber-600"
         title="Tareas regulatorias"
       />
 

@@ -68,6 +68,9 @@ _Ninguno. Todos los routers planificados están implementados._
 
 ### Cambios recientes (2026-05-12)
 
+- **Iteración 11 — Iconos en encabezados de página (completo)**: Undécima ronda de refinamiento visual que aplica el patrón de icono en PageHeader a todas las vistas principales.
+  - **Vistas con icono añadido**: Consentimientos (`ShieldCheck`), Prescripciones (`Pill`), Órdenes de servicio (`FlaskConical`), Interconsultas (`MessageSquare`), Tareas regulatorias (`Gavel` en `bg-amber-50`), Solicitudes del paciente (`Copy` en `bg-sky-50`).
+  - **Consistencia**: Cada vista principal ahora tiene una identidad visual distintiva con un icono que coincide con el de la sidebar, creando coherencia de navegación entre sidebar y encabezado.
 - **Iteración 10 — Iconos en encabezados de página**: Décima ronda de refinamiento visual enfocada en identidad visual de cada vista.
   - **PageHeader con icono**: El componente `PageHeader` ahora acepta props `icon` (componente Lucide) e `iconBgClass`. Cuando se proporciona, renderiza un círculo de fondo coloreado (`size-9 rounded-md shadow-sm`) con el icono centrado a la izquierda del título, creando una identidad visual distintiva por página.
   - **Pacientes**: Icono `Users` con fondo `bg-teal-50 text-teal-600`.

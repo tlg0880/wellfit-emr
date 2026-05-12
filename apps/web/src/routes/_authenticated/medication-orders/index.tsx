@@ -1247,6 +1247,8 @@ function MedicationOrdersListPage() {
           </Button>
         }
         description="Órdenes de medicamentos con denominación común internacional"
+        icon={Pill}
+        iconBgClass="bg-teal-50 text-teal-600"
         title="Prescripciones"
       />
 
