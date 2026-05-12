@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@wellfit-emr/ui/components/select";
-import { Eye, FilterX, Pencil, Plus, Trash2, X } from "lucide-react";
+import { Archive, Eye, FilterX, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -315,6 +315,8 @@ function RetentionRecordsPage() {
           </Button>
         }
         description="Control de retención y disposición documental"
+        icon={Archive}
+        iconBgClass="bg-slate-100 text-slate-600"
         title="Retención documental"
       />
 
