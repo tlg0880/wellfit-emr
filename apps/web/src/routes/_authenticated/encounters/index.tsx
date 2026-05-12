@@ -953,7 +953,7 @@ function EncountersPage() {
       )}
 
       <div className="px-6">
-        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-md border bg-card px-3 py-2.5 shadow-sm">
+        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-md border bg-card px-3 py-2.5 shadow-md">
           <div className="inline-flex items-center rounded-sm border bg-background p-0.5">
             {STATUS_OPTIONS.map((opt) => (
               <button
