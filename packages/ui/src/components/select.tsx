@@ -21,7 +21,7 @@ function SelectTrigger({
   return (
     <SelectPrimitive.Trigger
       className={cn(
-        "group inline-flex h-8 w-full items-center justify-between gap-2 rounded-none border border-input bg-transparent px-2.5 text-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-1 aria-invalid:ring-destructive/20 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+        "group inline-flex h-8 w-full items-center justify-between gap-2 rounded-sm border border-input bg-transparent px-2.5 text-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-1 aria-invalid:ring-destructive/20 [&_svg]:pointer-events-none [&_svg]:shrink-0",
         className
       )}
       data-slot="select-trigger"
@@ -77,7 +77,7 @@ function SelectContent({
       >
         <SelectPrimitive.Popup
           className={cn(
-            "data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:fade-in-0 data-open:zoom-in-95 data-closed:fade-out-0 data-closed:zoom-out-95 z-50 max-h-60 w-[--anchor-width] min-w-[--anchor-width] overflow-y-auto overflow-x-hidden rounded-none border border-input bg-popover text-popover-foreground shadow-md outline-none ring-1 ring-foreground/10 data-closed:animate-out data-open:animate-in data-closed:duration-100 data-open:duration-100",
+            "data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:fade-in-0 data-open:zoom-in-95 data-closed:fade-out-0 data-closed:zoom-out-95 z-50 max-h-60 w-[--anchor-width] min-w-[--anchor-width] overflow-y-auto overflow-x-hidden rounded-md border border-input bg-popover text-popover-foreground shadow-lg outline-none data-closed:animate-out data-open:animate-in data-closed:duration-100 data-open:duration-100",
             className
           )}
           data-slot="select-content"

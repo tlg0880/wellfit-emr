@@ -68,6 +68,11 @@ _Ninguno. Todos los routers planificados están implementados._
 
 ### Cambios recientes (2026-05-12)
 
+- **Iteración 3 — Sombras, profundidad y estados vacíos mejorados**: Tercera ronda de refinamiento visual enfocada en elevación, bordes redondeados y estados de carga/vacío.
+  - **Componente Card global mejorado**: Reemplazado `ring-1 ring-foreground/10` por `rounded-md border border-border/60 shadow-sm` en `packages/ui/src/components/card.tsx`. Las tarjetas ahora tienen bordes redondeados sutiles, sombra suave y borde semitransparente. En dark mode la sombra se desactiva para mantener coherencia.
+  - **List items del dashboard mejorados**: Los iconos de atenciones/pacientes ahora usan contenedores `size-10 rounded-md` con `shadow-sm` en lugar de `size-9` planos. Mayor presencia visual y mejor jerarquía. Padding aumentado a `p-3.5` y bordes redondeados `rounded-lg`.
+  - **Empty state rediseñado**: Ahora usa borde punteado (`border-dashed border-border/80`), fondo `bg-card/30`, contenedor de icono `size-14 rounded-xl`, y padding aumentado. Se integra visualmente como una tarjeta vacía en lugar de texto flotante.
+  - **Paginación de DataTable mejorada**: El contenedor de paginación ahora usa `rounded-lg border bg-card shadow-sm`. Los botones de navegación tienen hover states `hover:bg-primary/10 hover:text-primary` para feedback visual.
 - **Iteración 2 — Controles de acción y filtros profesionalizados**: Segunda ronda de mejoras visuales enfocada en botones de acción, filtros y controles de tabla.
   - **Botones de acción en tablas**: Los iconos de Ver/Editar/Eliminar en `/patients` y `/encounters` ahora usan hover states de color temático: teal para "Ver", ámbar para "Editar", rojo para "Eliminar`. Esto da feedback visual inmediato sobre la acción que cada botón realiza.
   - **CTAs mejorados**: Los botones "Nuevo paciente" y "Nueva atención" ahora usan `gap-1.5 shadow-sm` para darles más presencia visual.

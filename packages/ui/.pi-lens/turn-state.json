@@ -1,0 +1,50 @@
+{
+  "files": {
+    "src/components/button.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 6,
+          "end": 6
+        },
+        {
+          "start": 24,
+          "end": 25
+        },
+        {
+          "start": 28,
+          "end": 30
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-12T20:43:50.745Z"
+    },
+    "src/components/input.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 9,
+          "end": 9
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-12T20:43:57.271Z"
+    },
+    "src/components/select.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 24,
+          "end": 24
+        },
+        {
+          "start": 80,
+          "end": 80
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-12T20:44:03.341Z"
+    }
+  },
+  "turnCycles": 0,
+  "maxCycles": 3,
+  "lastUpdated": "2026-05-12T20:44:03.341Z",
+  "sessionId": "lens-mp32rgkz-3e9ca4af"
+}
