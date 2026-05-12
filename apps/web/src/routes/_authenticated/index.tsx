@@ -476,9 +476,9 @@ function DashboardPage() {
                 {stat.label}
               </CardTitle>
               <div
-                className={`flex size-8 items-center justify-center rounded-sm shadow-md ${stat.iconBg} ${stat.color}`}
+                className={`flex size-9 items-center justify-center rounded-sm shadow-md ${stat.iconBg} ${stat.color}`}
               >
-                <stat.icon size={16} />
+                <stat.icon size={18} />
               </div>
             </CardHeader>
             <CardContent>
