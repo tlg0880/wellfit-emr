@@ -804,7 +804,17 @@ function PatientsListPage() {
             value={sortBy}
           >
             <SelectTrigger className="h-8 w-36 bg-background text-xs">
-              <SelectValue />
+              <SelectValue>
+                {sortBy === "createdAt"
+                  ? "Creación"
+                  : sortBy === "firstName"
+                    ? "Nombre"
+                    : sortBy === "lastName1"
+                      ? "Apellido"
+                      : sortBy === "birthDate"
+                        ? "Nacimiento"
+                        : sortBy}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="createdAt">Creación</SelectItem>
