@@ -639,6 +639,10 @@
           "end": 204
         },
         {
+          "start": 206,
+          "end": 206
+        },
+        {
           "start": 212,
           "end": 214
         },
@@ -649,10 +653,14 @@
         {
           "start": 227,
           "end": 227
+        },
+        {
+          "start": 252,
+          "end": 252
         }
       ],
       "importsChanged": false,
-      "lastEdit": "2026-05-12T21:03:14.914Z"
+      "lastEdit": "2026-05-12T21:08:28.628Z"
     },
     "src/routes/_authenticated/clinical-documents/index.tsx": {
       "modifiedRanges": [
@@ -815,6 +823,6 @@
   },
   "turnCycles": 0,
   "maxCycles": 3,
-  "lastUpdated": "2026-05-12T21:07:28.368Z",
+  "lastUpdated": "2026-05-12T21:08:28.628Z",
   "sessionId": "lens-mp32rgkz-3e9ca4af"
 }

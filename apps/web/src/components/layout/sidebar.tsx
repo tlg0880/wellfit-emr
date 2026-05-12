@@ -190,7 +190,7 @@ export function Sidebar() {
           <div key={group.label}>
             {!collapsed && (
               <div className="mb-2 px-4">
-                <span className="inline-block rounded-md bg-sidebar-accent/40 px-2 py-0.5 font-bold text-[10px] text-sidebar-foreground/50 uppercase tracking-widest">
+                <span className="inline-block rounded-sm bg-sidebar-accent/40 px-2 py-0.5 font-bold text-[10px] text-sidebar-foreground/50 uppercase tracking-widest">
                   {group.label}
                 </span>
               </div>
@@ -203,7 +203,7 @@ export function Sidebar() {
                   <li key={item.to}>
                     <Link
                       className={cn(
-                        "group relative flex items-center gap-3 rounded-md px-3 py-2 text-[13px] transition-all duration-150",
+                        "group relative flex items-center gap-3 rounded-sm px-3 py-2 text-[13px] transition-all duration-150",
                         collapsed && "justify-center px-2",
                         isActive
                           ? "bg-sidebar-primary/10 font-medium text-sidebar-primary shadow-sm"
@@ -249,7 +249,7 @@ export function Sidebar() {
           </div>
         )}
         {collapsed && (
-          <div className="mx-auto size-2 bg-sidebar-foreground/20" />
+          <div className="mx-auto size-2 rounded-full bg-sidebar-foreground/20" />
         )}
       </div>
     </aside>

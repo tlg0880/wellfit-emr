@@ -68,6 +68,10 @@ _Ninguno. Todos los routers planificados están implementados._
 
 ### Cambios recientes (2026-05-12)
 
+- **Iteración 17 — Consistencia de redondeo en sidebar**: Decimoséptima ronda de refinamiento visual enfocada en la navegación.
+  - **Items de navegación**: Cambiado `rounded-md` a `rounded-sm` en los links de navegación del sidebar.
+  - **Pills de grupo**: Cambiado `rounded-md` a `rounded-sm` en las etiquetas de grupo (PRINCIPAL, CLÍNICO, etc.).
+  - **Footer colapsado**: Añadido `rounded-full` al indicador del footer en modo colapsado.
 - **Iteración 16 — Consistencia de redondeo en PageHeader**: Decimosexta ronda de refinamiento visual enfocada en micro-consistencia.
   - **PageHeader redondeo unificado**: El contenedor del icono, el botón de retroceso y el badge de atajo de teclado (`⌘K`) en `PageHeader` cambiaron de `rounded-md` a `rounded-sm`, alineándose con el lenguaje de diseño redondeado del resto de la aplicación.
 - **Iteración 15 — Refinamiento de login y formularios de autenticación**: Decimoquinta ronda de refinamiento visual enfocada en la página de entrada.
