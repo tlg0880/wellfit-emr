@@ -39,7 +39,7 @@ export function PageHeader({
         <div className="flex items-center gap-3">
           {backTo && (
             <Link
-              className="inline-flex size-8 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
+              className="inline-flex size-8 items-center justify-center rounded-sm text-muted-foreground shadow-sm transition-colors hover:bg-primary/10 hover:text-primary"
               to={backTo}
             >
               <ChevronLeft size={18} />
