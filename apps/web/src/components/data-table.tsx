@@ -87,10 +87,10 @@ export function DataTable<T>({
                   <tr className="bg-background" key={rowKey}>
                     {columns.map((_, columnIndex) => (
                       <td
-                        className="px-4 py-3"
+                        className="px-4 py-4"
                         key={`${rowKey}-${columnKeys[columnIndex]}`}
                       >
-                        <Skeleton className="h-4 w-24" />
+                        <Skeleton className="h-3.5 w-full max-w-[8rem]" />
                       </td>
                     ))}
                   </tr>
@@ -139,7 +139,7 @@ export function DataTable<T>({
       </div>
 
       {pagination && totalPages > 1 && (
-        <div className="flex items-center justify-between px-1">
+        <div className="flex items-center justify-between rounded-lg border bg-card px-3 py-2 shadow-sm">
           <span className="text-muted-foreground text-xs">
             Mostrando {pagination.offset + 1} -{" "}
             {Math.min(pagination.offset + pagination.limit, pagination.total)}{" "}
@@ -148,6 +148,7 @@ export function DataTable<T>({
           <div className="flex items-center gap-1">
             <Button
               aria-label="Primera página"
+              className="hover:bg-primary/10 hover:text-primary"
               disabled={currentPage <= 1}
               onClick={() => pagination.onPageChange(0)}
               size="icon-xs"
@@ -157,6 +158,7 @@ export function DataTable<T>({
             </Button>
             <Button
               aria-label="Página anterior"
+              className="hover:bg-primary/10 hover:text-primary"
               disabled={currentPage <= 1}
               onClick={() =>
                 pagination.onPageChange(pagination.offset - pagination.limit)
@@ -166,11 +168,12 @@ export function DataTable<T>({
             >
               <ChevronLeft size={14} />
             </Button>
-            <span className="px-2 text-xs">
+            <span className="px-2 font-medium text-xs tabular-nums">
               {currentPage} / {totalPages}
             </span>
             <Button
               aria-label="Página siguiente"
+              className="hover:bg-primary/10 hover:text-primary"
               disabled={currentPage >= totalPages}
               onClick={() =>
                 pagination.onPageChange(pagination.offset + pagination.limit)
@@ -182,6 +185,7 @@ export function DataTable<T>({
             </Button>
             <Button
               aria-label="Última página"
+              className="hover:bg-primary/10 hover:text-primary"
               disabled={currentPage >= totalPages}
               onClick={() =>
                 pagination.onPageChange((totalPages - 1) * pagination.limit)

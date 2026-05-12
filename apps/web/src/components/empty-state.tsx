@@ -20,19 +20,19 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center py-12 text-center",
+        "flex flex-col items-center justify-center rounded-lg border border-border/80 border-dashed bg-card/30 py-14 text-center",
         className
       )}
     >
-      <div className="mb-3 inline-flex size-12 items-center justify-center bg-primary/10 text-primary">
-        <FolderOpen size={22} />
+      <div className="mb-3 inline-flex size-14 items-center justify-center rounded-xl bg-primary/10 text-primary shadow-sm">
+        <FolderOpen size={24} />
       </div>
       <p className="font-semibold text-foreground/90 text-sm">{title}</p>
-      <p className="mt-1 max-w-xs text-muted-foreground text-xs leading-relaxed">
+      <p className="mt-1.5 max-w-xs text-muted-foreground text-xs leading-relaxed">
         {description}
       </p>
       {actionLabel && onAction && (
-        <Button className="mt-4" onClick={onAction} size="sm">
+        <Button className="mt-5 shadow-sm" onClick={onAction} size="sm">
           {actionLabel}
         </Button>
       )}

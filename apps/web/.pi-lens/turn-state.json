@@ -113,12 +113,24 @@
           "end": 298
         },
         {
+          "start": 305,
+          "end": 305
+        },
+        {
           "start": 308,
           "end": 308
         },
         {
           "start": 312,
-          "end": 312
+          "end": 313
+        },
+        {
+          "start": 316,
+          "end": 316
+        },
+        {
+          "start": 319,
+          "end": 319
         },
         {
           "start": 334,
@@ -147,6 +159,18 @@
         {
           "start": 358,
           "end": 358
+        },
+        {
+          "start": 364,
+          "end": 365
+        },
+        {
+          "start": 368,
+          "end": 368
+        },
+        {
+          "start": 371,
+          "end": 371
         },
         {
           "start": 432,
@@ -201,6 +225,18 @@
           "end": 527
         },
         {
+          "start": 537,
+          "end": 537
+        },
+        {
+          "start": 541,
+          "end": 542
+        },
+        {
+          "start": 548,
+          "end": 548
+        },
+        {
           "start": 556,
           "end": 557
         },
@@ -215,10 +251,22 @@
         {
           "start": 568,
           "end": 568
+        },
+        {
+          "start": 587,
+          "end": 587
+        },
+        {
+          "start": 593,
+          "end": 593
+        },
+        {
+          "start": 595,
+          "end": 595
         }
       ],
       "importsChanged": false,
-      "lastEdit": "2026-05-12T20:38:27.095Z"
+      "lastEdit": "2026-05-12T20:41:40.019Z"
     },
     "src/components/data-table.tsx": {
       "modifiedRanges": [
@@ -247,6 +295,10 @@
           "end": 90
         },
         {
+          "start": 93,
+          "end": 93
+        },
+        {
           "start": 98,
           "end": 98
         },
@@ -257,13 +309,45 @@
         {
           "start": 123,
           "end": 124
+        },
+        {
+          "start": 142,
+          "end": 142
+        },
+        {
+          "start": 151,
+          "end": 151
+        },
+        {
+          "start": 161,
+          "end": 161
+        },
+        {
+          "start": 169,
+          "end": 169
+        },
+        {
+          "start": 171,
+          "end": 171
+        },
+        {
+          "start": 176,
+          "end": 176
+        },
+        {
+          "start": 188,
+          "end": 188
         }
       ],
       "importsChanged": false,
-      "lastEdit": "2026-05-12T20:29:06.662Z"
+      "lastEdit": "2026-05-12T20:42:04.720Z"
     },
     "src/components/empty-state.tsx": {
       "modifiedRanges": [
+        {
+          "start": 23,
+          "end": 23
+        },
         {
           "start": 27,
           "end": 28
@@ -271,10 +355,14 @@
         {
           "start": 30,
           "end": 31
+        },
+        {
+          "start": 35,
+          "end": 35
         }
       ],
       "importsChanged": false,
-      "lastEdit": "2026-05-12T20:29:16.434Z"
+      "lastEdit": "2026-05-12T20:42:15.437Z"
     },
     "src/components/page-header.tsx": {
       "modifiedRanges": [
@@ -471,6 +559,6 @@
   },
   "turnCycles": 0,
   "maxCycles": 3,
-  "lastUpdated": "2026-05-12T20:38:27.095Z",
+  "lastUpdated": "2026-05-12T20:42:15.437Z",
   "sessionId": "lens-mp32rgkz-3e9ca4af"
 }

@@ -302,21 +302,21 @@ function DashboardPage() {
   } else if (encountersData && encountersData.encounters.length > 0) {
     encountersContent = encountersData.encounters.map((enc) => (
       <Link
-        className="group flex items-center justify-between rounded-md border p-3 transition-all duration-150 hover:border-primary/20 hover:bg-primary/5 hover:shadow-sm"
+        className="group flex items-center justify-between rounded-lg border p-3.5 transition-all duration-150 hover:border-primary/20 hover:bg-primary/5 hover:shadow-sm"
         key={enc.id}
         params={{ encounterId: enc.id }}
         search={{ tab: undefined }}
         to="/encounters/$encounterId"
       >
         <div className="flex items-center gap-3">
-          <div className="flex size-9 items-center justify-center bg-teal-50 text-teal-600 dark:bg-teal-950 dark:text-teal-400">
-            <HeartPulse size={15} />
+          <div className="flex size-10 items-center justify-center rounded-md bg-teal-50 text-teal-600 shadow-sm dark:bg-teal-950 dark:text-teal-400">
+            <HeartPulse size={16} />
           </div>
           <div>
-            <p className="font-medium text-foreground/90 text-sm">
+            <p className="font-medium text-foreground/90 text-sm leading-snug">
               {enc.reasonForVisit}
             </p>
-            <p className="text-muted-foreground text-xs">
+            <p className="mt-0.5 text-muted-foreground text-xs">
               <Clock className="mr-1 inline" size={10} />
               {new Date(enc.startedAt).toLocaleDateString("es-CO", {
                 day: "2-digit",
@@ -355,20 +355,20 @@ function DashboardPage() {
   } else if (patientsData && patientsData.patients.length > 0) {
     patientsContent = patientsData.patients.map((pat) => (
       <Link
-        className="group flex items-center justify-between rounded-md border p-3 transition-all duration-150 hover:border-primary/20 hover:bg-primary/5 hover:shadow-sm"
+        className="group flex items-center justify-between rounded-lg border p-3.5 transition-all duration-150 hover:border-primary/20 hover:bg-primary/5 hover:shadow-sm"
         key={pat.id}
         params={{ patientId: pat.id }}
         to="/patients/$patientId"
       >
         <div className="flex items-center gap-3">
-          <div className="flex size-9 items-center justify-center bg-sky-50 text-sky-600 dark:bg-sky-950 dark:text-sky-400">
-            <Users size={15} />
+          <div className="flex size-10 items-center justify-center rounded-md bg-sky-50 text-sky-600 shadow-sm dark:bg-sky-950 dark:text-sky-400">
+            <Users size={16} />
           </div>
           <div>
-            <p className="font-medium text-foreground/90 text-sm">
+            <p className="font-medium text-foreground/90 text-sm leading-snug">
               {pat.firstName} {pat.lastName1}
             </p>
-            <p className="text-muted-foreground text-xs">
+            <p className="mt-0.5 text-muted-foreground text-xs">
               {pat.primaryDocumentType} {pat.primaryDocumentNumber} ·{" "}
               {new Date(pat.birthDate).toLocaleDateString("es-CO")}
             </p>
@@ -534,18 +534,18 @@ function DashboardPage() {
           <CardContent className="space-y-2">
             {quickAccess.map((item) => (
               <Link
-                className="group flex items-center gap-3 rounded-md border p-3 transition-all duration-150 hover:border-primary/20 hover:bg-primary/5 hover:shadow-sm"
+                className="group flex items-center gap-3.5 rounded-lg border p-3.5 transition-all duration-150 hover:border-primary/20 hover:bg-primary/5 hover:shadow-sm"
                 key={item.to}
                 to={item.to}
               >
-                <div className="flex size-9 shrink-0 items-center justify-center bg-primary/10 text-primary">
-                  <item.icon size={15} />
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary shadow-sm">
+                  <item.icon size={16} />
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="font-medium text-foreground/90 text-sm">
                     {item.label}
                   </p>
-                  <p className="text-muted-foreground text-xs">
+                  <p className="mt-0.5 text-muted-foreground text-xs">
                     {item.description}
                   </p>
                 </div>
@@ -584,15 +584,15 @@ function DashboardPage() {
                 },
               ].map((item) => (
                 <div
-                  className="rounded-md border bg-card/50 p-4 transition-colors hover:bg-card"
+                  className="rounded-lg border bg-card/80 p-4 transition-all duration-150 hover:bg-card hover:shadow-sm"
                   key={item.label}
                 >
                   <p className="font-semibold text-[10px] text-muted-foreground uppercase tracking-wider">
                     {item.label}
                   </p>
-                  <div className="mt-2 flex items-center gap-2">
+                  <div className="mt-2.5 flex items-center gap-2">
                     <span
-                      className={`size-2.5 ${getStatusDotClass(item.pending, item.ok)}`}
+                      className={`size-2.5 rounded-full ${getStatusDotClass(item.pending, item.ok)}`}
                     />
                     <span className="font-medium text-foreground/90 text-sm">
                       {item.status}
