@@ -68,6 +68,10 @@ _Ninguno. Todos los routers planificados están implementados._
 
 ### Cambios recientes (2026-05-12)
 
+- **Iteración 6 — Toolbars unificadas y efectos hover elevados**: Sexta ronda de refinamiento visual enfocada en la organización de controles de tabla y micro-interacciones.
+  - **Toolbar unificada para pacientes**: Todos los controles de tabla (búsqueda, ordenamiento, dirección) ahora se agrupan en un único contenedor `rounded-lg border bg-card shadow-sm px-3 py-2.5`. Los controles internos usan `bg-background` para crear jerarquía visual dentro del toolbar.
+  - **Toolbar unificada para atenciones**: Similar al de pacientes, los filtros de estado (segmented control), selector de sede, botón de limpiar y búsqueda ahora viven dentro de una sola tarjeta toolbar unificada. Esto elimina la dispersión visual de controles flotantes.
+  - **Efectos hover en dashboard**: Las tarjetas de estadísticas ahora tienen `hover:-translate-y-px hover:shadow-md` con transición suave. Los items de "Accesos rápidos" también tienen efecto hover elevado (`hover:-translate-y-px hover:shadow-md`) para dar feedback táctil al usuario.
 - **Iteración 5 — Indicadores de navegación, topbar y skeletons refinados**: Quinta ronda de refinamiento visual enfocada en detalles de navegación, elevación y estados de carga.
   - **Sidebar active indicator mejorado**: Reemplazado el indicador de estado activo cuadrado (`h-1.5 w-1.5`) por un dot redondeado (`rounded-full`). Agregada una barra de acento izquierda (`w-0.5 h-5 bg-sidebar-primary`) que aparece al lado del ícono cuando el ítem está activo, creando una señal de navegación más profesional y legible.
   - **Topbar elevado**: Agregado `shadow-sm` y `backdrop-blur-md` al topbar. El fondo cambió de `bg-card/50` a `bg-card/80` para mayor opacidad y mejor separación visual del contenido. El borde ahora usa `border-border/60`.

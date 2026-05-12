@@ -201,6 +201,10 @@
           "end": 451
         },
         {
+          "start": 457,
+          "end": 457
+        },
+        {
           "start": 509,
           "end": 509
         },
@@ -266,7 +270,7 @@
         }
       ],
       "importsChanged": false,
-      "lastEdit": "2026-05-12T20:41:40.019Z"
+      "lastEdit": "2026-05-12T20:48:56.163Z"
     },
     "src/components/data-table.tsx": {
       "modifiedRanges": [
@@ -491,6 +495,10 @@
           "end": 933
         },
         {
+          "start": 944,
+          "end": 945
+        },
+        {
           "start": 951,
           "end": 972
         },
@@ -508,7 +516,7 @@
         }
       ],
       "importsChanged": true,
-      "lastEdit": "2026-05-12T20:38:06.505Z"
+      "lastEdit": "2026-05-12T20:48:42.052Z"
     },
     "src/routes/_authenticated/patients/index.tsx": {
       "modifiedRanges": [
@@ -558,7 +566,7 @@
         }
       ],
       "importsChanged": false,
-      "lastEdit": "2026-05-12T20:37:04.995Z"
+      "lastEdit": "2026-05-12T20:48:20.853Z"
     },
     "src/components/layout/sidebar.tsx": {
       "modifiedRanges": [
@@ -585,6 +593,6 @@
   },
   "turnCycles": 0,
   "maxCycles": 3,
-  "lastUpdated": "2026-05-12T20:46:06.794Z",
+  "lastUpdated": "2026-05-12T20:48:56.163Z",
   "sessionId": "lens-mp32rgkz-3e9ca4af"
 }

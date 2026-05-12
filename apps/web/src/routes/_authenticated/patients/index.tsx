@@ -767,8 +767,8 @@ function PatientsListPage() {
       )}
 
       <div className="px-6">
-        <div className="mb-4 flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-2 rounded-md border bg-card px-2.5 py-1.5">
+        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border bg-card px-3 py-2.5 shadow-sm">
+          <div className="flex items-center gap-2 rounded-md border bg-background px-2.5 py-1.5">
             <Search className="text-muted-foreground" size={14} />
             <Input
               className="h-6 max-w-xs border-0 bg-transparent p-0 text-xs focus-visible:ring-0"
@@ -801,7 +801,7 @@ function PatientsListPage() {
             }}
             value={sortBy}
           >
-            <SelectTrigger className="h-8 w-36 bg-card text-xs">
+            <SelectTrigger className="h-8 w-36 bg-background text-xs">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

@@ -454,7 +454,7 @@ function DashboardPage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
           <Card
-            className="overflow-hidden border-l-4 border-l-primary/30"
+            className="overflow-hidden border-l-4 border-l-primary/30 transition-all duration-200 hover:-translate-y-px hover:shadow-md"
             key={stat.label}
             size="sm"
           >
@@ -534,7 +534,7 @@ function DashboardPage() {
           <CardContent className="space-y-2">
             {quickAccess.map((item) => (
               <Link
-                className="group flex items-center gap-3.5 rounded-lg border p-3.5 transition-all duration-150 hover:border-primary/20 hover:bg-primary/5 hover:shadow-sm"
+                className="group flex items-center gap-3.5 rounded-lg border p-3.5 transition-all duration-200 hover:-translate-y-px hover:border-primary/20 hover:bg-primary/5 hover:shadow-md"
                 key={item.to}
                 to={item.to}
               >
