@@ -977,7 +977,7 @@ function AppointmentsPage() {
             <div className="hidden items-center gap-3 text-xs sm:flex">
               {Object.entries(statusConfig).map(([key, cfg]) => (
                 <div className="flex items-center gap-1.5" key={key}>
-                  <Circle className={cfg.color} fill="currentColor" size={8} />
+                  <Circle className={cfg.color} fill="currentColor" size={10} />
                   <span>{cfg.label}</span>
                 </div>
               ))}
@@ -988,7 +988,7 @@ function AppointmentsPage() {
           <div className="grid grid-cols-7">
             {WEEK_DAYS.map((day) => (
               <div
-                className="border-r border-b py-2 text-center font-medium text-muted-foreground text-xs uppercase tracking-wider last:border-r-0"
+                className="border-r border-b bg-muted/30 py-2 text-center font-medium text-muted-foreground text-xs uppercase tracking-wider shadow-sm last:border-r-0"
                 key={day}
               >
                 {day}
@@ -997,7 +997,7 @@ function AppointmentsPage() {
             {isLoading
               ? Array.from({ length: 35 }).map((_, i) => (
                   <div
-                    className="min-h-28 border-r border-b p-1.5 last:border-r-0"
+                    className="min-h-28 border-r border-b bg-background p-1.5 shadow-sm last:border-r-0"
                     key={`sk-${i}`}
                   >
                     <div className="mb-2 h-4 w-6 bg-muted" />
@@ -1024,7 +1024,7 @@ function AppointmentsPage() {
 
                   return (
                     <button
-                      className={`min-h-28 cursor-pointer border-r border-b p-1.5 text-left transition-colors last:border-r-0 ${
+                      className={`min-h-28 cursor-pointer border-r border-b p-1.5 text-left shadow-sm transition-all duration-150 last:border-r-0 hover:shadow-md ${
                         isCurrentMonth ? "bg-background" : "bg-muted/30"
                       } ${isToday ? "bg-blue-50/50 dark:bg-blue-950/20" : ""} hover:bg-muted/40`}
                       key={dateKey}
@@ -1048,7 +1048,7 @@ function AppointmentsPage() {
                           };
                           return (
                             <button
-                              className={`flex w-full items-center gap-1.5 rounded-sm px-1.5 py-0.5 text-left text-[10px] transition-opacity hover:opacity-80 ${
+                              className={`flex w-full items-center gap-1.5 rounded-sm px-1.5 py-0.5 text-left text-[10px] shadow-sm transition-all duration-150 hover:opacity-80 hover:shadow-md ${
                                 appt.status === "cancelled"
                                   ? "bg-muted line-through opacity-60"
                                   : "bg-slate-100 dark:bg-slate-800"
@@ -1061,7 +1061,7 @@ function AppointmentsPage() {
                               type="button"
                             >
                               <span
-                                className={`size-2 shrink-0 ${cfg.color}`}
+                                className={`size-2.5 shrink-0 rounded-full ${cfg.color}`}
                               />
                               <span className="truncate">
                                 {formatTime(new Date(appt.scheduledAt))}{" "}
