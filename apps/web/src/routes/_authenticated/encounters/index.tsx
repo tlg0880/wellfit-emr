@@ -845,7 +845,7 @@ function EncountersPage() {
           }`}
         >
           <span
-            className={`mr-1.5 size-1.5 rounded-full ${
+            className={`mr-1.5 size-2 rounded-full ${
               row.status === "in-progress"
                 ? "bg-amber-500"
                 : row.status === "finished"
