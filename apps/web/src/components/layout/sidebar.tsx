@@ -222,7 +222,7 @@ export function Sidebar() {
                             : "text-sidebar-foreground/50 group-hover:text-sidebar-foreground/80"
                         )}
                       >
-                        <item.icon size={17} />
+                        <item.icon size={18} />
                       </div>
                       {!collapsed && <span>{item.label}</span>}
                       {isActive && !collapsed && (
