@@ -739,7 +739,7 @@ function PatientsListPage() {
       <PageHeader
         actions={
           <Button
-            className="gap-1.5 shadow-sm"
+            className="gap-1.5 shadow-md"
             onClick={() => {
               if (showForm) {
                 handleCancelForm();
