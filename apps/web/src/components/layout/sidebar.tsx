@@ -206,13 +206,13 @@ export function Sidebar() {
                         "group relative flex items-center gap-3 rounded-sm px-3 py-2 text-[13px] transition-all duration-150",
                         collapsed && "justify-center px-2",
                         isActive
-                          ? "bg-sidebar-primary/10 font-medium text-sidebar-primary shadow-sm"
+                          ? "bg-sidebar-primary/15 font-medium text-sidebar-primary shadow-sm"
                           : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                       )}
                       to={item.to}
                     >
                       {isActive && (
-                        <span className="absolute top-1/2 left-0 h-5 w-0.5 -translate-y-1/2 bg-sidebar-primary" />
+                        <span className="absolute top-1/2 left-0 h-5 w-1 -translate-y-1/2 rounded-full bg-sidebar-primary" />
                       )}
                       <div
                         className={cn(
@@ -226,7 +226,7 @@ export function Sidebar() {
                       </div>
                       {!collapsed && <span>{item.label}</span>}
                       {isActive && !collapsed && (
-                        <div className="ml-auto size-1.5 rounded-full bg-sidebar-primary" />
+                        <div className="ml-auto size-2 rounded-full bg-sidebar-primary" />
                       )}
                     </Link>
                   </li>

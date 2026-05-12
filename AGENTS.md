@@ -68,6 +68,10 @@ _Ninguno. Todos los routers planificados están implementados._
 
 ### Cambios recientes (2026-05-12)
 
+- **Iteración 18 — Mejora de prominencia del item activo en sidebar**: Decimoctava ronda de refinamiento visual enfocada en usabilidad de navegación.
+  - **Fondo activo**: Aumentada la opacidad del fondo de item activo de `bg-sidebar-primary/10` a `bg-sidebar-primary/15`.
+  - **Barra de acento**: Aumentada el ancho de `w-0.5` a `w-1` y añadido `rounded-full` para un indicador más visible y moderno.
+  - **Indicador dot**: Aumentado el tamaño de `size-1.5` a `size-2` para mejor legibilidad del estado activo.
 - **Iteración 17 — Consistencia de redondeo en sidebar**: Decimoséptima ronda de refinamiento visual enfocada en la navegación.
   - **Items de navegación**: Cambiado `rounded-md` a `rounded-sm` en los links de navegación del sidebar.
   - **Pills de grupo**: Cambiado `rounded-md` a `rounded-sm` en las etiquetas de grupo (PRINCIPAL, CLÍNICO, etc.).
