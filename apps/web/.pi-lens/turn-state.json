@@ -356,7 +356,7 @@
         }
       ],
       "importsChanged": false,
-      "lastEdit": "2026-05-12T20:52:29.621Z"
+      "lastEdit": "2026-05-12T20:55:17.864Z"
     },
     "src/components/empty-state.tsx": {
       "modifiedRanges": [
@@ -623,10 +623,22 @@
         {
           "start": 76,
           "end": 76
+        },
+        {
+          "start": 622,
+          "end": 622
+        },
+        {
+          "start": 630,
+          "end": 630
+        },
+        {
+          "start": 646,
+          "end": 646
         }
       ],
       "importsChanged": false,
-      "lastEdit": "2026-05-12T20:53:07.011Z"
+      "lastEdit": "2026-05-12T20:55:09.955Z"
     },
     "src/routes/_authenticated/clinical-documents/$documentId.tsx": {
       "modifiedRanges": [
@@ -657,6 +669,6 @@
   },
   "turnCycles": 0,
   "maxCycles": 3,
-  "lastUpdated": "2026-05-12T20:53:30.735Z",
+  "lastUpdated": "2026-05-12T20:55:17.864Z",
   "sessionId": "lens-mp32rgkz-3e9ca4af"
 }

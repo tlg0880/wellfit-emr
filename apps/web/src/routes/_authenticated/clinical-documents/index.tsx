@@ -619,7 +619,7 @@ function ClinicalDocumentsListPage() {
       )}
 
       <div className="space-y-3 px-6">
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-card px-3 py-2.5 shadow-sm">
           <Select
             onValueChange={(v) => {
               setStatusFilter(v as string);
@@ -627,7 +627,7 @@ function ClinicalDocumentsListPage() {
             }}
             value={statusFilter}
           >
-            <SelectTrigger className="h-8 w-auto">
+            <SelectTrigger className="h-8 w-auto bg-background">
               <SelectValue placeholder="Todos los estados" />
             </SelectTrigger>
             <SelectContent>
@@ -643,7 +643,7 @@ function ClinicalDocumentsListPage() {
             }}
             value={typeFilter}
           >
-            <SelectTrigger className="h-8 w-auto">
+            <SelectTrigger className="h-8 w-auto bg-background">
               <SelectValue placeholder="Todos los tipos" />
             </SelectTrigger>
             <SelectContent>

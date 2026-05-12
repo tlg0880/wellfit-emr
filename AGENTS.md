@@ -68,6 +68,9 @@ _Ninguno. Todos los routers planificados están implementados._
 
 ### Cambios recientes (2026-05-12)
 
+- **Iteración 9 — Toolbar unificado en documentos clínicos y fondo en tablas**: Novena ronda de refinamiento visual enfocada en consistencia de páginas de datos y profundidad de tablas.
+  - **Toolbar unificado en documentos clínicos**: Los filtros de estado y tipo en `/clinical-documents` ahora viven dentro de una tarjeta toolbar unificada (`rounded-lg border bg-card shadow-sm px-3 py-2.5`), consistente con las páginas de pacientes y atenciones. Los selectores internos usan `bg-background` para jerarquía visual.
+  - **Fondo en contenedor de tabla**: El contenedor de `DataTable` ahora tiene `bg-card`, creando una ligera elevación que separa visualmente la tabla del fondo de la página.
 - **Iteración 8 — Hover accent en tabla y badges con bordes/colores mejorados**: Octava ronda de refinamiento visual enfocada en micro-interacciones de tabla y consistencia de badges.
   - **DataTable hover accent**: Las filas de tabla ahora tienen `border-l-2 border-transparent` que cambia a `hover:border-l-primary/40` (o muted para filas no clickeables) al pasar el mouse. Esto crea un indicador visual sutil de interacción, consistente con el patrón de la sidebar.
   - **Badges de estado en atenciones**: Añadidos bordes semánticos (`border-amber-300`, `border-teal-300`) y `shadow-sm` a los badges de estado, creando pills más definidos y con mejor presencia visual.
