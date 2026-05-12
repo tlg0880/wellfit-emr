@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from "@wellfit-emr/ui/components/card";
 import { Skeleton } from "@wellfit-emr/ui/components/skeleton";
-import { Trash2 } from "lucide-react";
+import { Share2, Trash2 } from "lucide-react";
 import { useEffect } from "react";
 import { toast } from "sonner";
 
@@ -83,6 +83,8 @@ function IhceBundleDetailPage() {
         }
         backTo="/ihce-bundles"
         description="Información del bundle IHCE/RDA"
+        icon={Share2}
+        iconBgClass="bg-indigo-100 text-indigo-600"
         title={title}
       />
 

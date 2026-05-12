@@ -1257,10 +1257,24 @@
       ],
       "importsChanged": true,
       "lastEdit": "2026-05-12T23:56:40.714Z"
+    },
+    "src/routes/_authenticated/ihce-bundles/$bundleId.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 11,
+          "end": 11
+        },
+        {
+          "start": 86,
+          "end": 87
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-12T23:57:07.893Z"
     }
   },
   "turnCycles": 0,
   "maxCycles": 3,
-  "lastUpdated": "2026-05-12T23:56:40.714Z",
+  "lastUpdated": "2026-05-12T23:57:07.893Z",
   "sessionId": "lens-mp32rgkz-3e9ca4af"
 }
