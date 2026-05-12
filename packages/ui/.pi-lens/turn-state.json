@@ -65,10 +65,40 @@
       ],
       "importsChanged": false,
       "lastEdit": "2026-05-12T23:13:57.745Z"
+    },
+    "src/components/dropdown-menu.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 43,
+          "end": 43
+        },
+        {
+          "start": 90,
+          "end": 90
+        },
+        {
+          "start": 116,
+          "end": 116
+        },
+        {
+          "start": 142,
+          "end": 142
+        },
+        {
+          "start": 166,
+          "end": 166
+        },
+        {
+          "start": 206,
+          "end": 206
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-12T23:14:49.939Z"
     }
   },
   "turnCycles": 0,
   "maxCycles": 3,
-  "lastUpdated": "2026-05-12T23:13:57.745Z",
+  "lastUpdated": "2026-05-12T23:14:49.939Z",
   "sessionId": "lens-mp32rgkz-3e9ca4af"
 }
