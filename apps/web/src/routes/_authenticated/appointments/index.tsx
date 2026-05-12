@@ -1061,7 +1061,7 @@ function AppointmentsPage() {
                               type="button"
                             >
                               <span
-                                className={`size-1.5 shrink-0 ${cfg.color}`}
+                                className={`size-2 shrink-0 ${cfg.color}`}
                               />
                               <span className="truncate">
                                 {formatTime(new Date(appt.scheduledAt))}{" "}
