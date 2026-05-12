@@ -68,6 +68,8 @@ _Ninguno. Todos los routers planificados están implementados._
 
 ### Cambios recientes (2026-05-12)
 
+- **Iteración 16 — Consistencia de redondeo en PageHeader**: Decimosexta ronda de refinamiento visual enfocada en micro-consistencia.
+  - **PageHeader redondeo unificado**: El contenedor del icono, el botón de retroceso y el badge de atajo de teclado (`⌘K`) en `PageHeader` cambiaron de `rounded-md` a `rounded-sm`, alineándose con el lenguaje de diseño redondeado del resto de la aplicación.
 - **Iteración 15 — Refinamiento de login y formularios de autenticación**: Decimoquinta ronda de refinamiento visual enfocada en la página de entrada.
   - **Icono de marca en login**: Los contenedores del icono HeartPulse en la página de login (tanto desktop `size-10` como mobile `size-9`) ahora tienen `rounded-sm` y `shadow-sm`, consistentes con el resto de la aplicación.
   - **Botones de autenticación**: Los botones de submit en `SignInForm` y `SignUpForm` ahora tienen `shadow-sm` para un efecto de elevación sutil.
