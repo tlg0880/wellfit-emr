@@ -1098,7 +1098,7 @@ function AppointmentsPage() {
       {/* Create Modal */}
       {showForm && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
           role="dialog"
         >
           <Card className="mx-4 max-h-[90vh] w-full max-w-lg overflow-auto shadow-lg">
@@ -1167,7 +1167,7 @@ function AppointmentsPage() {
       {/* Detail Modal */}
       {selectedAppointment && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
           role="dialog"
         >
           <Card className="mx-4 w-full max-w-sm shadow-lg">
