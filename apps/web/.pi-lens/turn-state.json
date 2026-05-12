@@ -1229,10 +1229,24 @@
       ],
       "importsChanged": true,
       "lastEdit": "2026-05-12T23:55:52.165Z"
+    },
+    "src/routes/_authenticated/incapacity-certificates/$certificateId.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 11,
+          "end": 11
+        },
+        {
+          "start": 139,
+          "end": 140
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-12T23:56:16.398Z"
     }
   },
   "turnCycles": 0,
   "maxCycles": 3,
-  "lastUpdated": "2026-05-12T23:55:52.165Z",
+  "lastUpdated": "2026-05-12T23:56:16.398Z",
   "sessionId": "lens-mp32rgkz-3e9ca4af"
 }

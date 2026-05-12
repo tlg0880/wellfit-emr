@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from "@wellfit-emr/ui/components/card";
 import { Skeleton } from "@wellfit-emr/ui/components/skeleton";
-import { AlertTriangle, RefreshCw, Trash2 } from "lucide-react";
+import { AlertTriangle, FileCheck, RefreshCw, Trash2 } from "lucide-react";
 import { useEffect } from "react";
 import { toast } from "sonner";
 
@@ -136,6 +136,8 @@ function IncapacityCertificateDetailPage() {
         }
         backTo="/incapacity-certificates"
         description="Información del certificado de incapacidad"
+        icon={FileCheck}
+        iconBgClass="bg-amber-100 text-amber-600"
         title={title}
       />
 
