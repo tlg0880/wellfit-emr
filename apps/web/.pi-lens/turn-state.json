@@ -25,6 +25,18 @@
     "src/routes/_authenticated/index.tsx": {
       "modifiedRanges": [
         {
+          "start": 19,
+          "end": 19
+        },
+        {
+          "start": 24,
+          "end": 24
+        },
+        {
+          "start": 26,
+          "end": 26
+        },
+        {
           "start": 167,
           "end": 167
         },
@@ -269,20 +281,24 @@
           "end": 568
         },
         {
-          "start": 587,
-          "end": 587
+          "start": 578,
+          "end": 580
         },
         {
-          "start": 593,
-          "end": 593
+          "start": 582,
+          "end": 605
         },
         {
-          "start": 595,
-          "end": 595
+          "start": 612,
+          "end": 614
+        },
+        {
+          "start": 621,
+          "end": 630
         }
       ],
       "importsChanged": false,
-      "lastEdit": "2026-05-12T20:51:05.675Z"
+      "lastEdit": "2026-05-12T21:02:00.826Z"
     },
     "src/components/data-table.tsx": {
       "modifiedRanges": [
@@ -749,6 +765,6 @@
   },
   "turnCycles": 0,
   "maxCycles": 3,
-  "lastUpdated": "2026-05-12T21:00:01.405Z",
+  "lastUpdated": "2026-05-12T21:02:00.826Z",
   "sessionId": "lens-mp32rgkz-3e9ca4af"
 }

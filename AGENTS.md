@@ -68,6 +68,8 @@ _Ninguno. Todos los routers planificados están implementados._
 
 ### Cambios recientes (2026-05-12)
 
+- **Iteración 12 — Iconos en tarjetas de estado del sistema**: Duodécima ronda de refinamiento visual enfocada en el dashboard.
+  - **Tarjetas de estado del sistema**: Cada una de las 4 tarjetas de estado (API, Base de datos, Autenticación, RIPS) ahora tiene un icono distintivo (`Server`, `Database`, `Shield`, `FileOutput`) en un contenedor coloreado (`size-6 rounded-md`) al lado de la etiqueta. Los colores son semánticos: `emerald` para API, `sky` para base de datos, `amber` para autenticación, `violet` para RIPS.
 - **Iteración 11 — Iconos en encabezados de página (completo)**: Undécima ronda de refinamiento visual que aplica el patrón de icono en PageHeader a todas las vistas principales.
   - **Vistas con icono añadido**: Consentimientos (`ShieldCheck`), Prescripciones (`Pill`), Órdenes de servicio (`FlaskConical`), Interconsultas (`MessageSquare`), Tareas regulatorias (`Gavel` en `bg-amber-50`), Solicitudes del paciente (`Copy` en `bg-sky-50`).
   - **Consistencia**: Cada vista principal ahora tiene una identidad visual distintiva con un icono que coincide con el de la sidebar, creando coherencia de navegación entre sidebar y encabezado.

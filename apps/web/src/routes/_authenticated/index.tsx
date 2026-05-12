@@ -16,11 +16,14 @@ import {
   ClipboardPlus,
   Clock,
   Copy,
+  Database,
   FileOutput,
   Gavel,
   HeartPulse,
   PenLine,
+  Server,
   Share2,
+  Shield,
   ShieldUser,
   Stethoscope,
   UserPlus,
@@ -575,9 +578,30 @@ function DashboardPage() {
           <CardContent>
             <div className="grid grid-cols-2 gap-3">
               {[
-                { label: "API", status: "Operativa", ok: true },
-                { label: "Base de datos", status: "Conectada", ok: true },
-                { label: "Autenticación", status: "Activa", ok: true },
+                {
+                  label: "API",
+                  status: "Operativa",
+                  ok: true,
+                  icon: Server,
+                  iconColor: "text-emerald-600",
+                  iconBg: "bg-emerald-50",
+                },
+                {
+                  label: "Base de datos",
+                  status: "Conectada",
+                  ok: true,
+                  icon: Database,
+                  iconColor: "text-sky-600",
+                  iconBg: "bg-sky-50",
+                },
+                {
+                  label: "Autenticación",
+                  status: "Activa",
+                  ok: true,
+                  icon: Shield,
+                  iconColor: "text-amber-600",
+                  iconBg: "bg-amber-50",
+                },
                 {
                   label: "RIPS",
                   status: ripsStatusLoading
@@ -585,15 +609,25 @@ function DashboardPage() {
                     : (ripsStatus?.message ?? "Desconocido"),
                   ok: ripsStatus?.status === "ok",
                   pending: ripsStatusLoading,
+                  icon: FileOutput,
+                  iconColor: "text-violet-600",
+                  iconBg: "bg-violet-50",
                 },
               ].map((item) => (
                 <div
                   className="rounded-lg border bg-card/80 p-4 transition-all duration-150 hover:bg-card hover:shadow-sm"
                   key={item.label}
                 >
-                  <p className="font-semibold text-[10px] text-muted-foreground uppercase tracking-wider">
-                    {item.label}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <div
+                      className={`flex size-6 items-center justify-center rounded-md ${item.iconBg} ${item.iconColor}`}
+                    >
+                      <item.icon size={12} />
+                    </div>
+                    <p className="font-semibold text-[10px] text-muted-foreground uppercase tracking-wider">
+                      {item.label}
+                    </p>
+                  </div>
                   <div className="mt-2.5 flex items-center gap-2">
                     <span
                       className={`size-2.5 rounded-full ${getStatusDotClass(item.pending, item.ok)}`}
