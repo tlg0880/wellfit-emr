@@ -382,7 +382,7 @@ function ChatHeader({
         <h1 className="font-semibold text-sm">Asistente Médico</h1>
       </div>
       {patientName && (
-        <span className="ml-2 rounded-none bg-primary/10 px-2 py-0.5 text-primary text-xs">
+        <span className="ml-2 rounded-sm bg-primary/10 px-2 py-0.5 text-primary text-xs">
           {patientName}
         </span>
       )}
@@ -505,7 +505,7 @@ function QuickAction({
 }) {
   return (
     <button
-      className={`flex items-center gap-2 rounded-none border px-3 py-2 text-xs transition-colors hover:bg-muted/60 ${className ?? ""}`}
+      className={`flex items-center gap-2 rounded-sm border px-3 py-2 text-xs transition-colors hover:bg-muted/60 ${className ?? ""}`}
       onClick={onClick}
       type="button"
     >

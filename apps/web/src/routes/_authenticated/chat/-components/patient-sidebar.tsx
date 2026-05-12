@@ -226,7 +226,7 @@ function PatientAllergies({
       <div className="space-y-1">
         {allergies.map((a) => (
           <div
-            className="rounded-none border border-destructive/30 bg-destructive/5 px-2 py-1 text-xs"
+            className="rounded-sm border border-destructive/30 bg-destructive/5 px-2 py-1 text-xs"
             key={a.id}
           >
             <span className="font-medium">{a.substanceCode}</span>
@@ -264,7 +264,7 @@ function PatientMedications({
       </p>
       <div className="space-y-1">
         {medications.slice(0, 5).map((m) => (
-          <div className="rounded-none border px-2 py-1 text-xs" key={m.id}>
+          <div className="rounded-sm border px-2 py-1 text-xs" key={m.id}>
             <p className="font-medium">{m.genericName}</p>
             <p className="text-muted-foreground">
               {m.dose} - {m.frequencyText} - {m.status}
@@ -294,7 +294,7 @@ function PatientEncounters({
       </p>
       <div className="space-y-1">
         {encounters.slice(0, 3).map((e) => (
-          <div className="rounded-none border px-2 py-1 text-xs" key={e.id}>
+          <div className="rounded-sm border px-2 py-1 text-xs" key={e.id}>
             <p className="font-medium">{e.reasonForVisit}</p>
             <p className="text-muted-foreground">
               {new Date(e.startedAt).toLocaleDateString("es-CO")} - {e.status}

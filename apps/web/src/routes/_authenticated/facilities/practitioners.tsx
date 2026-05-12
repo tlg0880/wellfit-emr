@@ -266,7 +266,7 @@ function PractitionersPage() {
                 <div className="flex items-center gap-2 pt-5">
                   <input
                     checked={active}
-                    className="size-4 rounded-none border border-input"
+                    className="size-4 rounded-sm border border-input"
                     id="prac-active"
                     onChange={(e) => setActive(e.target.checked)}
                     type="checkbox"

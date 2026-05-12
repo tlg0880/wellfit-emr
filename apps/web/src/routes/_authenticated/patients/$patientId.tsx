@@ -892,7 +892,7 @@ function ContactsSection({ patientId }: { patientId: string }) {
             <div className="flex items-center gap-2 pt-5">
               <input
                 checked={isPrimary}
-                className="size-4 rounded-none border border-input"
+                className="size-4 rounded-sm border border-input"
                 id="contact-primary"
                 onChange={(e) => setIsPrimary(e.target.checked)}
                 type="checkbox"
@@ -1529,7 +1529,7 @@ function IdentifiersSection({ patientId }: { patientId: string }) {
             <div className="flex items-center gap-2 pt-5">
               <input
                 checked={isCurrent}
-                className="size-4 rounded-none border border-input"
+                className="size-4 rounded-sm border border-input"
                 id="id-current"
                 onChange={(e) => setIsCurrent(e.target.checked)}
                 type="checkbox"

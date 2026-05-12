@@ -1046,7 +1046,7 @@ function AppointmentsPage() {
                           };
                           return (
                             <button
-                              className={`flex w-full items-center gap-1.5 rounded-none px-1.5 py-0.5 text-left text-[10px] transition-opacity hover:opacity-80 ${
+                              className={`flex w-full items-center gap-1.5 rounded-sm px-1.5 py-0.5 text-left text-[10px] transition-opacity hover:opacity-80 ${
                                 appt.status === "cancelled"
                                   ? "bg-muted line-through opacity-60"
                                   : "bg-slate-100 dark:bg-slate-800"

@@ -96,7 +96,7 @@ function TableEntriesPage() {
               <span className="ml-1.5">Sincronizar tabla</span>
             </Button>
             <Link
-              className="inline-flex h-7 items-center justify-center gap-1 rounded-none border border-input bg-background px-2.5 font-medium text-xs transition-colors hover:bg-muted"
+              className="inline-flex h-7 items-center justify-center gap-1 rounded-sm border border-input bg-background px-2.5 font-medium text-xs transition-colors hover:bg-muted"
               to="/catalogs"
             >
               <ArrowLeft size={14} />

@@ -334,7 +334,7 @@ function ToolCallCard({
   }
 
   return (
-    <div className={`my-2 rounded-none border ${containerClass}`}>
+    <div className={`my-2 rounded-sm border ${containerClass}`}>
       <div className="flex items-center gap-1.5 border-b px-2 py-1.5">
         {isRunning ? <Loader2 className="animate-spin" size={12} /> : icon}
         <span className="font-medium text-xs capitalize">{title}</span>
