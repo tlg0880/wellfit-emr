@@ -177,6 +177,8 @@ function AuditEventsListPage() {
     <div className="space-y-4">
       <PageHeader
         description="Bitácora de auditoría de acceso y modificaciones"
+        icon={Eye}
+        iconBgClass="bg-slate-100 text-slate-600"
         title="Auditoría"
       />
 

@@ -309,14 +309,14 @@ function DashboardPage() {
   } else if (encountersData && encountersData.encounters.length > 0) {
     encountersContent = encountersData.encounters.map((enc) => (
       <Link
-        className="group flex items-center justify-between rounded-lg border p-3.5 transition-all duration-150 hover:border-primary/20 hover:bg-primary/5 hover:shadow-sm"
+        className="group flex items-center justify-between rounded-sm border p-3.5 transition-all duration-150 hover:border-primary/20 hover:bg-primary/5 hover:shadow-sm"
         key={enc.id}
         params={{ encounterId: enc.id }}
         search={{ tab: undefined }}
         to="/encounters/$encounterId"
       >
         <div className="flex items-center gap-3">
-          <div className="flex size-10 items-center justify-center rounded-md bg-teal-50 text-teal-600 shadow-sm dark:bg-teal-950 dark:text-teal-400">
+          <div className="flex size-10 items-center justify-center rounded-sm bg-teal-50 text-teal-600 shadow-sm dark:bg-teal-950 dark:text-teal-400">
             <HeartPulse size={16} />
           </div>
           <div>
@@ -362,13 +362,13 @@ function DashboardPage() {
   } else if (patientsData && patientsData.patients.length > 0) {
     patientsContent = patientsData.patients.map((pat) => (
       <Link
-        className="group flex items-center justify-between rounded-lg border p-3.5 transition-all duration-150 hover:border-primary/20 hover:bg-primary/5 hover:shadow-sm"
+        className="group flex items-center justify-between rounded-sm border p-3.5 transition-all duration-150 hover:border-primary/20 hover:bg-primary/5 hover:shadow-sm"
         key={pat.id}
         params={{ patientId: pat.id }}
         to="/patients/$patientId"
       >
         <div className="flex items-center gap-3">
-          <div className="flex size-10 items-center justify-center rounded-md bg-sky-50 text-sky-600 shadow-sm dark:bg-sky-950 dark:text-sky-400">
+          <div className="flex size-10 items-center justify-center rounded-sm bg-sky-50 text-sky-600 shadow-sm dark:bg-sky-950 dark:text-sky-400">
             <Users size={16} />
           </div>
           <div>

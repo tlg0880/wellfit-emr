@@ -601,6 +601,8 @@ function AttachmentsListPage() {
           </Button>
         }
         description="Anexos y documentos vinculados"
+        icon={Paperclip}
+        iconBgClass="bg-slate-100 text-slate-600"
         title="Anexos"
       />
 

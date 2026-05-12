@@ -954,7 +954,7 @@ function EncountersPage() {
 
       <div className="px-6">
         <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border bg-card px-3 py-2.5 shadow-sm">
-          <div className="inline-flex items-center rounded-md border bg-background p-0.5">
+          <div className="inline-flex items-center rounded-sm border bg-background p-0.5">
             {STATUS_OPTIONS.map((opt) => (
               <button
                 className={`px-2.5 py-1 font-medium text-xs transition-colors ${
@@ -1009,7 +1009,7 @@ function EncountersPage() {
             </Button>
           )}
           <div className="ml-auto flex items-center gap-2">
-            <div className="flex items-center gap-2 rounded-md border bg-background px-2.5 py-1.5">
+            <div className="flex items-center gap-2 rounded-sm border bg-background px-2.5 py-1.5">
               <Search className="text-muted-foreground" size={14} />
               <Input
                 className="h-6 w-48 border-0 bg-transparent p-0 text-xs focus-visible:ring-0"
