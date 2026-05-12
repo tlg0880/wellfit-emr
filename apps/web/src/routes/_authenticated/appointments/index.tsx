@@ -1095,7 +1095,7 @@ function AppointmentsPage() {
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
           role="dialog"
         >
-          <Card className="mx-4 max-h-[90vh] w-full max-w-lg overflow-auto">
+          <Card className="mx-4 max-h-[90vh] w-full max-w-lg overflow-auto shadow-lg">
             <CardHeader className="flex flex-row items-center justify-between pb-4">
               <CardTitle>
                 {editingAppointment ? "Editar cita" : "Nueva cita"}
@@ -1159,7 +1159,7 @@ function AppointmentsPage() {
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
           role="dialog"
         >
-          <Card className="mx-4 w-full max-w-sm">
+          <Card className="mx-4 w-full max-w-sm shadow-lg">
             <CardHeader className="flex flex-row items-center justify-between pb-4">
               <CardTitle>Detalle de cita</CardTitle>
               <Button
