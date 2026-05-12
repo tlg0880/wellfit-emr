@@ -682,7 +682,7 @@ function PatientsListPage() {
     {
       header: "Acciones",
       accessor: (row: { id: string }) => (
-        <div className="flex items-center gap-0.5">
+        <div className="flex items-center gap-1">
           <Button
             aria-label="Ver paciente"
             className="hover:bg-teal-50 hover:text-teal-700"
