@@ -747,6 +747,10 @@
           "end": 96
         },
         {
+          "start": 602,
+          "end": 603
+        },
+        {
           "start": 653,
           "end": 653
         },
@@ -756,7 +760,7 @@
         }
       ],
       "importsChanged": false,
-      "lastEdit": "2026-05-12T20:53:30.735Z"
+      "lastEdit": "2026-05-12T23:37:15.264Z"
     },
     "src/routes/_authenticated/consents/index.tsx": {
       "modifiedRanges": [
@@ -1053,6 +1057,6 @@
   },
   "turnCycles": 0,
   "maxCycles": 3,
-  "lastUpdated": "2026-05-12T23:36:39.654Z",
+  "lastUpdated": "2026-05-12T23:37:15.264Z",
   "sessionId": "lens-mp32rgkz-3e9ca4af"
 }

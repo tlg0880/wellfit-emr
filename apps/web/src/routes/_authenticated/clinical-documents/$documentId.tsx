@@ -599,6 +599,8 @@ function ClinicalDocumentDetailPage() {
           ) : undefined
         }
         backTo="/clinical-documents"
+        icon={FileText}
+        iconBgClass="bg-slate-100 text-slate-600"
         title={isLoading ? "Cargando..." : documentTitle}
       />
 
