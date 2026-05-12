@@ -68,6 +68,10 @@ _Ninguno. Todos los routers planificados están implementados._
 
 ### Cambios recientes (2026-05-12)
 
+- **Iteración 14 — Eliminación de badges de desarrollo**: Decimocuarta ronda de refinamiento visual enfocada en pulir la interfaz para producción.
+  - **TanStack Router Devtools removido**: El badge de desarrollo de TanStack Router que aparecía en la esquina inferior izquierda de todas las páginas fue completamente eliminado del componente raíz (`__root.tsx`).
+  - **React Query Devtools removido**: El botón flotante de React Query Devtools también fue eliminado.
+  - **Razón**: Los badges de herramientas de desarrollo son inapropiados para una aplicación médica en producción y restan profesionalismo visual.
 - **Iteración 13 — Bordes redondeados en iconos de marca del sidebar**: Decimotercera ronda de refinamiento visual enfocada en consistencia de la navegación.
   - **Icono de marca del sidebar**: Los contenedores del icono de marca (tanto expandido `size-7` como colapsado `size-8`) ahora tienen `rounded-sm` y `shadow-sm`, eliminando las esquinas anguladas que contrastaban con el resto de la interfaz redondeada.
   - **Botón de colapsar sidebar**: Añadido `rounded-sm` al botón de colapsar/expandir para consistencia visual.
