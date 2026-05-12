@@ -164,46 +164,66 @@ function ComplianceSummaryBlock() {
       </CardHeader>
       <CardContent className="space-y-2">
         {draftDocsTotal > 0 && (
-          <div className="flex items-center justify-between rounded-none border p-3">
+          <div className="flex items-center justify-between rounded-md border border-amber-200 bg-amber-50/50 p-3 transition-colors hover:bg-amber-50">
             <div className="flex items-center gap-2">
-              <PenLine className="text-amber-600" size={14} />
-              <span className="text-sm">Firmas pendientes</span>
+              <div className="flex size-7 items-center justify-center bg-amber-100 text-amber-600">
+                <PenLine size={14} />
+              </div>
+              <span className="font-medium text-foreground/90 text-sm">
+                Firmas pendientes
+              </span>
             </div>
             <span className="font-bold text-amber-700">{draftDocsTotal}</span>
           </div>
         )}
         {ripsTotal > 0 && (
-          <div className="flex items-center justify-between rounded-none border p-3">
+          <div className="flex items-center justify-between rounded-md border border-sky-200 bg-sky-50/50 p-3 transition-colors hover:bg-sky-50">
             <div className="flex items-center gap-2">
-              <FileOutput className="text-blue-600" size={14} />
-              <span className="text-sm">RIPS pendientes</span>
+              <div className="flex size-7 items-center justify-center bg-sky-100 text-sky-600">
+                <FileOutput size={14} />
+              </div>
+              <span className="font-medium text-foreground/90 text-sm">
+                RIPS pendientes
+              </span>
             </div>
-            <span className="font-bold text-blue-700">{ripsTotal}</span>
+            <span className="font-bold text-sky-700">{ripsTotal}</span>
           </div>
         )}
         {ihceTotal > 0 && (
-          <div className="flex items-center justify-between rounded-none border p-3">
+          <div className="flex items-center justify-between rounded-md border border-indigo-200 bg-indigo-50/50 p-3 transition-colors hover:bg-indigo-50">
             <div className="flex items-center gap-2">
-              <Share2 className="text-indigo-600" size={14} />
-              <span className="text-sm">IHCE/RDA pendientes</span>
+              <div className="flex size-7 items-center justify-center bg-indigo-100 text-indigo-600">
+                <Share2 size={14} />
+              </div>
+              <span className="font-medium text-foreground/90 text-sm">
+                IHCE/RDA pendientes
+              </span>
             </div>
             <span className="font-bold text-indigo-700">{ihceTotal}</span>
           </div>
         )}
         {interTotal > 0 && (
-          <div className="flex items-center justify-between rounded-none border p-3">
+          <div className="flex items-center justify-between rounded-md border border-emerald-200 bg-emerald-50/50 p-3 transition-colors hover:bg-emerald-50">
             <div className="flex items-center gap-2">
-              <Users className="text-emerald-600" size={14} />
-              <span className="text-sm">Interconsultas abiertas</span>
+              <div className="flex size-7 items-center justify-center bg-emerald-100 text-emerald-600">
+                <Users size={14} />
+              </div>
+              <span className="font-medium text-foreground/90 text-sm">
+                Interconsultas abiertas
+              </span>
             </div>
             <span className="font-bold text-emerald-700">{interTotal}</span>
           </div>
         )}
         {orderTotal > 0 && (
-          <div className="flex items-center justify-between rounded-none border p-3">
+          <div className="flex items-center justify-between rounded-md border border-rose-200 bg-rose-50/50 p-3 transition-colors hover:bg-rose-50">
             <div className="flex items-center gap-2">
-              <Activity className="text-rose-600" size={14} />
-              <span className="text-sm">Órdenes activas</span>
+              <div className="flex size-7 items-center justify-center bg-rose-100 text-rose-600">
+                <Activity size={14} />
+              </div>
+              <span className="font-medium text-foreground/90 text-sm">
+                Órdenes activas
+              </span>
             </div>
             <span className="font-bold text-rose-700">{orderTotal}</span>
           </div>

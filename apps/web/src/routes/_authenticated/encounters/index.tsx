@@ -2,7 +2,6 @@ import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createFileRoute,
-  Link,
   useNavigate,
   useSearch,
 } from "@tanstack/react-router";
@@ -24,15 +23,7 @@ import {
   SelectValue,
 } from "@wellfit-emr/ui/components/select";
 import { Skeleton } from "@wellfit-emr/ui/components/skeleton";
-import {
-  ChevronRight,
-  Pencil,
-  Plus,
-  Search,
-  Trash2,
-  User,
-  X,
-} from "lucide-react";
+import { Eye, Pencil, Plus, Search, Trash2, User, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -863,17 +854,25 @@ function EncountersPage() {
     {
       header: "",
       accessor: (row: NonNullable<typeof data>["encounters"][0]) => (
-        <div className="flex items-center gap-1">
-          <Link
-            className="inline-flex items-center gap-1 text-[10px] text-primary hover:underline"
-            params={{ encounterId: row.id }}
-            search={{ tab: undefined }}
-            to="/encounters/$encounterId"
+        <div className="flex items-center gap-0.5">
+          <Button
+            aria-label="Ver atención"
+            className="hover:bg-teal-50 hover:text-teal-700"
+            onClick={() => {
+              navigate({
+                params: { encounterId: row.id },
+                search: { tab: undefined },
+                to: "/encounters/$encounterId",
+              });
+            }}
+            size="icon-xs"
+            variant="ghost"
           >
-            Ver <ChevronRight size={12} />
-          </Link>
+            <Eye size={14} />
+          </Button>
           <Button
             aria-label="Editar atención"
+            className="hover:bg-amber-50 hover:text-amber-700"
             onClick={() => {
               setEditingEncounter(row);
               setShowForm(true);
@@ -885,6 +884,7 @@ function EncountersPage() {
           </Button>
           <Button
             aria-label="Eliminar atención"
+            className="hover:bg-red-50 hover:text-red-700"
             disabled={deleteMutation.isPending}
             onClick={() => {
               if (confirm("¿Eliminar esta atención permanentemente?")) {
@@ -912,6 +912,7 @@ function EncountersPage() {
       <PageHeader
         actions={
           <Button
+            className="gap-1.5 shadow-sm"
             onClick={() => {
               if (showForm) {
                 handleCancelForm();
@@ -921,7 +922,7 @@ function EncountersPage() {
             }}
             size="sm"
           >
-            {showForm ? <X size={14} /> : <Plus size={14} />}
+            {showForm ? <X size={15} /> : <Plus size={15} />}
             {showForm ? "Cancelar" : "Nueva atención"}
           </Button>
         }
@@ -940,20 +941,26 @@ function EncountersPage() {
       )}
 
       <div className="px-6">
-        <div className="mb-3 flex flex-wrap items-center gap-2">
-          {STATUS_OPTIONS.map((opt) => (
-            <Button
-              key={opt.value}
-              onClick={() => {
-                setStatus(opt.value);
-                setOffset(0);
-              }}
-              size="xs"
-              variant={status === opt.value ? "default" : "outline"}
-            >
-              {opt.label}
-            </Button>
-          ))}
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <div className="inline-flex items-center rounded-md border bg-card p-0.5">
+            {STATUS_OPTIONS.map((opt) => (
+              <button
+                className={`px-2.5 py-1 font-medium text-xs transition-colors ${
+                  status === opt.value
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                key={opt.value}
+                onClick={() => {
+                  setStatus(opt.value);
+                  setOffset(0);
+                }}
+                type="button"
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
           <Select
             onValueChange={(v) => {
               setSiteId(v as string);
@@ -961,7 +968,7 @@ function EncountersPage() {
             }}
             value={siteId}
           >
-            <SelectTrigger className="h-7 w-44 text-xs">
+            <SelectTrigger className="h-8 w-44 bg-card text-xs">
               <SelectValue placeholder="Todas las sedes" />
             </SelectTrigger>
             <SelectContent>
@@ -975,6 +982,7 @@ function EncountersPage() {
           </Select>
           {(status || siteId || search) && (
             <Button
+              className="h-7 gap-1 text-xs"
               onClick={() => {
                 setStatus("");
                 setSiteId("");
@@ -989,29 +997,32 @@ function EncountersPage() {
             </Button>
           )}
           <div className="ml-auto flex items-center gap-2">
-            <Search className="text-muted-foreground" size={14} />
-            <Input
-              className="h-7 w-48 text-xs"
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setOffset(0);
-              }}
-              placeholder="Buscar por motivo..."
-              value={search}
-            />
-            {search && (
-              <Button
-                aria-label="Limpiar búsqueda"
-                onClick={() => {
-                  setSearch("");
+            <div className="flex items-center gap-2 rounded-md border bg-card px-2.5 py-1.5">
+              <Search className="text-muted-foreground" size={14} />
+              <Input
+                className="h-6 w-48 border-0 bg-transparent p-0 text-xs focus-visible:ring-0"
+                onChange={(e) => {
+                  setSearch(e.target.value);
                   setOffset(0);
                 }}
-                size="icon-xs"
-                variant="ghost"
-              >
-                <X size={12} />
-              </Button>
-            )}
+                placeholder="Buscar por motivo..."
+                value={search}
+              />
+              {search && (
+                <Button
+                  aria-label="Limpiar búsqueda"
+                  className="size-5"
+                  onClick={() => {
+                    setSearch("");
+                    setOffset(0);
+                  }}
+                  size="icon-xs"
+                  variant="ghost"
+                >
+                  <X size={10} />
+                </Button>
+              )}
+            </div>
           </div>
         </div>
 

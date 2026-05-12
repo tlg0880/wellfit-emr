@@ -682,9 +682,10 @@ function PatientsListPage() {
     {
       header: "Acciones",
       accessor: (row: { id: string }) => (
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5">
           <Button
             aria-label="Ver paciente"
+            className="hover:bg-teal-50 hover:text-teal-700"
             onClick={() =>
               navigate({
                 to: "/patients/$patientId",
@@ -698,6 +699,7 @@ function PatientsListPage() {
           </Button>
           <Button
             aria-label="Editar paciente"
+            className="hover:bg-amber-50 hover:text-amber-700"
             onClick={() => {
               setEditingPatient(row as PatientRow);
               setShowForm(true);
@@ -709,6 +711,7 @@ function PatientsListPage() {
           </Button>
           <Button
             aria-label="Eliminar paciente"
+            className="hover:bg-red-50 hover:text-red-700"
             disabled={deleteMutation.isPending}
             onClick={() => {
               if (confirm("¿Eliminar este paciente permanentemente?")) {
@@ -736,6 +739,7 @@ function PatientsListPage() {
       <PageHeader
         actions={
           <Button
+            className="gap-1.5 shadow-sm"
             onClick={() => {
               if (showForm) {
                 handleCancelForm();
@@ -745,7 +749,7 @@ function PatientsListPage() {
             }}
             size="sm"
           >
-            <Plus size={14} />
+            <Plus size={15} />
             {showForm ? "Cancelar" : "Nuevo paciente"}
           </Button>
         }
@@ -763,30 +767,33 @@ function PatientsListPage() {
       )}
 
       <div className="px-6">
-        <div className="mb-3 flex flex-wrap items-center gap-2">
-          <Search className="text-muted-foreground" size={14} />
-          <Input
-            className="h-7 max-w-xs text-xs"
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setOffset(0);
-            }}
-            placeholder="Buscar por nombre o documento..."
-            value={search}
-          />
-          {search && (
-            <Button
-              aria-label="Limpiar búsqueda"
-              onClick={() => {
-                setSearch("");
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2 rounded-md border bg-card px-2.5 py-1.5">
+            <Search className="text-muted-foreground" size={14} />
+            <Input
+              className="h-6 max-w-xs border-0 bg-transparent p-0 text-xs focus-visible:ring-0"
+              onChange={(e) => {
+                setSearch(e.target.value);
                 setOffset(0);
               }}
-              size="icon-xs"
-              variant="ghost"
-            >
-              <X size={12} />
-            </Button>
-          )}
+              placeholder="Buscar por nombre o documento..."
+              value={search}
+            />
+            {search && (
+              <Button
+                aria-label="Limpiar búsqueda"
+                className="size-5"
+                onClick={() => {
+                  setSearch("");
+                  setOffset(0);
+                }}
+                size="icon-xs"
+                variant="ghost"
+              >
+                <X size={10} />
+              </Button>
+            )}
+          </div>
           <Select
             onValueChange={(v) => {
               setSortBy(v as typeof sortBy);
@@ -794,7 +801,7 @@ function PatientsListPage() {
             }}
             value={sortBy}
           >
-            <SelectTrigger className="h-7 w-36 text-xs">
+            <SelectTrigger className="h-8 w-36 bg-card text-xs">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -810,12 +817,13 @@ function PatientsListPage() {
                 ? "Ordenar descendente"
                 : "Ordenar ascendente"
             }
+            className="h-8 w-8"
             onClick={() => {
               setSortDirection((d) => (d === "asc" ? "desc" : "asc"));
               setOffset(0);
             }}
             size="icon-xs"
-            variant="ghost"
+            variant="outline"
           >
             {sortDirection === "asc" ? "↑" : "↓"}
           </Button>

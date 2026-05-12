@@ -19,6 +19,7 @@ Historia Clínica Electrónica conforme con la normativa colombiana. Diseñada p
 File-based routing con Tanstack Router. Las rutas públicas están en `apps/web/src/routes/`. Las rutas protegidas viven bajo `_authenticated/` y heredan el layout con guard de autenticación (`beforeLoad` que redirige a `/login`). El `AppShell` (sidebar + main) se renderiza únicamente en el layout `_authenticated.tsx`; las rutas públicas como `/login` usan su propio layout independiente.
 
 Patrón de oRPC en este proyecto:
+
 ```tsx
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { orpc } from "@/utils/orpc";
@@ -36,6 +37,7 @@ const mutation = useMutation({ ...orpc.patients.create.mutationOptions(), onSucc
 ## Estado de implementación
 
 ### Backend routers (oRPC) existentes
+
 - `patients` — CRUD + list paginado
 - `encounters` — CRUD + list + close
 - `clinicalRecords` — create/list de diagnosis, allergy, observation, procedure
@@ -54,16 +56,25 @@ const mutation = useMutation({ ...orpc.patients.create.mutationOptions(), onSucc
 - `ripsReference` — catálogos SISPRO (list tables/entries, sync). `listEntries` filtra por tabla y agrupa correctamente la búsqueda por código/nombre para no mezclar resultados de otras tablas. La sincronización RIPS usa condiciones Drizzle estructuradas para búsquedas por tabla/código y conteos.
 
 ### Endpoint IA / Chat médico
+
 - `apps/server/src/chat.ts` expone `POST /api/chat` con autenticación Better Auth, valida mensajes `UIMessage`, usa `createAgentUIStreamResponse` con `ToolLoopAgent`, y ejecuta el modelo server-side definido en `packages/api/src/ai/agent.ts`. El endpoint mantiene el protocolo de AI SDK UI para `DefaultChatTransport` y añade headers anti-buffering (`Content-Encoding: none`, `X-Accel-Buffering: no`) para preservar streaming. `apps/server/src/index.ts` exporta la configuración de Bun con `idleTimeout: 120` para que las respuestas largas del agente no sean cortadas por el timeout idle por defecto de 10 segundos.
 - El cliente solo envía `selectedPatientId`; el servidor construye el contexto clínico desde la base de datos (datos demográficos, alergias activas, medicamentos y atenciones recientes). No se confía en contexto clínico textual enviado por el navegador.
 - Las herramientas del agente viven en `packages/api/src/ai/agent.ts`: búsqueda/consulta de pacientes, atenciones, diagnósticos, alergias, observaciones, medicamentos, procedimientos, atención activa, profesionales, catálogos RIPS/SISPRO, timeline clínico, revisión de seguridad clínica, documentos clínicos, órdenes de servicio/resultados, interconsultas, incapacidades, consentimientos y anexos.
 - Las herramientas quedan limitadas al paciente seleccionado cuando existe `selectedPatientId`; las consultas por `encounterId` verifican pertenencia al paciente. Las escrituras clínicas disponibles desde el chat incluyen creación de prescripciones, diagnósticos, observaciones/signos vitales, procedimientos CUPS, órdenes de servicio, interconsultas, incapacidades y borradores de documentos clínicos. Estas herramientas validan paciente/atención/profesional cuando aplica y registran eventos de auditoría en canal `ai-chat`; los documentos creados por IA quedan como borradores y no se firman automáticamente. Todas las herramientas están envueltas con observabilidad server-side (`started`, `completed`, `failed`) para evitar fallas silenciosas, y los errores de stream/tool se exponen al cliente mediante los estados de AI SDK UI.
 
 ### Backend routers PENDIENTES
+
 _Ninguno. Todos los routers planificados están implementados._
 
 ### Cambios recientes (2026-05-12)
-- **Rediseño visual profesional de interfaz hospitalaria**: Actualización masiva del tema visual para que la aplicación luzca como un EMR hospitalario profesional.
+
+- **Iteración 2 — Controles de acción y filtros profesionalizados**: Segunda ronda de mejoras visuales enfocada en botones de acción, filtros y controles de tabla.
+  - **Botones de acción en tablas**: Los iconos de Ver/Editar/Eliminar en `/patients` y `/encounters` ahora usan hover states de color temático: teal para "Ver", ámbar para "Editar", rojo para "Eliminar`. Esto da feedback visual inmediato sobre la acción que cada botón realiza.
+  - **CTAs mejorados**: Los botones "Nuevo paciente" y "Nueva atención" ahora usan `gap-1.5 shadow-sm` para darles más presencia visual.
+  - **Barras de búsqueda rediseñadas**: Los inputs de búsqueda ahora viven dentro de contenedores `rounded-md border bg-card` que agrupan el icono de lupa, el input sin bordes internos, y el botón de limpiar en una sola unidad visual.
+  - **Filtros de estado tipo segmented control**: En `/encounters`, los botones de filtro (Todas, En progreso, Finalizadas, Canceladas) se agrupan en un contenedor `rounded-md border bg-card p-0.5` con estilo de control segmentado: el activo usa `bg-primary text-primary-foreground shadow-sm` y los inactivos son texto atenuado con hover.
+  - **Compliance summary mejorado**: Los items del resumen regulatorio ahora usan fondos de color semitransparente (`bg-{color}-50/50`) con bordes temáticos y contenedores de icono cuadrados, creando tarjetas de alerta visualmente distinguibles.
+- **Iteración 1 — Rediseño visual profesional de interfaz hospitalaria**: Actualización masiva del tema visual para que la aplicación luzca como un EMR hospitalario profesional.
   - **Paleta de colores médica**: Cambio del tema primario de gris neutro a teal/cyan médico (`oklch(0.52 0.13 180)`), con ajustes en `--sidebar`, `--accent`, `--ring`, `--chart-*` y variantes dark mode. El fondo ahora usa un blanco ligeramente cálido con tinte azulado (`oklch(0.99 0.001 240)`) para reducir fatiga visual.
   - **Sidebar rediseñado**: Nuevo header con icono `HeartPulse` en contenedor de color primario, subtítulo "Sistema Hospitalario", navegación con indicadores de estado activo (punto teal + fondo sutil), anchos ajustados (`w-60` expandido / `w-16` colapsado), padding mejorado, y footer con versión y referencia regulatoria. Los grupos de navegación usan tracking más ancho y separación visual superior.
   - **Topbar refinado**: Fondo `bg-card/50` con `backdrop-blur-sm`, separadores verticales sutiles, y el logo móvil usa `bg-primary` en lugar de `bg-slate-900`.
@@ -79,38 +90,48 @@ _Ninguno. Todos los routers planificados están implementados._
 - **Limpieza transversal de calidad (repo completo)**: Ejecutada limpieza global con Ultracite (`fix` + `check`) y ajustes manuales de accesibilidad/tipos en rutas críticas (modales de citas/medicamentos/órdenes, formularios de participantes, detail de documentos clínicos, consultas de consentimientos y tipado en router de `medication-orders`). El repo queda con `bun x ultracite check` y `tsc` en verde. Se añadió override en `biome.jsonc` para desactivar `suspicious/noAlert` en rutas frontend, manteniendo el resto de reglas activas.
 
 ### Cambios recientes (2026-05-11)
+
 - **Fix título de pestaña en detalle de anexos** (`/attachments/$attachmentId`): Corregido `useEffect` que actualiza `document.title` a `'Anexo: {title}'` cuando los datos del attachment se cargan exitosamente, a `'Anexo no encontrado | WellFit EMR'` cuando hay error, y a `'WellFit EMR'` durante carga. Se restablece `'WellFit EMR'` al desmontar el componente. La versión anterior solo actualizaba el título en el caso de éxito, dejando el título previo en estados intermedios de carga/error. Esto satisface completamente VAL-ATTACH-018.
 
 ### Cambios recientes (2026-05-11)
+
 - **Fix detalle de anexos** (`/attachments/$attachmentId`): Reemplazado el hack roto de `listLinks`+`find` por `orpc.attachments.getLink` y `orpc.attachments.getBinaryObject`. La página ahora muestra: título en encabezado, clasificación, entidad vinculada con hipervínculo a la ruta de detalle correspondiente (paciente, atención, profesional, organización, documento clínico), fecha de captura formateada `es-CO`, tipo MIME, tamaño legible, hash SHA-256 en fuente monoespaciada, ubicación de almacenamiento, clase de retención y referencia de clave cifrada. Estados de carga con skeletons. Error "Anexo no encontrado" para IDs inválidos sin crash. Falla en carga de metadatos binarios manejada graciosamente: tarjeta de link aún visible, campos binarios muestran indicador de error. Navegación de regreso al listado sin recarga completa. Agregado `onRowClick` en tabla de anexos para navegar al detalle. Satisface VAL-ATTACH-001 a VAL-ATTACH-018.
 
 ### Cambios recientes (2026-05-11)
+
 - **Fix firma de documentos clínicos** (`packages/api/src/routers/clinical-documents.ts`): Corregido `signDocumentProcedure` para actualizar el `status` del documento padre de `'draft'` a `'signed'` tras firmar exitosamente la versión actual. Antes solo actualizaba `clinicalDocumentVersion.signedAt`/`signedByUserId` sin cambiar el estado del documento, lo que causaba que el contador "Firmas pendientes" del dashboard regulatorio nunca decreciera. Se agregó una única sentencia `update(clinicalDocument).set({ status: 'signed' })` después de la actualización de versión, dentro del mismo flujo protegido. Esto satisface VAL-REGTASKS-042 y VAL-REGTASKS-043: al firmar un documento borrador, el métrico de firmas pendientes se actualiza correctamente y la lista de documentos refleja el nuevo estado.
 
 ### Cambios recientes (2026-05-11)
+
 - **Fix persistencia de solicitudes del paciente** (`/patient-requests`): Movido el estado de `useState` local del componente a un `PatientRequestsContext` (`apps/web/src/contexts/patient-requests-context.tsx`) envuelto en el layout `_authenticated.tsx`. El contexto provee estado de requests (`requests`), expand/collapse (`expandedId`), creación (`addRequest`) y transiciones de estado (`updateRequestStatus`), con hooks `useCallback` para estabilidad. La página `/patient-requests` consume el contexto mediante `usePatientRequests()`. Esto corrige VAL-PATREQ-024: las solicitudes ahora sobreviven a la navegación intra-sesión (por ejemplo, ir a `/patients` y volver) y solo se pierden al recargar la página, como estaba originalmente diseñado. Se preserva toda la funcionalidad existente: formulario de creación, validación Zod, transiciones de estado, cálculo de fecha límite, orden descendente y disclaimer de sesión.
 
 ### Cambios recientes (2026-05-11)
+
 - **Nueva vista: Solicitudes del paciente** (`/patient-requests`): Workflow de demostración en memoria para solicitudes de copia de historia clínica. Incluye: selección de paciente mediante `SearchSelect` con búsqueda debounced contra `patients.list`; formulario con alcance (Completa/Parcial/Resumen), canal de entrega (Físico/Correo electrónico/Portal del paciente), solicitante, base legal (Ley 23 de 1981, Ley 1581 de 2012, Resolución 1995 de 1999, etc.) y notas opcionales; validación con `@tanstack/react-form` + Zod en español; fecha límite auto-calculada como fecha de creación + 5 días calendario; ciclo de estados (Recibida → En preparación → Entregada, con Vencida computada reactivamente cuando la fecha límite pasa la fecha actual); tabla/listado con columnas (Paciente, Alcance, Canal, Fecha límite, Estado, Solicitante, Base legal); orden por timestamp descendente (más reciente primero); fila expandible con detalle completo; persistencia en memoria durante la sesión con disclaimer visible en español que explica que los datos se perderán al recargar la página. Agregado item "Solicitudes del paciente" al sidebar bajo grupo Regulatorio.
 
 ### Cambios recientes (2026-05-11)
+
 - **Actualización de navegación y dashboard**: Agregados títulos de topbar para `/regulatory-tasks` ("Tareas regulatorias") y `/patient-requests` ("Solicitudes del paciente"). Dashboard (`/`) actualizado con: (a) dos nuevos accesos rápidos — "Tareas regulatorias" y "Solicitudes del paciente" — en la sección de accesos rápidos; (b) bloque de resumen de cumplimiento regulatorio (`ComplianceSummaryBlock`) que consulta `clinicalDocuments.list`, `ripsExports.list`, `ihceBundles.list`, `interconsultations.list` y `serviceRequests.list`, mostrando conteos reales de pendientes con skeletons de carga, estado vacío y enlaces al panel regulatorio. Layout del dashboard ajustado a grid de 3 columnas en desktop (accesos rápidos, cumplimiento, estado del sistema). Los iconos de sidebar colapsado y estados activos ya funcionan para ambas rutas nuevas.
 - **Nueva vista: Tareas regulatorias** (`/regulatory-tasks`): Dashboard operativo de cumplimiento con metric strips (firmas pendientes, RIPS, IHCE/RDA, interconsultas, órdenes), alertas de cumplimiento con lógica SLA, secciones con datos reales de backend, esqueletos de carga, estados vacíos y manejo de errores con reintentos. Layout responsive (1/2/3 columnas). Agregado item "Tareas regulatorias" al sidebar bajo Regulatorio. Pequeños cambios backend: filtros opcionales `status` en `clinicalDocuments.list` y `serviceRequests.list`.
 - **Pre-existentes detectados**: errores de tipo en `encounters/$encounterId.tsx` y `patients/$patientId.tsx` (imports faltantes), no relacionados con este avance.
 
 ### Cambios recientes (2026-05-11)
+
 - **Nueva vista: Solicitudes del paciente** (`/patient-requests`): Workflow de demostración en memoria para solicitudes de copia de historia clínica. Incluye: selección de paciente mediante `SearchSelect` con búsqueda debounced contra `patients.list`; formulario con alcance (Completa/Parcial/Resumen), canal de entrega (Físico/Correo electrónico/Portal del paciente), solicitante, base legal (Ley 23 de 1981, Ley 1581 de 2012, Resolución 1995 de 1999, etc.) y notas opcionales; validación con `@tanstack/react-form` + Zod en español; fecha límite auto-calculada como fecha de creación + 5 días calendario; ciclo de estados (Recibida → En preparación → Entregada, con Vencida computada reactivamente cuando la fecha límite pasa la fecha actual); tabla/listado con columnas (Paciente, Alcance, Canal, Fecha límite, Estado, Solicitante, Base legal); orden por timestamp descendente (más reciente primero); fila expandible con detalle completo; persistencia en memoria durante la sesión con disclaimer visible en español que explica que los datos se perderán al recargar la página. Agregado item "Solicitudes del paciente" al sidebar bajo grupo Regulatorio.
 
 ## Cambios recientes (2026-05-11)
+
 - **Línea de tiempo clínica en detalle de paciente** (`/patients/$patientId`): Nuevo componente `PatientTimeline` (`apps/web/src/components/patient-timeline.tsx`) integrado debajo de la información del paciente y encima del historial de atenciones. Consulta en paralelo 8 fuentes de datos filtradas por `patientId`: `encounters.list`, `clinicalDocuments.list`, `medicationOrders.list`, `serviceRequests.list`, `interconsultations.list` (filtrado client-side por `encounterId`), `incapacityCertificates.list`, `consents.listConsents` y `consents.listDataDisclosures`. Fusiona y ordena todos los items por fecha descendente. Cada item muestra: icono distintivo de `lucide-react`, color de fondo único, etiqueta de tipo en español, badge de estado traducido, fecha formateada `es-CO`, resumen legible y enlace navegable a su ruta de detalle correspondiente. Soporta skeleton de carga con 6 filas, estado vacío con mensaje descriptivo, y tolerancia a fallos parciales con indicador discreto de error y botón de reintento. Layout denso (~60–80 px por fila), scroll interno si hay más de ~20 items. Preserva completamente el formulario de edición de paciente y la tabla de atenciones existentes.
 
 ### Cambios recientes (2026-05-11)
+
 - **Mejoras en documentos clínicos** (`/clinical-documents` y `/clinical-documents/$documentId`):
   - **Listado**: IDs de paciente/atención ahora truncados y mostrados en texto atenuado (`text-muted-foreground`) en lugar de ocupar columnas dominantes. Etiquetas de tipo en español (`evolucion_medica` → "Evolución médica", etc.). Badges de estado en español (`Borrador` / `Firmado`) con colores amber/emerald. Agregados filtros de estado (`Todos`, `Borrador`, `Firmado`) y tipo de documento en la parte superior de la tabla; los filtros actualizan los resultados sin recarga completa y incluyen botón "Limpiar filtros". Paginación total refleja el conteo filtrado.
   - **Detalle**: La tarjeta de información del documento ahora muestra el tipo en español, estado como badge, IDs truncados y la fecha de creación. La tarjeta de cumplimiento/versión actual muestra explícitamente: estado (`Borrador`/`Firmado`), número de versión, autor (practitioner ID), hash SHA-256 en fuente monoespaciada, fecha de firma (o "Pendiente de firma"), y motivo de corrección cuando aplica.
   - **Secciones**: Los payloads JSON de secciones con claves conocidas (`reasonForVisit`, `subjective`, `objective`, `assessment`, `plan`, `diagnoses`) se renderizan como bloques legibles con etiquetas en español ("Motivo de consulta", "Diagnósticos" con lista con viñetas, etc.) en lugar de solo JSON crudo. Se conserva un botón "Ver JSON" / "Ocultar JSON" por sección para acceder al JSON formateado original. Estados de carga (skeletons) y vacío manejados correctamente. Back navigation al listado preservada. El flujo de creación y firma de documentos se mantiene intacto. Test backend agregado para verificar filtro `status` en `clinicalDocuments.list`.
 
 ## Cambios recientes (2026-05-07)
+
 - **Refactor flujo clínico central**: Los 4 tabs de `$encounterId` (diagnósticos, alergias, observaciones, procedimientos) fueron extraídos a componentes independientes en `encounters/-components/` y migrados de `useState` a `@tanstack/react-form` + Zod, con validación declarativa y manejo de errores consistente.
 - **Tab "Evolución" (SOAP)**: Nuevo tab en `$encounterId` con editor estructurado por secciones (Subjetivo/Objetivo/Análisis/Plan) que crea automáticamente un `clinical_document` de tipo `evolucion_medica` vinculado a la atención, con secciones versionadas y texto renderizado.
 - **Persistencia de tabs en URL**: Los tabs de `$encounterId` ahora se persisten mediante `?tab=diagnoses` (TanStack Router `validateSearch` + `useNavigate`), evitando que se pierdan al refrescar la página.
@@ -119,6 +140,7 @@ _Ninguno. Todos los routers planificados están implementados._
 - **CTA "Nueva atención" en paciente**: El detalle de paciente (`$patientId`) ahora incluye un botón de acceso rápido para crear una nueva atención.
 
 ### Cambios recientes (2026-04-30)
+
 - **DELETE endpoints**: Agregados a `patients`, `encounters`, `clinicalRecords` (diagnosis/allergy/observation/procedure), `clinicalDocuments`, `medicationOrders`, `medicationAdministrations`, `serviceRequests`, `diagnosticReports`, `interconsultations`, `incapacityCertificates`, `attachments` (binary/link), `facilities` (org/site/unit/practitioner), `ripsExports`, `ihceBundles`, `consents` (consent/dataDisclosure).
 - **GET endpoints**: Agregados a `medicationOrders`, `serviceRequests`, `interconsultations`, `incapacityCertificates`, `attachments` (binary/link), `ripsExports`, `ihceBundles`, `facilities` (org/site/unit/practitioner).
 - **onDelete cascade**: Agregado a FKs del schema DB para permitir eliminación en cascada de registros clínicos vinculados a pacientes/atenciones.
@@ -128,6 +150,7 @@ _Ninguno. Todos los routers planificados están implementados._
 - **Migración de formularios**: Todos los formularios de creación migrados de `useState` a `@tanstack/react-form` + Zod: `appointments`, `patients`, `encounters`, `medication-orders`, `service-requests`, `consents`, `interconsultations`, `incapacity-certificates`, `clinical-documents`, `ihce-bundles`.
 
 ### Vistas frontend implementadas
+
 - `/` — Dashboard
 - `/patients` — Listado, búsqueda, registro
 - `/patients/$patientId` — Detalle, edición, historial de atenciones
@@ -160,9 +183,11 @@ _Ninguno. Todos los routers planificados están implementados._
 - La pantalla `/chat` incluye acción de nuevo chat en el encabezado para detener cualquier stream activo y limpiar el historial local sin cambiar el paciente seleccionado. El transporte de AI SDK se mantiene estable y usa `prepareSendMessagesRequest` con un `ref` del paciente seleccionado para enviar siempre el `selectedPatientId` vigente, evitando que el chat conserve el valor inicial `null`.
 
 ### Vistas frontend PENDIENTES
+
 - Portal del paciente (solicitudes de copia) — parcialmente implementado como demo frontend-only en `/patient-requests`
 
 ### Backend PENDIENTE (post-auditoría 2026-04-30)
+
 - **CRÍTICO**: Tablas transaccionales RIPS por tipo de servicio (consulta, procedimientos, medicamentos, urgencias, hospitalización, recién nacido, otros servicios) + generador FEV-RIPS estructurado
 - **CRÍTICO**: API FHIR R4 para interoperabilidad (Res. 866 de 2021)
 - **CRÍTICO**: Validación de interacciones medicamentosas (tabla local ATC o integración)
@@ -179,10 +204,12 @@ _Ninguno. Todos los routers planificados están implementados._
 ## Seed y Test Infrastructure
 
 ### Archivos
+
 - `packages/api/src/seed.ts` — Script de seed completo que usa los routers oRPC reales (no inserts directos a DB). Sirve dual propósito: poblar datos realistas y actuar como suite de integración.
 - `packages/api/src/test-utils.ts` — Utilidades compartidas para tests: `ensureSeedUserExists`, `createSeedContext`, `createTestContext`.
 
 ### Características del seed
+
 - **Sincronización RIPS obligatoria**: Antes de crear cualquier dato, ejecuta `ripsReference.syncAll()` para poblar catálogos SISPRO desde la API del estado. **Ningún código RIPS está hardcodeado**; todos se resuelven dinámicamente contra la base de datos post-sync.
 - **Narrativas coherentes**: 10 pacientes con historias médicas realistas y evolutivas (diabetes, asma, prenatal, EPOC, pediatría, ortopedia, salud mental, cardiología, dermatología, gastroenterología).
 - **Datos completos por paciente**: múltiples appointments, encounters, diagnósticos CIE10, observaciones (signos vitales), procedimientos CUPS, prescripciones médicas, administraciones, documentos clínicos, consentimientos, autorizaciones de divulgación, órdenes/resultados diagnósticos, interconsultas, incapacidades, anexos, bundles IHCE/RDA, contactos, identificadores y coberturas.
@@ -191,6 +218,7 @@ _Ninguno. Todos los routers planificados están implementados._
 - **Cobertura regulatoria ampliada**: crea exports RIPS por pagador con payload/resumen de validación, bundles IHCE/RDA por atención, consentimientos y autorizaciones por paciente, documentos firmados/borradores, anexos documentales con hash SHA-256 y resultados diagnósticos coherentes con la historia clínica.
 
 ### Comandos
+
 ```bash
 # Ejecutar seed (primera vez o con DB limpia)
 bun run seed
@@ -211,6 +239,7 @@ bun x tsc --noEmit -p packages/api/tsconfig.json
 > **Idempotencia:** El seed detecta automáticamente si ya existe datos de un seed anterior (por `reps_code` de la organización). Si detecta datos existentes, muestra un error amigable y sugiere usar `--clean`. El flag `--clean` elimina todos los datos previos del seed antes de poblar la base de datos nuevamente.
 
 ### Test patterns establecidos
+
 - **Unit tests** (existentes): usan `createRouterClient` con DB mocked (sin DB real).
 - **Integration/seed tests** (nuevo): usan `createRouterClient` con DB real y `createSeedContext`.
 - El seed user se crea/verifica en la tabla `user` de Better Auth para satisfacer FKs y el middleware de autenticación.
