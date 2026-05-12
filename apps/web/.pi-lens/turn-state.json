@@ -1067,8 +1067,8 @@
           "end": 1051
         },
         {
-          "start": 1064,
-          "end": 1064
+          "start": 1060,
+          "end": 1066
         },
         {
           "start": 1098,
@@ -1080,7 +1080,7 @@
         }
       ],
       "importsChanged": true,
-      "lastEdit": "2026-05-12T23:52:16.504Z"
+      "lastEdit": "2026-05-12T23:52:35.735Z"
     },
     "src/routes/_authenticated/patients/$patientId.tsx": {
       "modifiedRanges": [
@@ -1141,6 +1141,6 @@
   },
   "turnCycles": 0,
   "maxCycles": 3,
-  "lastUpdated": "2026-05-12T23:52:16.504Z",
+  "lastUpdated": "2026-05-12T23:52:35.735Z",
   "sessionId": "lens-mp32rgkz-3e9ca4af"
 }
