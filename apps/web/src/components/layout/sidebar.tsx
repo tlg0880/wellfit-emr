@@ -212,7 +212,7 @@ export function Sidebar() {
                       to={item.to}
                     >
                       {isActive && (
-                        <span className="absolute top-1/2 left-0 h-5 w-1 -translate-y-1/2 rounded-full bg-sidebar-primary" />
+                        <span className="absolute top-1/2 left-0 h-5 w-1.5 -translate-y-1/2 rounded-full bg-sidebar-primary" />
                       )}
                       <div
                         className={cn(
