@@ -54,7 +54,7 @@ export function Topbar() {
         </div>
         <div className="flex items-center gap-2">
           <div className="h-4 w-px bg-border" />
-          <h2 className="font-semibold text-foreground/90 text-sm tracking-tight">
+          <h2 className="font-semibold text-base text-foreground/90 tracking-tight">
             {title}
           </h2>
         </div>
