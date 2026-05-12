@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from "@wellfit-emr/ui/components/card";
 import { Skeleton } from "@wellfit-emr/ui/components/skeleton";
-import { Trash2 } from "lucide-react";
+import { Hospital, Trash2 } from "lucide-react";
 import { useEffect } from "react";
 import { toast } from "sonner";
 
@@ -75,6 +75,8 @@ function ServiceUnitDetailPage() {
       <PageHeader
         backTo="/facilities/service-units"
         description="Información de la unidad de servicio"
+        icon={Hospital}
+        iconBgClass="bg-teal-100 text-teal-600"
         title={title}
       />
 
