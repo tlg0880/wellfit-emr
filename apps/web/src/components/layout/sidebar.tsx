@@ -175,7 +175,7 @@ export function Sidebar() {
         )}
         <button
           className={cn(
-            "inline-flex size-7 items-center justify-center rounded-sm text-sidebar-foreground/60 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground",
+            "inline-flex size-7 items-center justify-center rounded-sm text-sidebar-foreground/60 transition-colors hover:bg-primary/5 hover:text-sidebar-primary",
             collapsed && "mx-auto mt-2"
           )}
           onClick={() => setCollapsed((c) => !c)}
