@@ -68,6 +68,9 @@ _Ninguno. Todos los routers planificados están implementados._
 
 ### Cambios recientes (2026-05-12)
 
+- **Iteración 13 — Bordes redondeados en iconos de marca del sidebar**: Decimotercera ronda de refinamiento visual enfocada en consistencia de la navegación.
+  - **Icono de marca del sidebar**: Los contenedores del icono de marca (tanto expandido `size-7` como colapsado `size-8`) ahora tienen `rounded-sm` y `shadow-sm`, eliminando las esquinas anguladas que contrastaban con el resto de la interfaz redondeada.
+  - **Botón de colapsar sidebar**: Añadido `rounded-sm` al botón de colapsar/expandir para consistencia visual.
 - **Iteración 12 — Iconos en tarjetas de estado del sistema**: Duodécima ronda de refinamiento visual enfocada en el dashboard.
   - **Tarjetas de estado del sistema**: Cada una de las 4 tarjetas de estado (API, Base de datos, Autenticación, RIPS) ahora tiene un icono distintivo (`Server`, `Database`, `Shield`, `FileOutput`) en un contenedor coloreado (`size-6 rounded-md`) al lado de la etiqueta. Los colores son semánticos: `emerald` para API, `sky` para base de datos, `amber` para autenticación, `violet` para RIPS.
 - **Iteración 11 — Iconos en encabezados de página (completo)**: Undécima ronda de refinamiento visual que aplica el patrón de icono en PageHeader a todas las vistas principales.

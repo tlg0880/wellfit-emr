@@ -615,6 +615,18 @@
     "src/components/layout/sidebar.tsx": {
       "modifiedRanges": [
         {
+          "start": 158,
+          "end": 158
+        },
+        {
+          "start": 172,
+          "end": 172
+        },
+        {
+          "start": 178,
+          "end": 178
+        },
+        {
           "start": 192,
           "end": 195
         },
@@ -636,7 +648,7 @@
         }
       ],
       "importsChanged": false,
-      "lastEdit": "2026-05-12T20:51:15.168Z"
+      "lastEdit": "2026-05-12T21:03:14.914Z"
     },
     "src/routes/_authenticated/clinical-documents/index.tsx": {
       "modifiedRanges": [
@@ -765,6 +777,6 @@
   },
   "turnCycles": 0,
   "maxCycles": 3,
-  "lastUpdated": "2026-05-12T21:02:00.826Z",
+  "lastUpdated": "2026-05-12T21:03:14.914Z",
   "sessionId": "lens-mp32rgkz-3e9ca4af"
 }
