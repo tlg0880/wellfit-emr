@@ -151,7 +151,7 @@ export function SearchSelect({
 
       {open && (
         <div
-          className="absolute z-50 mt-1 w-full border border-input bg-popover shadow-md"
+          className="absolute z-50 mt-1 w-full rounded-sm border border-input bg-popover shadow-md"
           id={`${id}-listbox`}
           role="listbox"
         >
