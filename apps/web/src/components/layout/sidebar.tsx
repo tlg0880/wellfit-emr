@@ -155,8 +155,8 @@ export function Sidebar() {
       <div className="flex h-14 items-center justify-between border-sidebar-border border-b px-4">
         {!collapsed && (
           <div className="flex items-center gap-2.5">
-            <div className="flex size-7 items-center justify-center rounded-sm bg-sidebar-primary text-sidebar-primary-foreground shadow-md">
-              <HeartPulse size={16} strokeWidth={2.5} />
+            <div className="flex size-8 items-center justify-center rounded-sm bg-sidebar-primary text-sidebar-primary-foreground shadow-md">
+              <HeartPulse size={18} strokeWidth={2.5} />
             </div>
             <div className="flex flex-col">
               <span className="font-bold text-sidebar-foreground text-sm leading-none tracking-tight">
@@ -169,8 +169,8 @@ export function Sidebar() {
           </div>
         )}
         {collapsed && (
-          <div className="mx-auto flex size-8 items-center justify-center rounded-sm bg-sidebar-primary text-sidebar-primary-foreground shadow-md">
-            <HeartPulse size={16} strokeWidth={2.5} />
+          <div className="mx-auto flex size-9 items-center justify-center rounded-sm bg-sidebar-primary text-sidebar-primary-foreground shadow-md">
+            <HeartPulse size={18} strokeWidth={2.5} />
           </div>
         )}
         <button
