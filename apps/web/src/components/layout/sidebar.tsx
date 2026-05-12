@@ -226,7 +226,7 @@ export function Sidebar() {
                       </div>
                       {!collapsed && <span>{item.label}</span>}
                       {isActive && !collapsed && (
-                        <div className="ml-auto size-2 rounded-full bg-sidebar-primary" />
+                        <div className="ml-auto size-2.5 rounded-full bg-sidebar-primary" />
                       )}
                     </Link>
                   </li>
