@@ -1180,7 +1180,9 @@ function AppointmentsPage() {
             <CardContent className="space-y-4">
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-sm">
-                  <Clock className="text-muted-foreground" size={14} />
+                  <div className="flex size-7 items-center justify-center rounded-sm bg-primary/10 text-primary shadow-sm">
+                    <Clock size={14} />
+                  </div>
                   <span>
                     {new Date(
                       selectedAppointment.scheduledAt
@@ -1194,7 +1196,9 @@ function AppointmentsPage() {
                   </span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
-                  <User className="text-muted-foreground" size={14} />
+                  <div className="flex size-7 items-center justify-center rounded-sm bg-teal-100 text-teal-600 shadow-sm">
+                    <User size={14} />
+                  </div>
                   <span>
                     Paciente:{" "}
                     {selectedPatient
@@ -1204,7 +1208,9 @@ function AppointmentsPage() {
                 </div>
                 {selectedAppointment.practitionerId && (
                   <div className="flex items-center gap-2 text-sm">
-                    <User className="text-muted-foreground" size={14} />
+                    <div className="flex size-7 items-center justify-center rounded-sm bg-violet-100 text-violet-600 shadow-sm">
+                      <Stethoscope size={14} />
+                    </div>
                     <span>
                       Profesional:{" "}
                       {selectedPractitioner
@@ -1214,12 +1220,14 @@ function AppointmentsPage() {
                   </div>
                 )}
                 <div className="flex items-center gap-2 text-sm">
-                  <span
-                    className={`size-2.5 ${
-                      statusConfig[selectedAppointment.status]?.color ??
-                      "bg-slate-500"
-                    }`}
-                  />
+                  <div className="flex size-7 items-center justify-center rounded-sm bg-slate-100 text-slate-600 shadow-sm">
+                    <span
+                      className={`size-2.5 rounded-full ${
+                        statusConfig[selectedAppointment.status]?.color ??
+                        "bg-slate-500"
+                      }`}
+                    />
+                  </div>
                   <span>
                     Estado:{" "}
                     {statusConfig[selectedAppointment.status]?.label ??
