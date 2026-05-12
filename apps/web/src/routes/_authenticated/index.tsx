@@ -167,7 +167,7 @@ function ComplianceSummaryBlock() {
       </CardHeader>
       <CardContent className="space-y-2">
         {draftDocsTotal > 0 && (
-          <div className="flex items-center justify-between rounded-sm border border-amber-200 bg-amber-50/50 p-3 transition-colors hover:bg-amber-50">
+          <div className="flex items-center justify-between rounded-sm border border-amber-200 bg-amber-50/50 p-3 shadow-sm transition-colors hover:bg-amber-50">
             <div className="flex items-center gap-2">
               <div className="flex size-7 items-center justify-center rounded-sm bg-amber-100 text-amber-600 shadow-sm">
                 <PenLine size={14} />
@@ -180,7 +180,7 @@ function ComplianceSummaryBlock() {
           </div>
         )}
         {ripsTotal > 0 && (
-          <div className="flex items-center justify-between rounded-sm border border-sky-200 bg-sky-50/50 p-3 transition-colors hover:bg-sky-50">
+          <div className="flex items-center justify-between rounded-sm border border-sky-200 bg-sky-50/50 p-3 shadow-sm transition-colors hover:bg-sky-50">
             <div className="flex items-center gap-2">
               <div className="flex size-7 items-center justify-center rounded-sm bg-sky-100 text-sky-600 shadow-sm">
                 <FileOutput size={14} />
@@ -193,7 +193,7 @@ function ComplianceSummaryBlock() {
           </div>
         )}
         {ihceTotal > 0 && (
-          <div className="flex items-center justify-between rounded-sm border border-indigo-200 bg-indigo-50/50 p-3 transition-colors hover:bg-indigo-50">
+          <div className="flex items-center justify-between rounded-sm border border-indigo-200 bg-indigo-50/50 p-3 shadow-sm transition-colors hover:bg-indigo-50">
             <div className="flex items-center gap-2">
               <div className="flex size-7 items-center justify-center rounded-sm bg-indigo-100 text-indigo-600 shadow-sm">
                 <Share2 size={14} />
@@ -206,7 +206,7 @@ function ComplianceSummaryBlock() {
           </div>
         )}
         {interTotal > 0 && (
-          <div className="flex items-center justify-between rounded-sm border border-emerald-200 bg-emerald-50/50 p-3 transition-colors hover:bg-emerald-50">
+          <div className="flex items-center justify-between rounded-sm border border-emerald-200 bg-emerald-50/50 p-3 shadow-sm transition-colors hover:bg-emerald-50">
             <div className="flex items-center gap-2">
               <div className="flex size-7 items-center justify-center rounded-sm bg-emerald-100 text-emerald-600 shadow-sm">
                 <Users size={14} />
@@ -219,7 +219,7 @@ function ComplianceSummaryBlock() {
           </div>
         )}
         {orderTotal > 0 && (
-          <div className="flex items-center justify-between rounded-sm border border-rose-200 bg-rose-50/50 p-3 transition-colors hover:bg-rose-50">
+          <div className="flex items-center justify-between rounded-sm border border-rose-200 bg-rose-50/50 p-3 shadow-sm transition-colors hover:bg-rose-50">
             <div className="flex items-center gap-2">
               <div className="flex size-7 items-center justify-center rounded-sm bg-rose-100 text-rose-600 shadow-sm">
                 <Activity size={14} />
