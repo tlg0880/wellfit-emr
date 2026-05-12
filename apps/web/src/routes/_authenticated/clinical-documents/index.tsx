@@ -621,7 +621,7 @@ function ClinicalDocumentsListPage() {
       )}
 
       <div className="space-y-3 px-6">
-        <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-card px-3 py-2.5 shadow-sm">
+        <div className="flex flex-wrap items-center gap-2 rounded-md border bg-card px-3 py-2.5 shadow-sm">
           <Select
             onValueChange={(v) => {
               setStatusFilter(v as string);

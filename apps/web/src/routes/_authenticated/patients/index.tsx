@@ -769,7 +769,7 @@ function PatientsListPage() {
       )}
 
       <div className="px-6">
-        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border bg-card px-3 py-2.5 shadow-sm">
+        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-md border bg-card px-3 py-2.5 shadow-sm">
           <div className="flex items-center gap-2 rounded-sm border bg-background px-2.5 py-1.5">
             <Search className="text-muted-foreground" size={14} />
             <Input

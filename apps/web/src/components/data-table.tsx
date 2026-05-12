@@ -139,7 +139,7 @@ export function DataTable<T>({
       </div>
 
       {pagination && totalPages > 1 && (
-        <div className="flex items-center justify-between rounded-lg border bg-card px-3 py-2 shadow-sm">
+        <div className="flex items-center justify-between rounded-md border bg-card px-3 py-2 shadow-sm">
           <span className="text-muted-foreground text-xs">
             Mostrando {pagination.offset + 1} -{" "}
             {Math.min(pagination.offset + pagination.limit, pagination.total)}{" "}
