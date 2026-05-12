@@ -18,7 +18,7 @@ function RouteComponent() {
       <div className="relative hidden w-1/2 flex-col justify-between bg-teal-900 p-12 text-white lg:flex">
         <div className="z-10">
           <div className="flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-sm bg-white text-teal-900 shadow-sm">
+            <div className="flex size-10 items-center justify-center rounded-sm bg-white text-teal-900 shadow-md">
               <HeartPulse size={20} strokeWidth={2.5} />
             </div>
             <span className="font-bold text-xl tracking-tight">
@@ -63,7 +63,7 @@ function RouteComponent() {
         <div className="mx-auto w-full max-w-sm">
           {/* Mobile-only logo */}
           <div className="mb-8 flex items-center gap-3 lg:hidden">
-            <div className="flex size-9 items-center justify-center rounded-sm bg-teal-800 text-white shadow-sm">
+            <div className="flex size-9 items-center justify-center rounded-sm bg-teal-800 text-white shadow-md">
               <HeartPulse size={18} strokeWidth={2.5} />
             </div>
             <span className="font-bold text-lg tracking-tight">
