@@ -621,7 +621,7 @@ function DashboardPage() {
                 },
               ].map((item) => (
                 <div
-                  className="rounded-sm border bg-card/80 p-4 transition-all duration-150 hover:bg-card hover:shadow-md"
+                  className="rounded-sm border bg-card/80 p-4 shadow-sm transition-all duration-150 hover:bg-card hover:shadow-md"
                   key={item.label}
                 >
                   <div className="flex items-center gap-2">
