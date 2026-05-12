@@ -309,7 +309,7 @@ function DashboardPage() {
   } else if (encountersData && encountersData.encounters.length > 0) {
     encountersContent = encountersData.encounters.map((enc) => (
       <Link
-        className="group flex items-center justify-between rounded-sm border p-3.5 transition-all duration-150 hover:border-primary/20 hover:bg-primary/5 hover:shadow-sm"
+        className="group flex items-center justify-between rounded-sm border p-3.5 shadow-sm transition-all duration-150 hover:border-primary/20 hover:bg-primary/5 hover:shadow-md"
         key={enc.id}
         params={{ encounterId: enc.id }}
         search={{ tab: undefined }}
@@ -362,7 +362,7 @@ function DashboardPage() {
   } else if (patientsData && patientsData.patients.length > 0) {
     patientsContent = patientsData.patients.map((pat) => (
       <Link
-        className="group flex items-center justify-between rounded-sm border p-3.5 transition-all duration-150 hover:border-primary/20 hover:bg-primary/5 hover:shadow-sm"
+        className="group flex items-center justify-between rounded-sm border p-3.5 shadow-sm transition-all duration-150 hover:border-primary/20 hover:bg-primary/5 hover:shadow-md"
         key={pat.id}
         params={{ patientId: pat.id }}
         to="/patients/$patientId"
@@ -541,7 +541,7 @@ function DashboardPage() {
           <CardContent className="space-y-2">
             {quickAccess.map((item) => (
               <Link
-                className="group flex items-center gap-3.5 rounded-sm border p-3.5 transition-all duration-200 hover:-translate-y-px hover:border-primary/20 hover:bg-primary/5 hover:shadow-md"
+                className="group flex items-center gap-3.5 rounded-sm border p-3.5 shadow-sm transition-all duration-200 hover:-translate-y-px hover:border-primary/20 hover:bg-primary/5 hover:shadow-md"
                 key={item.to}
                 to={item.to}
               >
