@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from "@wellfit-emr/ui/components/card";
 import { Skeleton } from "@wellfit-emr/ui/components/skeleton";
-import { RefreshCw, Trash2 } from "lucide-react";
+import { Pill, RefreshCw, Trash2 } from "lucide-react";
 import { useEffect } from "react";
 import { toast } from "sonner";
 
@@ -187,6 +187,8 @@ function MedicationOrderDetailPage() {
         }
         backTo="/medication-orders"
         description="Detalle de la orden de medicamento"
+        icon={Pill}
+        iconBgClass="bg-rose-100 text-rose-600"
         title={title}
       />
 
