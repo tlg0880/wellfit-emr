@@ -206,7 +206,7 @@ export function Sidebar() {
                         "group relative flex items-center gap-3 rounded-sm px-3 py-2 text-[13px] transition-all duration-150",
                         collapsed && "justify-center px-2",
                         isActive
-                          ? "bg-sidebar-primary/15 font-medium text-sidebar-primary shadow-md"
+                          ? "bg-sidebar-primary/20 font-medium text-sidebar-primary shadow-md"
                           : "text-sidebar-foreground/70 hover:bg-primary/5 hover:text-sidebar-primary hover:shadow-sm"
                       )}
                       to={item.to}
