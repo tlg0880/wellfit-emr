@@ -101,8 +101,8 @@ export function DataTable<T>({
                       "border-transparent border-l-2 transition-all duration-150",
                       rowIndex % 2 === 0 ? "bg-background" : "bg-muted/40",
                       onRowClick
-                        ? "cursor-pointer hover:border-l-4 hover:border-l-primary/60 hover:bg-primary/5"
-                        : "hover:border-l-[3px] hover:border-l-muted-foreground/40 hover:bg-muted/40"
+                        ? "cursor-pointer hover:border-l-4 hover:border-l-primary/60 hover:bg-primary/5 hover:shadow-lg"
+                        : "hover:border-l-[3px] hover:border-l-muted-foreground/40 hover:bg-muted/40 hover:shadow-sm"
                     )}
                     key={keyExtractor(row)}
                     onClick={
