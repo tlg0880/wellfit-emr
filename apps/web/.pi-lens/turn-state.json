@@ -29,7 +29,7 @@
           "end": 19
         },
         {
-          "start": 24,
+          "start": 23,
           "end": 24
         },
         {
@@ -230,15 +230,7 @@
         },
         {
           "start": 451,
-          "end": 451
-        },
-        {
-          "start": 457,
-          "end": 457
-        },
-        {
-          "start": 461,
-          "end": 461
+          "end": 463
         },
         {
           "start": 473,
@@ -322,7 +314,7 @@
         }
       ],
       "importsChanged": false,
-      "lastEdit": "2026-05-12T23:34:26.914Z"
+      "lastEdit": "2026-05-12T23:41:56.284Z"
     },
     "src/components/data-table.tsx": {
       "modifiedRanges": [
@@ -1085,6 +1077,6 @@
   },
   "turnCycles": 0,
   "maxCycles": 3,
-  "lastUpdated": "2026-05-12T23:40:40.320Z",
+  "lastUpdated": "2026-05-12T23:41:56.284Z",
   "sessionId": "lens-mp32rgkz-3e9ca4af"
 }

@@ -20,6 +20,7 @@ import {
   FileOutput,
   Gavel,
   HeartPulse,
+  Home,
   PenLine,
   Server,
   Share2,
@@ -447,14 +448,19 @@ function DashboardPage() {
   return (
     <div className="space-y-8 p-6">
       {/* Header */}
-      <div className="space-y-1">
-        <h1 className="font-semibold text-2xl tracking-tight">
-          Panel principal
-        </h1>
-        <p className="text-muted-foreground text-sm">
-          Bienvenido, {session.data?.user.name}. Este es el resumen operativo de
-          la institución.
-        </p>
+      <div className="flex items-center gap-3">
+        <div className="flex size-9 items-center justify-center rounded-sm bg-teal-100 text-teal-600 shadow-md">
+          <Home size={18} />
+        </div>
+        <div className="space-y-1">
+          <h1 className="font-semibold text-2xl tracking-tight">
+            Panel principal
+          </h1>
+          <p className="text-muted-foreground text-sm">
+            Bienvenido, {session.data?.user.name}. Este es el resumen operativo
+            de la institución.
+          </p>
+        </div>
       </div>
 
       {/* Stats */}
