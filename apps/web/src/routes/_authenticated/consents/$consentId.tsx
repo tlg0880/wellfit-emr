@@ -8,7 +8,13 @@ import {
   CardTitle,
 } from "@wellfit-emr/ui/components/card";
 import { Skeleton } from "@wellfit-emr/ui/components/skeleton";
-import { AlertTriangle, Ban, RefreshCw, Trash2 } from "lucide-react";
+import {
+  AlertTriangle,
+  Ban,
+  RefreshCw,
+  ShieldCheck,
+  Trash2,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -199,6 +205,8 @@ function ConsentDetailPage() {
         }
         backTo="/consents"
         description={consent.consentType}
+        icon={ShieldCheck}
+        iconBgClass="bg-amber-100 text-amber-600"
         title={`Consentimiento ${isRevoked ? "(revocado)" : ""}`}
       />
 

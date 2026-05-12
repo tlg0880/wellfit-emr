@@ -1053,10 +1053,24 @@
       ],
       "importsChanged": false,
       "lastEdit": "2026-05-12T23:36:39.654Z"
+    },
+    "src/routes/_authenticated/consents/$consentId.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 11,
+          "end": 17
+        },
+        {
+          "start": 202,
+          "end": 203
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-12T23:38:43.196Z"
     }
   },
   "turnCycles": 0,
   "maxCycles": 3,
-  "lastUpdated": "2026-05-12T23:37:41.492Z",
+  "lastUpdated": "2026-05-12T23:38:43.196Z",
   "sessionId": "lens-mp32rgkz-3e9ca4af"
 }
