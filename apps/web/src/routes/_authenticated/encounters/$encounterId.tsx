@@ -32,6 +32,7 @@ import {
   Pill,
   RefreshCw,
   Scissors,
+  Stethoscope,
   Syringe,
   Trash2,
   Users,
@@ -232,6 +233,8 @@ function EncounterDetailPage() {
         }
         backTo="/encounters"
         description={encounterLoading ? "..." : `Estado: ${statusLabel}`}
+        icon={Stethoscope}
+        iconBgClass="bg-teal-100 text-teal-600"
         title={
           encounterLoading
             ? "Cargando..."

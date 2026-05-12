@@ -1035,10 +1035,24 @@
       ],
       "importsChanged": true,
       "lastEdit": "2026-05-12T23:35:51.893Z"
+    },
+    "src/routes/_authenticated/encounters/$encounterId.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 35,
+          "end": 35
+        },
+        {
+          "start": 235,
+          "end": 236
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-12T23:36:39.654Z"
     }
   },
   "turnCycles": 0,
   "maxCycles": 3,
-  "lastUpdated": "2026-05-12T23:35:51.893Z",
+  "lastUpdated": "2026-05-12T23:36:39.654Z",
   "sessionId": "lens-mp32rgkz-3e9ca4af"
 }
