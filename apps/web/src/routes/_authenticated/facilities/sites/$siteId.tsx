@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from "@wellfit-emr/ui/components/card";
 import { Skeleton } from "@wellfit-emr/ui/components/skeleton";
-import { Trash2 } from "lucide-react";
+import { Building2, Trash2 } from "lucide-react";
 import { useEffect } from "react";
 import { toast } from "sonner";
 
@@ -75,6 +75,8 @@ function SiteDetailPage() {
       <PageHeader
         backTo="/facilities/sites"
         description="Información de la sede"
+        icon={Building2}
+        iconBgClass="bg-blue-100 text-blue-600"
         title={title}
       />
 
