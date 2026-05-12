@@ -68,6 +68,10 @@ _Ninguno. Todos los routers planificados están implementados._
 
 ### Cambios recientes (2026-05-12)
 
+- **Iteración 8 — Hover accent en tabla y badges con bordes/colores mejorados**: Octava ronda de refinamiento visual enfocada en micro-interacciones de tabla y consistencia de badges.
+  - **DataTable hover accent**: Las filas de tabla ahora tienen `border-l-2 border-transparent` que cambia a `hover:border-l-primary/40` (o muted para filas no clickeables) al pasar el mouse. Esto crea un indicador visual sutil de interacción, consistente con el patrón de la sidebar.
+  - **Badges de estado en atenciones**: Añadidos bordes semánticos (`border-amber-300`, `border-teal-300`) y `shadow-sm` a los badges de estado, creando pills más definidos y con mejor presencia visual.
+  - **Badges de documentos clínicos**: Transformados de rectángulos con borde a pills redondeados (`rounded-full`) con `shadow-sm` y padding horizontal aumentado (`px-2`), para consistencia con los badges de atenciones.
 - **Iteración 7 — Bordes semánticos en stat cards, gradiente en tabla y pills en sidebar**: Séptima ronda de refinamiento visual enfocada en color semántico y jerarquía visual.
   - **Stat cards con bordes semánticos**: Cada tarjeta de estadísticas del dashboard ahora tiene un borde izquierdo (`border-l-4`) cuyo color coincide con su significado semántico: `teal` para pacientes, `sky` para atenciones del mes, `amber` para atenciones activas y `slate` para profesionales. Esto hace que el dashboard sea más escaneable visualmente.
   - **Gradiente en header de tabla**: El header de `DataTable` cambió de `bg-muted/80` plano a `bg-gradient-to-b from-muted/90 to-muted/70`, creando una transición suave que añade profundidad visual.

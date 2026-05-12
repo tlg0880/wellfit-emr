@@ -88,12 +88,12 @@ function getDocumentStatusLabel(status: string): string {
 
 function getStatusBadgeClass(status: string): string {
   if (status === "draft") {
-    return "border-amber-200 bg-amber-50 text-amber-700";
+    return "rounded-full border-amber-200 bg-amber-50 px-2 py-0.5 shadow-sm text-amber-700";
   }
   if (status === "signed") {
-    return "border-emerald-200 bg-emerald-50 text-emerald-700";
+    return "rounded-full border-emerald-200 bg-emerald-50 px-2 py-0.5 shadow-sm text-emerald-700";
   }
-  return "border-slate-200 bg-slate-50 text-slate-700";
+  return "rounded-full border-slate-200 bg-slate-50 px-2 py-0.5 shadow-sm text-slate-700";
 }
 
 interface SectionPayload {
@@ -650,7 +650,7 @@ function ClinicalDocumentDetailPage() {
                 <div>
                   <p className="text-[10px] text-muted-foreground">Estado</p>
                   <span
-                    className={`inline-flex items-center border px-1.5 py-0.5 font-medium text-[10px] ${getStatusBadgeClass(data.document.status)}`}
+                    className={`inline-flex items-center font-medium text-[10px] ${getStatusBadgeClass(data.document.status)}`}
                   >
                     {getDocumentStatusLabel(data.document.status)}
                   </span>
@@ -723,7 +723,7 @@ function ClinicalDocumentDetailPage() {
                 <div>
                   <p className="text-[10px] text-muted-foreground">Estado</p>
                   <span
-                    className={`inline-flex items-center border px-1.5 py-0.5 font-medium text-[10px] ${getStatusBadgeClass(data.document.status)}`}
+                    className={`inline-flex items-center font-medium text-[10px] ${getStatusBadgeClass(data.document.status)}`}
                   >
                     {getDocumentStatusLabel(data.document.status)}
                   </span>

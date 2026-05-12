@@ -320,7 +320,7 @@
         },
         {
           "start": 101,
-          "end": 103
+          "end": 105
         },
         {
           "start": 123,
@@ -356,7 +356,7 @@
         }
       ],
       "importsChanged": false,
-      "lastEdit": "2026-05-12T20:51:10.557Z"
+      "lastEdit": "2026-05-12T20:52:29.621Z"
     },
     "src/components/empty-state.tsx": {
       "modifiedRanges": [
@@ -467,6 +467,18 @@
           "end": 27
         },
         {
+          "start": 829,
+          "end": 829
+        },
+        {
+          "start": 831,
+          "end": 831
+        },
+        {
+          "start": 833,
+          "end": 834
+        },
+        {
           "start": 838,
           "end": 838
         },
@@ -528,7 +540,7 @@
         }
       ],
       "importsChanged": true,
-      "lastEdit": "2026-05-12T20:48:42.052Z"
+      "lastEdit": "2026-05-12T20:52:41.000Z"
     },
     "src/routes/_authenticated/patients/index.tsx": {
       "modifiedRanges": [
@@ -605,10 +617,46 @@
       ],
       "importsChanged": false,
       "lastEdit": "2026-05-12T20:51:15.168Z"
+    },
+    "src/routes/_authenticated/clinical-documents/index.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 76,
+          "end": 76
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-12T20:53:07.011Z"
+    },
+    "src/routes/_authenticated/clinical-documents/$documentId.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 91,
+          "end": 91
+        },
+        {
+          "start": 94,
+          "end": 94
+        },
+        {
+          "start": 96,
+          "end": 96
+        },
+        {
+          "start": 653,
+          "end": 653
+        },
+        {
+          "start": 726,
+          "end": 726
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-12T20:53:30.735Z"
     }
   },
   "turnCycles": 0,
   "maxCycles": 3,
-  "lastUpdated": "2026-05-12T20:51:15.168Z",
+  "lastUpdated": "2026-05-12T20:53:30.735Z",
   "sessionId": "lens-mp32rgkz-3e9ca4af"
 }

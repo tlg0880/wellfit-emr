@@ -73,7 +73,7 @@ function getStatusBadge(status: string): React.ReactNode {
   };
   return (
     <span
-      className={`inline-flex items-center border px-1.5 py-0.5 font-medium text-[10px] ${mapped.colorClass}`}
+      className={`inline-flex items-center rounded-full border px-2 py-0.5 font-medium text-[10px] shadow-sm ${mapped.colorClass}`}
     >
       {mapped.label}
     </span>

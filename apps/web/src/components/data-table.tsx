@@ -98,11 +98,11 @@ export function DataTable<T>({
               : data.map((row, rowIndex) => (
                   <tr
                     className={cn(
-                      "transition-colors duration-150",
+                      "border-transparent border-l-2 transition-all duration-150",
                       rowIndex % 2 === 0 ? "bg-background" : "bg-muted/30",
                       onRowClick
-                        ? "cursor-pointer hover:bg-primary/5"
-                        : "hover:bg-muted/40"
+                        ? "cursor-pointer hover:border-l-primary/40 hover:bg-primary/5"
+                        : "hover:border-l-muted-foreground/20 hover:bg-muted/40"
                     )}
                     key={keyExtractor(row)}
                     onClick={
