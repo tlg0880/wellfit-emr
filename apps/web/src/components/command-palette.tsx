@@ -303,7 +303,7 @@ export function CommandPalette() {
             ref={inputRef}
             value={query}
           />
-          <kbd className="hidden rounded-none border bg-muted px-1.5 py-0.5 font-mono text-[10px] sm:inline-block">
+          <kbd className="hidden rounded-sm border bg-muted px-1.5 py-0.5 font-mono text-[10px] sm:inline-block">
             ESC
           </kbd>
         </div>
@@ -379,13 +379,13 @@ export function CommandPalette() {
         <div className="flex items-center justify-between border-t px-4 py-2 text-[10px] text-muted-foreground">
           <div className="flex items-center gap-3">
             <span className="inline-flex items-center gap-1">
-              <kbd className="rounded-none border bg-muted px-1 py-0.5 font-mono">
+              <kbd className="rounded-sm border bg-muted px-1 py-0.5 font-mono">
                 ↵
               </kbd>{" "}
               seleccionar
             </span>
             <span className="inline-flex items-center gap-1">
-              <kbd className="rounded-none border bg-muted px-1 py-0.5 font-mono">
+              <kbd className="rounded-sm border bg-muted px-1 py-0.5 font-mono">
                 ↑↓
               </kbd>{" "}
               navegar
