@@ -21,6 +21,7 @@ import {
 import {
   AlertTriangle,
   Calendar,
+  CalendarDays,
   ChevronLeft,
   ChevronRight,
   Circle,
@@ -862,7 +863,8 @@ function AppointmentsPage() {
         actions={
           <div className="flex items-center gap-2">
             <Button onClick={goToToday} size="sm" variant="outline">
-              Hoy
+              <CalendarDays size={14} />
+              <span className="ml-1.5">Hoy</span>
             </Button>
             <Button
               onClick={() => {
@@ -950,12 +952,13 @@ function AppointmentsPage() {
         )}
       </div>
 
-      <Card>
+      <Card className="shadow-md">
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Button
                 aria-label="Mes anterior"
+                className="hover:bg-primary/10 hover:text-primary"
                 onClick={goToPrevMonth}
                 size="icon"
                 variant="ghost"
@@ -967,6 +970,7 @@ function AppointmentsPage() {
               </h2>
               <Button
                 aria-label="Mes siguiente"
+                className="hover:bg-primary/10 hover:text-primary"
                 onClick={goToNextMonth}
                 size="icon"
                 variant="ghost"
