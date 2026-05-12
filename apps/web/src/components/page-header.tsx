@@ -91,7 +91,7 @@ export function PageHeader({
         </div>
         <div className="flex items-center gap-2">
           {actions && <div className="flex items-center gap-2">{actions}</div>}
-          <div className="hidden items-center gap-1.5 rounded-sm border bg-muted/50 px-2.5 py-1.5 text-[11px] text-muted-foreground sm:flex">
+          <div className="hidden items-center gap-1.5 rounded-sm border bg-muted/50 px-2.5 py-1.5 text-[11px] text-muted-foreground shadow-sm sm:flex">
             <Command size={12} />
             <span className="font-medium">K</span>
           </div>
