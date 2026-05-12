@@ -1021,10 +1021,24 @@
       ],
       "importsChanged": true,
       "lastEdit": "2026-05-12T23:27:03.777Z"
+    },
+    "src/routes/_authenticated/patients/$patientId.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 34,
+          "end": 34
+        },
+        {
+          "start": 1753,
+          "end": 1754
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-12T23:35:51.893Z"
     }
   },
   "turnCycles": 0,
   "maxCycles": 3,
-  "lastUpdated": "2026-05-12T23:35:11.551Z",
+  "lastUpdated": "2026-05-12T23:35:51.893Z",
   "sessionId": "lens-mp32rgkz-3e9ca4af"
 }

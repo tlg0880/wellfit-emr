@@ -31,6 +31,7 @@ import {
   RefreshCw,
   ShieldCheck,
   Trash2,
+  User,
   X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -1750,6 +1751,8 @@ function PatientDetailPage() {
         }
         backTo="/patients"
         description="Información clínica y atenciones del paciente"
+        icon={User}
+        iconBgClass="bg-teal-100 text-teal-600"
         title={fullName}
       />
 
