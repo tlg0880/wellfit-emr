@@ -68,6 +68,15 @@ _Ninguno. Todos los routers planificados están implementados._
 
 ### Cambios recientes (2026-05-12)
 
+- **Iteración 5 — Indicadores de navegación, topbar y skeletons refinados**: Quinta ronda de refinamiento visual enfocada en detalles de navegación, elevación y estados de carga.
+  - **Sidebar active indicator mejorado**: Reemplazado el indicador de estado activo cuadrado (`h-1.5 w-1.5`) por un dot redondeado (`rounded-full`). Agregada una barra de acento izquierda (`w-0.5 h-5 bg-sidebar-primary`) que aparece al lado del ícono cuando el ítem está activo, creando una señal de navegación más profesional y legible.
+  - **Topbar elevado**: Agregado `shadow-sm` y `backdrop-blur-md` al topbar. El fondo cambió de `bg-card/50` a `bg-card/80` para mayor opacidad y mejor separación visual del contenido. El borde ahora usa `border-border/60`.
+  - **Page header mejorado**: Agregado `shadow-sm` y `backdrop-blur-md`. El borde usa `border-border/60` y el fondo es `bg-card/90` para mayor presencia visual.
+  - **Skeleton global mejorado**: Reemplazado `rounded-none` por `rounded-sm` y `bg-muted` por `bg-muted/70`, creando skeletons más suaves y consistentes con el resto de la interfaz.
+- **Iteración 4 — Esquinas redondeadas en elementos interactivos globales**: Cuarta ronda de refinamiento visual que afecta a todos los botones, inputs y selects de la aplicación.
+  - **Button global mejorado**: Reemplazado `rounded-none` por `rounded-sm` en el estilo base de todos los botones. Los tamaños `xs` y `sm` también usan `rounded-sm`. Los botones de icono (`icon-xs`, `icon-sm`, `icon-lg`) usan `rounded-md` para un aspecto más amigable. Esto elimina las esquinas angulares agresivas en todo el sistema.
+  - **Input global mejorado**: Reemplazado `rounded-none` por `rounded-sm` en el componente `Input` de `@wellfit-emr/ui`. Todos los campos de texto ahora tienen esquinas suaves coherentes con los botones.
+  - **Select global mejorado**: El trigger ahora usa `rounded-sm` en lugar de `rounded-none`. El popup/dropdown usa `rounded-md` y `shadow-lg` (mayor elevación) en lugar de `rounded-none` con `ring-1`, creando un dropdown más moderno y con mejor separación visual.
 - **Iteración 3 — Sombras, profundidad y estados vacíos mejorados**: Tercera ronda de refinamiento visual enfocada en elevación, bordes redondeados y estados de carga/vacío.
   - **Componente Card global mejorado**: Reemplazado `ring-1 ring-foreground/10` por `rounded-md border border-border/60 shadow-sm` en `packages/ui/src/components/card.tsx`. Las tarjetas ahora tienen bordes redondeados sutiles, sombra suave y borde semitransparente. En dark mode la sombra se desactiva para mantener coherencia.
   - **List items del dashboard mejorados**: Los iconos de atenciones/pacientes ahora usan contenedores `size-10 rounded-md` con `shadow-sm` en lugar de `size-9` planos. Mayor presencia visual y mejor jerarquía. Padding aumentado a `p-3.5` y bordes redondeados `rounded-lg`.

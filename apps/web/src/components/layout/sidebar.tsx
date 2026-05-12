@@ -201,7 +201,7 @@ export function Sidebar() {
                   <li key={item.to}>
                     <Link
                       className={cn(
-                        "group flex items-center gap-3 rounded-md px-3 py-2 text-[13px] transition-all duration-150",
+                        "group relative flex items-center gap-3 rounded-md px-3 py-2 text-[13px] transition-all duration-150",
                         collapsed && "justify-center px-2",
                         isActive
                           ? "bg-sidebar-primary/10 font-medium text-sidebar-primary shadow-sm"
@@ -209,6 +209,9 @@ export function Sidebar() {
                       )}
                       to={item.to}
                     >
+                      {isActive && (
+                        <span className="absolute top-1/2 left-0 h-5 w-0.5 -translate-y-1/2 bg-sidebar-primary" />
+                      )}
                       <div
                         className={cn(
                           "flex items-center justify-center transition-colors",
@@ -221,7 +224,7 @@ export function Sidebar() {
                       </div>
                       {!collapsed && <span>{item.label}</span>}
                       {isActive && !collapsed && (
-                        <div className="ml-auto h-1.5 w-1.5 bg-sidebar-primary" />
+                        <div className="ml-auto size-1.5 rounded-full bg-sidebar-primary" />
                       )}
                     </Link>
                   </li>
