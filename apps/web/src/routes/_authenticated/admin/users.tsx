@@ -266,7 +266,9 @@ function UsersPage() {
             </Button>
           )
         }
-        description="Gestione los usuarios del sistema"
+        description="Gestionar usuarios y permisos del sistema"
+        icon={UserCheck}
+        iconBgClass="bg-slate-100 text-slate-600"
         title="Administracion de usuarios"
       />
 

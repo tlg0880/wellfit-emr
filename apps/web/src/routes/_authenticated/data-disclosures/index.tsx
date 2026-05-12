@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@wellfit-emr/ui/components/select";
-import { Ban, Eye, Plus, Trash2, X } from "lucide-react";
+import { Ban, Eye, Plus, Trash2, Unlock, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -297,6 +297,8 @@ function DataDisclosuresPage() {
           </Button>
         }
         description="Autorizaciones de divulgación de datos personales a terceros"
+        icon={Unlock}
+        iconBgClass="bg-slate-100 text-slate-600"
         title="Autorizaciones de datos"
       />
 

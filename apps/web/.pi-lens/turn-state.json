@@ -957,10 +957,34 @@
       ],
       "importsChanged": false,
       "lastEdit": "2026-05-12T23:21:51.807Z"
+    },
+    "src/routes/_authenticated/data-disclosures/index.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 21,
+          "end": 21
+        },
+        {
+          "start": 300,
+          "end": 301
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-12T23:22:26.280Z"
+    },
+    "src/routes/_authenticated/admin/users.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 269,
+          "end": 272
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-12T23:22:48.445Z"
     }
   },
   "turnCycles": 0,
   "maxCycles": 3,
-  "lastUpdated": "2026-05-12T23:21:51.807Z",
+  "lastUpdated": "2026-05-12T23:22:48.445Z",
   "sessionId": "lens-mp32rgkz-3e9ca4af"
 }
