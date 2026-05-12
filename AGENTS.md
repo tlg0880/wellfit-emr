@@ -68,6 +68,10 @@ _Ninguno. Todos los routers planificados están implementados._
 
 ### Cambios recientes (2026-05-12)
 
+- **Iteración 7 — Bordes semánticos en stat cards, gradiente en tabla y pills en sidebar**: Séptima ronda de refinamiento visual enfocada en color semántico y jerarquía visual.
+  - **Stat cards con bordes semánticos**: Cada tarjeta de estadísticas del dashboard ahora tiene un borde izquierdo (`border-l-4`) cuyo color coincide con su significado semántico: `teal` para pacientes, `sky` para atenciones del mes, `amber` para atenciones activas y `slate` para profesionales. Esto hace que el dashboard sea más escaneable visualmente.
+  - **Gradiente en header de tabla**: El header de `DataTable` cambió de `bg-muted/80` plano a `bg-gradient-to-b from-muted/90 to-muted/70`, creando una transición suave que añade profundidad visual.
+  - **Pills en sidebar**: Los títulos de grupo de navegación (PRINCIPAL, CLÍNICO, DOCUMENTAL, REGULATORIO) ahora tienen un fondo pill (`rounded-md bg-sidebar-accent/40 px-2 py-0.5`) en lugar de texto plano, mejorando la organización visual de la navegación.
 - **Iteración 6 — Toolbars unificadas y efectos hover elevados**: Sexta ronda de refinamiento visual enfocada en la organización de controles de tabla y micro-interacciones.
   - **Toolbar unificada para pacientes**: Todos los controles de tabla (búsqueda, ordenamiento, dirección) ahora se agrupan en un único contenedor `rounded-lg border bg-card shadow-sm px-3 py-2.5`. Los controles internos usan `bg-background` para crear jerarquía visual dentro del toolbar.
   - **Toolbar unificada para atenciones**: Similar al de pacientes, los filtros de estado (segmented control), selector de sede, botón de limpiar y búsqueda ahora viven dentro de una sola tarjeta toolbar unificada. Esto elimina la dispersión visual de controles flotantes.

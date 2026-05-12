@@ -189,8 +189,10 @@ export function Sidebar() {
         {navGroups.map((group) => (
           <div key={group.label}>
             {!collapsed && (
-              <div className="mb-2 px-4 font-bold text-[10px] text-sidebar-foreground/40 uppercase tracking-widest">
-                {group.label}
+              <div className="mb-2 px-4">
+                <span className="inline-block rounded-md bg-sidebar-accent/40 px-2 py-0.5 font-bold text-[10px] text-sidebar-foreground/50 uppercase tracking-widest">
+                  {group.label}
+                </span>
               </div>
             )}
             <ul className="space-y-0.5 px-2">

@@ -259,6 +259,7 @@ function DashboardPage() {
       icon: Users,
       color: "bg-teal-50 text-teal-700 dark:bg-teal-950 dark:text-teal-300",
       iconBg: "bg-teal-100 dark:bg-teal-900",
+      borderLeft: "border-l-teal-400",
       loading: patientsLoading,
     },
     {
@@ -267,6 +268,7 @@ function DashboardPage() {
       icon: CalendarDays,
       color: "bg-sky-50 text-sky-700 dark:bg-sky-950 dark:text-sky-300",
       iconBg: "bg-sky-100 dark:bg-sky-900",
+      borderLeft: "border-l-sky-400",
       loading: encountersLoading,
     },
     {
@@ -277,6 +279,7 @@ function DashboardPage() {
       icon: Activity,
       color: "bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
       iconBg: "bg-amber-100 dark:bg-amber-900",
+      borderLeft: "border-l-amber-400",
       loading: encountersLoading,
     },
     {
@@ -285,6 +288,7 @@ function DashboardPage() {
       icon: Stethoscope,
       color: "bg-slate-50 text-slate-700 dark:bg-slate-900 dark:text-slate-300",
       iconBg: "bg-slate-100 dark:bg-slate-800",
+      borderLeft: "border-l-slate-400",
       loading: false,
     },
   ];
@@ -454,7 +458,7 @@ function DashboardPage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
           <Card
-            className="overflow-hidden border-l-4 border-l-primary/30 transition-all duration-200 hover:-translate-y-px hover:shadow-md"
+            className={`overflow-hidden border-l-4 transition-all duration-200 hover:-translate-y-px hover:shadow-md ${stat.borderLeft}`}
             key={stat.label}
             size="sm"
           >

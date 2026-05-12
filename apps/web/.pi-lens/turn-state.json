@@ -85,6 +85,10 @@
           "end": 260
         },
         {
+          "start": 262,
+          "end": 262
+        },
+        {
           "start": 265,
           "end": 265
         },
@@ -93,7 +97,11 @@
           "end": 269
         },
         {
-          "start": 283,
+          "start": 271,
+          "end": 271
+        },
+        {
+          "start": 282,
           "end": 283
         },
         {
@@ -102,7 +110,7 @@
         },
         {
           "start": 290,
-          "end": 290
+          "end": 291
         },
         {
           "start": 294,
@@ -205,6 +213,10 @@
           "end": 457
         },
         {
+          "start": 461,
+          "end": 461
+        },
+        {
           "start": 509,
           "end": 509
         },
@@ -270,7 +282,7 @@
         }
       ],
       "importsChanged": false,
-      "lastEdit": "2026-05-12T20:48:56.163Z"
+      "lastEdit": "2026-05-12T20:51:05.675Z"
     },
     "src/components/data-table.tsx": {
       "modifiedRanges": [
@@ -344,7 +356,7 @@
         }
       ],
       "importsChanged": false,
-      "lastEdit": "2026-05-12T20:42:04.720Z"
+      "lastEdit": "2026-05-12T20:51:10.557Z"
     },
     "src/components/empty-state.tsx": {
       "modifiedRanges": [
@@ -571,6 +583,10 @@
     "src/components/layout/sidebar.tsx": {
       "modifiedRanges": [
         {
+          "start": 192,
+          "end": 195
+        },
+        {
           "start": 204,
           "end": 204
         },
@@ -588,11 +604,11 @@
         }
       ],
       "importsChanged": false,
-      "lastEdit": "2026-05-12T20:45:48.628Z"
+      "lastEdit": "2026-05-12T20:51:15.168Z"
     }
   },
   "turnCycles": 0,
   "maxCycles": 3,
-  "lastUpdated": "2026-05-12T20:48:56.163Z",
+  "lastUpdated": "2026-05-12T20:51:15.168Z",
   "sessionId": "lens-mp32rgkz-3e9ca4af"
 }

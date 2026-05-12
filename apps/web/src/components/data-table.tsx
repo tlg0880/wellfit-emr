@@ -66,7 +66,7 @@ export function DataTable<T>({
     <div className="flex flex-col gap-3">
       <div className="overflow-auto rounded-md border border-border shadow-sm">
         <table className="w-full text-xs">
-          <thead className="border-border border-b bg-muted/80">
+          <thead className="border-border border-b bg-gradient-to-b from-muted/90 to-muted/70">
             <tr>
               {columns.map((col, columnIndex) => (
                 <th
