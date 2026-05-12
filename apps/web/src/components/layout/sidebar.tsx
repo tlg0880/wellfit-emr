@@ -249,7 +249,7 @@ export function Sidebar() {
           </div>
         )}
         {collapsed && (
-          <div className="mx-auto size-2 rounded-full bg-sidebar-foreground/20" />
+          <div className="mx-auto size-2.5 rounded-full bg-sidebar-foreground/30" />
         )}
       </div>
     </aside>
