@@ -47,9 +47,9 @@ export function PageHeader({
           )}
           {Icon && (
             <div
-              className={`flex size-9 items-center justify-center rounded-sm shadow-md ${iconBgClass}`}
+              className={`flex size-10 items-center justify-center rounded-sm shadow-md ${iconBgClass}`}
             >
-              <Icon size={18} />
+              <Icon size={20} />
             </div>
           )}
           <div className="min-w-0">
