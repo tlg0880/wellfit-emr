@@ -10,7 +10,7 @@ import {
 import { Input } from "@wellfit-emr/ui/components/input";
 import { Label } from "@wellfit-emr/ui/components/label";
 import { Skeleton } from "@wellfit-emr/ui/components/skeleton";
-import { Plus, RefreshCw, Trash2, X } from "lucide-react";
+import { ClipboardList, Plus, RefreshCw, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -155,6 +155,8 @@ function ServiceRequestDetailPage() {
         }
         backTo="/service-requests"
         description="Detalle de la orden de servicio y reporte asociado"
+        icon={ClipboardList}
+        iconBgClass="bg-sky-100 text-sky-600"
         title={title}
       />
 
