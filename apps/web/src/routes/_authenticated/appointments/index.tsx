@@ -885,72 +885,74 @@ function AppointmentsPage() {
         title="Agenda"
       />
 
-      <div className="flex flex-wrap items-end gap-2">
-        <div className="flex items-center gap-2">
-          <Search className="text-muted-foreground" size={14} />
-          <SearchSelect
-            className="max-w-xs"
-            clearable
-            emptyMessage="Escribe para buscar profesionales"
-            loading={practitionersLoading}
-            onChange={(v) => setFilterPractitionerId(v)}
-            onSearchChange={setPractitionerSearch}
-            options={
-              practitionersData?.practitioners.map((p) => ({
-                value: p.id,
-                label: p.fullName,
-                description: p.documentNumber,
-              })) ?? []
-            }
-            placeholder="Filtrar por profesional..."
-            search={practitionerSearch}
-            value={filterPractitionerId}
-          />
-        </div>
-        <div className="space-y-1">
-          <Label className="text-[10px]">Estado</Label>
-          <Select
-            onValueChange={(v) => setFilterStatus(v as typeof filterStatus)}
-            value={filterStatus}
-          >
-            <SelectTrigger className="w-40">
-              <SelectValue placeholder="Todos" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">Todos</SelectItem>
-              <SelectItem value="scheduled">Programada</SelectItem>
-              <SelectItem value="confirmed">Confirmada</SelectItem>
-              <SelectItem value="completed">Completada</SelectItem>
-              <SelectItem value="cancelled">Cancelada</SelectItem>
-              <SelectItem value="no-show">No asistió</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-1">
-          <Label className="text-[10px]">Buscar</Label>
-          <Input
-            className="w-48"
-            onChange={(e) => setSearchValue(e.target.value)}
-            placeholder="Motivo o notas..."
-            value={searchValue}
-          />
-        </div>
-        {(filterPractitionerId || filterStatus || searchValue) && (
-          <Button
-            onClick={() => {
-              setFilterPractitionerId("");
-              setPractitionerSearch("");
-              setFilterStatus("");
-              setSearchValue("");
-            }}
-            size="sm"
-            variant="ghost"
-          >
-            <FilterX size={14} />
-            Limpiar filtros
-          </Button>
-        )}
-      </div>
+      <Card className="shadow-sm">
+        <CardContent className="flex flex-wrap items-end gap-2 py-3">
+          <div className="flex items-center gap-2">
+            <Search className="text-muted-foreground" size={14} />
+            <SearchSelect
+              className="max-w-xs"
+              clearable
+              emptyMessage="Escribe para buscar profesionales"
+              loading={practitionersLoading}
+              onChange={(v) => setFilterPractitionerId(v)}
+              onSearchChange={setPractitionerSearch}
+              options={
+                practitionersData?.practitioners.map((p) => ({
+                  value: p.id,
+                  label: p.fullName,
+                  description: p.documentNumber,
+                })) ?? []
+              }
+              placeholder="Filtrar por profesional..."
+              search={practitionerSearch}
+              value={filterPractitionerId}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-[10px]">Estado</Label>
+            <Select
+              onValueChange={(v) => setFilterStatus(v as typeof filterStatus)}
+              value={filterStatus}
+            >
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Todos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Todos</SelectItem>
+                <SelectItem value="scheduled">Programada</SelectItem>
+                <SelectItem value="confirmed">Confirmada</SelectItem>
+                <SelectItem value="completed">Completada</SelectItem>
+                <SelectItem value="cancelled">Cancelada</SelectItem>
+                <SelectItem value="no-show">No asistió</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-[10px]">Buscar</Label>
+            <Input
+              className="w-48"
+              onChange={(e) => setSearchValue(e.target.value)}
+              placeholder="Motivo o notas..."
+              value={searchValue}
+            />
+          </div>
+          {(filterPractitionerId || filterStatus || searchValue) && (
+            <Button
+              onClick={() => {
+                setFilterPractitionerId("");
+                setPractitionerSearch("");
+                setFilterStatus("");
+                setSearchValue("");
+              }}
+              size="sm"
+              variant="ghost"
+            >
+              <FilterX size={14} />
+              Limpiar filtros
+            </Button>
+          )}
+        </CardContent>
+      </Card>
 
       <Card className="shadow-md">
         <CardHeader className="pb-4">
