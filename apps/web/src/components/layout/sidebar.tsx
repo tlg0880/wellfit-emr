@@ -13,6 +13,7 @@ import {
   FileText,
   FlaskConical,
   Gavel,
+  HeartPulse,
   Home,
   Mail,
   MessageSquare,
@@ -147,18 +148,36 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        "flex flex-col border-r bg-sidebar transition-all duration-200 ease-out",
-        collapsed ? "w-14" : "w-56"
+        "flex flex-col border-sidebar-border border-r bg-sidebar transition-all duration-200 ease-out",
+        collapsed ? "w-16" : "w-60"
       )}
     >
-      <div className="flex h-12 items-center justify-between border-b px-3">
+      <div className="flex h-14 items-center justify-between border-sidebar-border border-b px-4">
         {!collapsed && (
-          <span className="font-semibold text-sidebar-foreground text-sm tracking-tight">
-            WellFit EMR
-          </span>
+          <div className="flex items-center gap-2.5">
+            <div className="flex size-7 items-center justify-center bg-sidebar-primary text-sidebar-primary-foreground">
+              <HeartPulse size={16} strokeWidth={2.5} />
+            </div>
+            <div className="flex flex-col">
+              <span className="font-bold text-sidebar-foreground text-sm leading-none tracking-tight">
+                WellFit EMR
+              </span>
+              <span className="mt-0.5 text-[9px] text-sidebar-foreground/50 uppercase leading-none tracking-wider">
+                Sistema Hospitalario
+              </span>
+            </div>
+          </div>
+        )}
+        {collapsed && (
+          <div className="mx-auto flex size-8 items-center justify-center bg-sidebar-primary text-sidebar-primary-foreground">
+            <HeartPulse size={16} strokeWidth={2.5} />
+          </div>
         )}
         <button
-          className="ml-auto inline-flex size-7 items-center justify-center text-sidebar-foreground/70 hover:text-sidebar-foreground"
+          className={cn(
+            "inline-flex size-7 items-center justify-center text-sidebar-foreground/60 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground",
+            collapsed && "mx-auto mt-2"
+          )}
           onClick={() => setCollapsed((c) => !c)}
           type="button"
         >
@@ -166,15 +185,15 @@ export function Sidebar() {
         </button>
       </div>
 
-      <nav className="flex-1 space-y-5 overflow-auto py-4">
+      <nav className="flex-1 space-y-6 overflow-auto py-5">
         {navGroups.map((group) => (
           <div key={group.label}>
             {!collapsed && (
-              <div className="mb-1 px-3 font-medium text-[10px] text-sidebar-foreground/50 uppercase tracking-wider">
+              <div className="mb-2 px-4 font-bold text-[10px] text-sidebar-foreground/40 uppercase tracking-widest">
                 {group.label}
               </div>
             )}
-            <ul className="space-y-0.5">
+            <ul className="space-y-0.5 px-2">
               {group.items.map((item) => {
                 const isActive =
                   pathname === item.to || pathname.startsWith(`${item.to}/`);
@@ -182,16 +201,28 @@ export function Sidebar() {
                   <li key={item.to}>
                     <Link
                       className={cn(
-                        "flex items-center gap-2.5 px-3 py-1.5 text-xs transition-colors",
+                        "group flex items-center gap-3 rounded-md px-3 py-2 text-[13px] transition-all duration-150",
                         collapsed && "justify-center px-2",
                         isActive
-                          ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                          : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                          ? "bg-sidebar-primary/10 font-medium text-sidebar-primary shadow-sm"
+                          : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                       )}
                       to={item.to}
                     >
-                      <item.icon size={16} />
+                      <div
+                        className={cn(
+                          "flex items-center justify-center transition-colors",
+                          isActive
+                            ? "text-sidebar-primary"
+                            : "text-sidebar-foreground/50 group-hover:text-sidebar-foreground/80"
+                        )}
+                      >
+                        <item.icon size={17} />
+                      </div>
                       {!collapsed && <span>{item.label}</span>}
+                      {isActive && !collapsed && (
+                        <div className="ml-auto h-1.5 w-1.5 bg-sidebar-primary" />
+                      )}
                     </Link>
                   </li>
                 );
@@ -201,11 +232,19 @@ export function Sidebar() {
         ))}
       </nav>
 
-      <div className="border-t p-3">
+      <div className="border-sidebar-border border-t p-4">
         {!collapsed && (
-          <div className="text-[10px] text-sidebar-foreground/50">
-            WellFit EMR v0.1
+          <div className="space-y-1">
+            <div className="font-medium text-[10px] text-sidebar-foreground/70">
+              WellFit EMR
+            </div>
+            <div className="text-[9px] text-sidebar-foreground/40">
+              v1.0 · Resolución 1888 de 2025
+            </div>
           </div>
+        )}
+        {collapsed && (
+          <div className="mx-auto size-2 bg-sidebar-foreground/20" />
         )}
       </div>
     </aside>

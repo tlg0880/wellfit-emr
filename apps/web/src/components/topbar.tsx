@@ -47,15 +47,21 @@ export function Topbar() {
   const title = getPageTitle(pathname);
 
   return (
-    <header className="flex h-14 items-center justify-between border-b bg-background px-6">
+    <header className="flex h-14 items-center justify-between border-b bg-card/50 px-6 backdrop-blur-sm">
       <div className="flex items-center gap-3">
-        <div className="flex size-7 items-center justify-center bg-slate-900 text-white lg:hidden">
+        <div className="flex size-7 items-center justify-center bg-primary text-primary-foreground lg:hidden">
           <HeartPulse size={14} strokeWidth={2.5} />
         </div>
-        <h2 className="font-semibold text-sm tracking-tight">{title}</h2>
+        <div className="flex items-center gap-2">
+          <div className="h-4 w-px bg-border" />
+          <h2 className="font-semibold text-foreground/90 text-sm tracking-tight">
+            {title}
+          </h2>
+        </div>
       </div>
       <div className="flex items-center gap-2">
         <ModeToggle />
+        <div className="h-4 w-px bg-border" />
         <UserMenu />
       </div>
     </header>

@@ -835,14 +835,23 @@ function EncountersPage() {
       header: "Estado",
       accessor: (row: NonNullable<typeof data>["encounters"][0]) => (
         <span
-          className={`inline-flex border px-1.5 py-0.5 text-[10px] ${
+          className={`inline-flex items-center rounded-full px-2.5 py-1 font-medium text-[11px] ${
             row.status === "in-progress"
-              ? "border-amber-200 bg-amber-50 text-amber-700"
+              ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300"
               : row.status === "finished"
-                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                : "border-gray-200 bg-gray-50 text-gray-700"
+                ? "bg-teal-100 text-teal-700 dark:bg-teal-950 dark:text-teal-300"
+                : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"
           }`}
         >
+          <span
+            className={`mr-1.5 size-1.5 rounded-full ${
+              row.status === "in-progress"
+                ? "bg-amber-500"
+                : row.status === "finished"
+                  ? "bg-teal-500"
+                  : "bg-slate-400"
+            }`}
+          />
           {row.status === "in-progress"
             ? "En progreso"
             : row.status === "finished"

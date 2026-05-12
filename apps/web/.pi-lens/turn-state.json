@@ -1,0 +1,334 @@
+{
+  "files": {
+    "src/components/topbar.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 50,
+          "end": 50
+        },
+        {
+          "start": 52,
+          "end": 52
+        },
+        {
+          "start": 55,
+          "end": 58
+        },
+        {
+          "start": 62,
+          "end": 62
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-12T20:28:23.261Z"
+    },
+    "src/routes/_authenticated/index.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 240,
+          "end": 241
+        },
+        {
+          "start": 248,
+          "end": 250
+        },
+        {
+          "start": 260,
+          "end": 260
+        },
+        {
+          "start": 265,
+          "end": 265
+        },
+        {
+          "start": 268,
+          "end": 269
+        },
+        {
+          "start": 283,
+          "end": 283
+        },
+        {
+          "start": 287,
+          "end": 287
+        },
+        {
+          "start": 290,
+          "end": 290
+        },
+        {
+          "start": 294,
+          "end": 294
+        },
+        {
+          "start": 298,
+          "end": 298
+        },
+        {
+          "start": 308,
+          "end": 308
+        },
+        {
+          "start": 312,
+          "end": 312
+        },
+        {
+          "start": 334,
+          "end": 334
+        },
+        {
+          "start": 338,
+          "end": 338
+        },
+        {
+          "start": 340,
+          "end": 340
+        },
+        {
+          "start": 344,
+          "end": 344
+        },
+        {
+          "start": 348,
+          "end": 348
+        },
+        {
+          "start": 354,
+          "end": 354
+        },
+        {
+          "start": 358,
+          "end": 358
+        },
+        {
+          "start": 432,
+          "end": 434
+        },
+        {
+          "start": 436,
+          "end": 438
+        },
+        {
+          "start": 442,
+          "end": 442
+        },
+        {
+          "start": 445,
+          "end": 445
+        },
+        {
+          "start": 447,
+          "end": 447
+        },
+        {
+          "start": 449,
+          "end": 449
+        },
+        {
+          "start": 451,
+          "end": 451
+        },
+        {
+          "start": 509,
+          "end": 509
+        },
+        {
+          "start": 513,
+          "end": 513
+        },
+        {
+          "start": 517,
+          "end": 517
+        },
+        {
+          "start": 521,
+          "end": 521
+        },
+        {
+          "start": 523,
+          "end": 523
+        },
+        {
+          "start": 527,
+          "end": 527
+        },
+        {
+          "start": 556,
+          "end": 557
+        },
+        {
+          "start": 560,
+          "end": 561
+        },
+        {
+          "start": 564,
+          "end": 564
+        },
+        {
+          "start": 568,
+          "end": 568
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-12T20:28:51.119Z"
+    },
+    "src/components/data-table.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 67,
+          "end": 67
+        },
+        {
+          "start": 69,
+          "end": 69
+        },
+        {
+          "start": 74,
+          "end": 74
+        },
+        {
+          "start": 84,
+          "end": 84
+        },
+        {
+          "start": 87,
+          "end": 87
+        },
+        {
+          "start": 90,
+          "end": 90
+        },
+        {
+          "start": 98,
+          "end": 98
+        },
+        {
+          "start": 101,
+          "end": 103
+        },
+        {
+          "start": 123,
+          "end": 124
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-12T20:29:06.662Z"
+    },
+    "src/components/empty-state.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 27,
+          "end": 28
+        },
+        {
+          "start": 30,
+          "end": 31
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-12T20:29:16.434Z"
+    },
+    "src/components/page-header.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 28,
+          "end": 28
+        },
+        {
+          "start": 33,
+          "end": 33
+        },
+        {
+          "start": 36,
+          "end": 36
+        },
+        {
+          "start": 41,
+          "end": 41
+        },
+        {
+          "start": 44,
+          "end": 44
+        },
+        {
+          "start": 48,
+          "end": 48
+        },
+        {
+          "start": 52,
+          "end": 52
+        },
+        {
+          "start": 58,
+          "end": 58
+        },
+        {
+          "start": 64,
+          "end": 64
+        },
+        {
+          "start": 66,
+          "end": 66
+        },
+        {
+          "start": 72,
+          "end": 74
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-12T20:29:26.914Z"
+    },
+    "src/routes/login.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 18,
+          "end": 18
+        },
+        {
+          "start": 21,
+          "end": 21
+        },
+        {
+          "start": 39,
+          "end": 39
+        },
+        {
+          "start": 45,
+          "end": 45
+        },
+        {
+          "start": 66,
+          "end": 66
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-12T20:33:37.170Z"
+    },
+    "src/routes/_authenticated/encounters/index.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 838,
+          "end": 838
+        },
+        {
+          "start": 840,
+          "end": 840
+        },
+        {
+          "start": 842,
+          "end": 843
+        },
+        {
+          "start": 846,
+          "end": 852
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-12T20:33:55.525Z"
+    }
+  },
+  "turnCycles": 0,
+  "maxCycles": 3,
+  "lastUpdated": "2026-05-12T20:33:55.525Z",
+  "sessionId": "lens-mp32rgkz-3e9ca4af"
+}

@@ -15,10 +15,10 @@ function RouteComponent() {
   return (
     <div className="flex min-h-svh w-full">
       {/* Left column - Branding */}
-      <div className="relative hidden w-1/2 flex-col justify-between bg-slate-900 p-12 text-white lg:flex">
+      <div className="relative hidden w-1/2 flex-col justify-between bg-teal-900 p-12 text-white lg:flex">
         <div className="z-10">
           <div className="flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center bg-white text-slate-900">
+            <div className="flex size-10 items-center justify-center bg-white text-teal-900">
               <HeartPulse size={20} strokeWidth={2.5} />
             </div>
             <span className="font-bold text-xl tracking-tight">
@@ -36,13 +36,13 @@ function RouteComponent() {
             normativa colombiana. Diseñado para instituciones de salud que
             buscan eficiencia, seguridad y cumplimiento regulatorio.
           </p>
-          <div className="flex items-center gap-2 text-slate-400 text-sm">
+          <div className="flex items-center gap-2 text-sm text-teal-200/70">
             <Shield size={16} />
             <span>Cumplimiento con Resolución 1888 de 2025</span>
           </div>
         </div>
 
-        <div className="z-10 text-slate-500 text-xs">
+        <div className="z-10 text-teal-300/50 text-xs">
           © {new Date().getFullYear()} WellFit EMR. Todos los derechos
           reservados.
         </div>
@@ -63,7 +63,7 @@ function RouteComponent() {
         <div className="mx-auto w-full max-w-sm">
           {/* Mobile-only logo */}
           <div className="mb-8 flex items-center gap-3 lg:hidden">
-            <div className="flex size-9 items-center justify-center bg-slate-900 text-white">
+            <div className="flex size-9 items-center justify-center bg-teal-800 text-white">
               <HeartPulse size={18} strokeWidth={2.5} />
             </div>
             <span className="font-bold text-lg tracking-tight">

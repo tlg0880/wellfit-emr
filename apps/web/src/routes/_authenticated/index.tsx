@@ -237,15 +237,16 @@ function DashboardPage() {
       label: "Pacientes registrados",
       value: patientsData?.total ?? 0,
       icon: Users,
-      color: "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300",
+      color: "bg-teal-50 text-teal-700 dark:bg-teal-950 dark:text-teal-300",
+      iconBg: "bg-teal-100 dark:bg-teal-900",
       loading: patientsLoading,
     },
     {
       label: "Atenciones del mes",
       value: encountersData?.total ?? 0,
       icon: CalendarDays,
-      color:
-        "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
+      color: "bg-sky-50 text-sky-700 dark:bg-sky-950 dark:text-sky-300",
+      iconBg: "bg-sky-100 dark:bg-sky-900",
       loading: encountersLoading,
     },
     {
@@ -255,14 +256,15 @@ function DashboardPage() {
           .length ?? 0,
       icon: Activity,
       color: "bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
+      iconBg: "bg-amber-100 dark:bg-amber-900",
       loading: encountersLoading,
     },
     {
       label: "Profesionales activos",
       value: "—",
       icon: Stethoscope,
-      color:
-        "bg-slate-100 text-slate-700 dark:bg-slate-900 dark:text-slate-300",
+      color: "bg-slate-50 text-slate-700 dark:bg-slate-900 dark:text-slate-300",
+      iconBg: "bg-slate-100 dark:bg-slate-800",
       loading: false,
     },
   ];
@@ -280,18 +282,20 @@ function DashboardPage() {
   } else if (encountersData && encountersData.encounters.length > 0) {
     encountersContent = encountersData.encounters.map((enc) => (
       <Link
-        className="group flex items-center justify-between rounded-none border p-3 transition-colors hover:bg-muted/60"
+        className="group flex items-center justify-between rounded-md border p-3 transition-all duration-150 hover:border-primary/20 hover:bg-primary/5 hover:shadow-sm"
         key={enc.id}
         params={{ encounterId: enc.id }}
         search={{ tab: undefined }}
         to="/encounters/$encounterId"
       >
         <div className="flex items-center gap-3">
-          <div className="flex size-9 items-center justify-center bg-muted">
+          <div className="flex size-9 items-center justify-center bg-teal-50 text-teal-600 dark:bg-teal-950 dark:text-teal-400">
             <HeartPulse size={15} />
           </div>
           <div>
-            <p className="font-medium text-sm">{enc.reasonForVisit}</p>
+            <p className="font-medium text-foreground/90 text-sm">
+              {enc.reasonForVisit}
+            </p>
             <p className="text-muted-foreground text-xs">
               <Clock className="mr-1 inline" size={10} />
               {new Date(enc.startedAt).toLocaleDateString("es-CO", {
@@ -305,7 +309,7 @@ function DashboardPage() {
           </div>
         </div>
         <ChevronRight
-          className="text-muted-foreground transition-colors group-hover:text-foreground"
+          className="text-muted-foreground/40 transition-colors group-hover:text-primary"
           size={14}
         />
       </Link>
@@ -331,17 +335,17 @@ function DashboardPage() {
   } else if (patientsData && patientsData.patients.length > 0) {
     patientsContent = patientsData.patients.map((pat) => (
       <Link
-        className="group flex items-center justify-between rounded-none border p-3 transition-colors hover:bg-muted/60"
+        className="group flex items-center justify-between rounded-md border p-3 transition-all duration-150 hover:border-primary/20 hover:bg-primary/5 hover:shadow-sm"
         key={pat.id}
         params={{ patientId: pat.id }}
         to="/patients/$patientId"
       >
         <div className="flex items-center gap-3">
-          <div className="flex size-9 items-center justify-center bg-muted">
+          <div className="flex size-9 items-center justify-center bg-sky-50 text-sky-600 dark:bg-sky-950 dark:text-sky-400">
             <Users size={15} />
           </div>
           <div>
-            <p className="font-medium text-sm">
+            <p className="font-medium text-foreground/90 text-sm">
               {pat.firstName} {pat.lastName1}
             </p>
             <p className="text-muted-foreground text-xs">
@@ -351,7 +355,7 @@ function DashboardPage() {
           </div>
         </div>
         <ChevronRight
-          className="text-muted-foreground transition-colors group-hover:text-foreground"
+          className="text-muted-foreground/40 transition-colors group-hover:text-primary"
           size={14}
         />
       </Link>
@@ -429,22 +433,26 @@ function DashboardPage() {
       {/* Stats */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
-          <Card key={stat.label} size="sm">
-            <CardHeader className="flex flex-row items-center justify-between pb-3">
-              <CardTitle className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
+          <Card
+            className="overflow-hidden border-l-4 border-l-primary/30"
+            key={stat.label}
+            size="sm"
+          >
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="font-semibold text-[11px] text-muted-foreground uppercase tracking-wider">
                 {stat.label}
               </CardTitle>
               <div
-                className={`flex size-8 items-center justify-center ${stat.color}`}
+                className={`flex size-8 items-center justify-center ${stat.iconBg} ${stat.color}`}
               >
                 <stat.icon size={16} />
               </div>
             </CardHeader>
             <CardContent>
               {stat.loading ? (
-                <Skeleton className="h-7 w-20" />
+                <Skeleton className="h-8 w-24" />
               ) : (
-                <div className="font-bold text-3xl tabular-nums tracking-tight">
+                <div className="font-bold text-3xl text-foreground tabular-nums tracking-tight">
                   {stat.value}
                 </div>
               )}
@@ -506,21 +514,23 @@ function DashboardPage() {
           <CardContent className="space-y-2">
             {quickAccess.map((item) => (
               <Link
-                className="group flex items-center gap-3 rounded-none border p-3 transition-colors hover:bg-muted/60"
+                className="group flex items-center gap-3 rounded-md border p-3 transition-all duration-150 hover:border-primary/20 hover:bg-primary/5 hover:shadow-sm"
                 key={item.to}
                 to={item.to}
               >
-                <div className="flex size-9 shrink-0 items-center justify-center bg-slate-900 text-white">
+                <div className="flex size-9 shrink-0 items-center justify-center bg-primary/10 text-primary">
                   <item.icon size={15} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium text-sm">{item.label}</p>
+                  <p className="font-medium text-foreground/90 text-sm">
+                    {item.label}
+                  </p>
                   <p className="text-muted-foreground text-xs">
                     {item.description}
                   </p>
                 </div>
                 <ChevronRight
-                  className="shrink-0 text-muted-foreground transition-colors group-hover:text-foreground"
+                  className="shrink-0 text-muted-foreground/40 transition-colors group-hover:text-primary"
                   size={14}
                 />
               </Link>
@@ -553,15 +563,20 @@ function DashboardPage() {
                   pending: ripsStatusLoading,
                 },
               ].map((item) => (
-                <div className="border p-4" key={item.label}>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                <div
+                  className="rounded-md border bg-card/50 p-4 transition-colors hover:bg-card"
+                  key={item.label}
+                >
+                  <p className="font-semibold text-[10px] text-muted-foreground uppercase tracking-wider">
                     {item.label}
                   </p>
                   <div className="mt-2 flex items-center gap-2">
                     <span
                       className={`size-2.5 ${getStatusDotClass(item.pending, item.ok)}`}
                     />
-                    <span className="font-medium text-sm">{item.status}</span>
+                    <span className="font-medium text-foreground/90 text-sm">
+                      {item.status}
+                    </span>
                   </div>
                 </div>
               ))}

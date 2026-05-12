@@ -24,11 +24,11 @@ export function EmptyState({
         className
       )}
     >
-      <div className="mb-3 inline-flex size-10 items-center justify-center bg-muted">
-        <FolderOpen className="text-muted-foreground" size={20} />
+      <div className="mb-3 inline-flex size-12 items-center justify-center bg-primary/10 text-primary">
+        <FolderOpen size={22} />
       </div>
-      <p className="font-medium text-sm">{title}</p>
-      <p className="mt-1 max-w-xs text-muted-foreground text-xs">
+      <p className="font-semibold text-foreground/90 text-sm">{title}</p>
+      <p className="mt-1 max-w-xs text-muted-foreground text-xs leading-relaxed">
         {description}
       </p>
       {actionLabel && onAction && (

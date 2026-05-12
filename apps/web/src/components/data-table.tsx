@@ -64,14 +64,14 @@ export function DataTable<T>({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="overflow-auto border">
+      <div className="overflow-auto rounded-md border border-border shadow-sm">
         <table className="w-full text-xs">
-          <thead className="bg-muted">
+          <thead className="border-border border-b bg-muted/80">
             <tr>
               {columns.map((col, columnIndex) => (
                 <th
                   className={cn(
-                    "px-3 py-2 text-left font-medium text-muted-foreground",
+                    "px-4 py-3 text-left font-semibold text-[11px] text-muted-foreground uppercase tracking-wider",
                     col.className
                   )}
                   key={columnKeys[columnIndex]}
@@ -81,13 +81,13 @@ export function DataTable<T>({
               ))}
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-border/60">
             {isLoading
               ? skeletonRows.map((rowKey) => (
-                  <tr key={rowKey}>
+                  <tr className="bg-background" key={rowKey}>
                     {columns.map((_, columnIndex) => (
                       <td
-                        className="px-3 py-2"
+                        className="px-4 py-3"
                         key={`${rowKey}-${columnKeys[columnIndex]}`}
                       >
                         <Skeleton className="h-4 w-24" />
@@ -95,11 +95,14 @@ export function DataTable<T>({
                     ))}
                   </tr>
                 ))
-              : data.map((row) => (
+              : data.map((row, rowIndex) => (
                   <tr
                     className={cn(
-                      "border-t transition-colors",
-                      onRowClick ? "cursor-pointer hover:bg-muted/50" : ""
+                      "transition-colors duration-150",
+                      rowIndex % 2 === 0 ? "bg-background" : "bg-muted/30",
+                      onRowClick
+                        ? "cursor-pointer hover:bg-primary/5"
+                        : "hover:bg-muted/40"
                     )}
                     key={keyExtractor(row)}
                     onClick={
@@ -120,7 +123,10 @@ export function DataTable<T>({
                   >
                     {columns.map((col, columnIndex) => (
                       <td
-                        className={cn("px-3 py-2", col.className)}
+                        className={cn(
+                          "px-4 py-3 text-foreground/90",
+                          col.className
+                        )}
                         key={`${keyExtractor(row)}-${columnKeys[columnIndex]}`}
                       >
                         {col.accessor(row)}
