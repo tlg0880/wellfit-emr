@@ -49,7 +49,7 @@ export function Topbar() {
   return (
     <header className="flex h-14 items-center justify-between border-border/60 border-b bg-card/80 px-6 shadow-md backdrop-blur-md">
       <div className="flex items-center gap-3">
-        <div className="flex size-7 items-center justify-center rounded-sm bg-primary text-primary-foreground shadow-sm lg:hidden">
+        <div className="flex size-7 items-center justify-center rounded-sm bg-primary text-primary-foreground shadow-md lg:hidden">
           <HeartPulse size={14} strokeWidth={2.5} />
         </div>
         <div className="flex items-center gap-2">
