@@ -268,6 +268,8 @@ function RipsExportsListPage() {
           </Button>
         }
         description="Generación y seguimiento de lotes RIPS"
+        icon={FileOutput}
+        iconBgClass="bg-sky-100 text-sky-600"
         title="Exportaciones RIPS"
       />
 

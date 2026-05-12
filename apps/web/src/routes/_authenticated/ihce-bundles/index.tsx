@@ -327,6 +327,8 @@ function IhceBundlesListPage() {
           </Button>
         }
         description="Bundles FHIR/RDA para interoperabilidad IHCE"
+        icon={Share2}
+        iconBgClass="bg-indigo-100 text-indigo-600"
         title="Bundles IHCE"
       />
 

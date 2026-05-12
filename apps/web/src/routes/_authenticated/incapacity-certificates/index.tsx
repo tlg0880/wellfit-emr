@@ -618,6 +618,8 @@ function IncapacityCertificatesListPage() {
           </Button>
         }
         description="Certificados de incapacidad médica"
+        icon={ClipboardList}
+        iconBgClass="bg-amber-100 text-amber-600"
         title="Incapacidades"
       />
 

@@ -76,6 +76,8 @@ function CatalogsPage() {
           </Button>
         }
         description="Tablas de referencia RIPS sincronizadas con SISPRO"
+        icon={Table}
+        iconBgClass="bg-violet-100 text-violet-600"
         title="Catalogos RIPS"
       />
 
