@@ -470,7 +470,7 @@
         }
       ],
       "importsChanged": false,
-      "lastEdit": "2026-05-12T20:33:37.170Z"
+      "lastEdit": "2026-05-12T21:05:42.124Z"
     },
     "src/routes/_authenticated/encounters/index.tsx": {
       "modifiedRanges": [
@@ -787,10 +787,30 @@
       ],
       "importsChanged": true,
       "lastEdit": "2026-05-12T21:04:47.285Z"
+    },
+    "src/components/sign-in-form.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 138,
+          "end": 138
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-12T21:05:51.078Z"
+    },
+    "src/components/sign-up-form.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 164,
+          "end": 164
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-12T21:06:03.919Z"
     }
   },
   "turnCycles": 0,
   "maxCycles": 3,
-  "lastUpdated": "2026-05-12T21:04:47.285Z",
+  "lastUpdated": "2026-05-12T21:06:03.919Z",
   "sessionId": "lens-mp32rgkz-3e9ca4af"
 }

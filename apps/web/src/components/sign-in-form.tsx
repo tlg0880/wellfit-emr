@@ -135,7 +135,7 @@ export default function SignInForm({
         >
           {({ canSubmit, isSubmitting }) => (
             <Button
-              className="w-full"
+              className="w-full shadow-sm"
               disabled={!canSubmit || isSubmitting}
               type="submit"
             >

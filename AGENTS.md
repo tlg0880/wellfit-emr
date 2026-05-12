@@ -68,6 +68,9 @@ _Ninguno. Todos los routers planificados están implementados._
 
 ### Cambios recientes (2026-05-12)
 
+- **Iteración 15 — Refinamiento de login y formularios de autenticación**: Decimoquinta ronda de refinamiento visual enfocada en la página de entrada.
+  - **Icono de marca en login**: Los contenedores del icono HeartPulse en la página de login (tanto desktop `size-10` como mobile `size-9`) ahora tienen `rounded-sm` y `shadow-sm`, consistentes con el resto de la aplicación.
+  - **Botones de autenticación**: Los botones de submit en `SignInForm` y `SignUpForm` ahora tienen `shadow-sm` para un efecto de elevación sutil.
 - **Iteración 14 — Eliminación de badges de desarrollo**: Decimocuarta ronda de refinamiento visual enfocada en pulir la interfaz para producción.
   - **TanStack Router Devtools removido**: El badge de desarrollo de TanStack Router que aparecía en la esquina inferior izquierda de todas las páginas fue completamente eliminado del componente raíz (`__root.tsx`).
   - **React Query Devtools removido**: El botón flotante de React Query Devtools también fue eliminado.
