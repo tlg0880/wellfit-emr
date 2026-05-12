@@ -169,7 +169,7 @@ function ComplianceSummaryBlock() {
         {draftDocsTotal > 0 && (
           <div className="flex items-center justify-between rounded-sm border border-amber-200 bg-amber-50/50 p-3 shadow-sm transition-colors hover:bg-amber-50">
             <div className="flex items-center gap-2">
-              <div className="flex size-7 items-center justify-center rounded-sm bg-amber-100 text-amber-600 shadow-sm">
+              <div className="flex size-7 items-center justify-center rounded-sm bg-amber-100 text-amber-600 shadow-md">
                 <PenLine size={14} />
               </div>
               <span className="font-medium text-foreground/90 text-sm">
@@ -182,7 +182,7 @@ function ComplianceSummaryBlock() {
         {ripsTotal > 0 && (
           <div className="flex items-center justify-between rounded-sm border border-sky-200 bg-sky-50/50 p-3 shadow-sm transition-colors hover:bg-sky-50">
             <div className="flex items-center gap-2">
-              <div className="flex size-7 items-center justify-center rounded-sm bg-sky-100 text-sky-600 shadow-sm">
+              <div className="flex size-7 items-center justify-center rounded-sm bg-sky-100 text-sky-600 shadow-md">
                 <FileOutput size={14} />
               </div>
               <span className="font-medium text-foreground/90 text-sm">
@@ -195,7 +195,7 @@ function ComplianceSummaryBlock() {
         {ihceTotal > 0 && (
           <div className="flex items-center justify-between rounded-sm border border-indigo-200 bg-indigo-50/50 p-3 shadow-sm transition-colors hover:bg-indigo-50">
             <div className="flex items-center gap-2">
-              <div className="flex size-7 items-center justify-center rounded-sm bg-indigo-100 text-indigo-600 shadow-sm">
+              <div className="flex size-7 items-center justify-center rounded-sm bg-indigo-100 text-indigo-600 shadow-md">
                 <Share2 size={14} />
               </div>
               <span className="font-medium text-foreground/90 text-sm">
@@ -208,7 +208,7 @@ function ComplianceSummaryBlock() {
         {interTotal > 0 && (
           <div className="flex items-center justify-between rounded-sm border border-emerald-200 bg-emerald-50/50 p-3 shadow-sm transition-colors hover:bg-emerald-50">
             <div className="flex items-center gap-2">
-              <div className="flex size-7 items-center justify-center rounded-sm bg-emerald-100 text-emerald-600 shadow-sm">
+              <div className="flex size-7 items-center justify-center rounded-sm bg-emerald-100 text-emerald-600 shadow-md">
                 <Users size={14} />
               </div>
               <span className="font-medium text-foreground/90 text-sm">
@@ -221,7 +221,7 @@ function ComplianceSummaryBlock() {
         {orderTotal > 0 && (
           <div className="flex items-center justify-between rounded-sm border border-rose-200 bg-rose-50/50 p-3 shadow-sm transition-colors hover:bg-rose-50">
             <div className="flex items-center gap-2">
-              <div className="flex size-7 items-center justify-center rounded-sm bg-rose-100 text-rose-600 shadow-sm">
+              <div className="flex size-7 items-center justify-center rounded-sm bg-rose-100 text-rose-600 shadow-md">
                 <Activity size={14} />
               </div>
               <span className="font-medium text-foreground/90 text-sm">
@@ -316,7 +316,7 @@ function DashboardPage() {
         to="/encounters/$encounterId"
       >
         <div className="flex items-center gap-3">
-          <div className="flex size-10 items-center justify-center rounded-sm bg-teal-50 text-teal-600 shadow-sm dark:bg-teal-950 dark:text-teal-400">
+          <div className="flex size-10 items-center justify-center rounded-sm bg-teal-50 text-teal-600 shadow-md dark:bg-teal-950 dark:text-teal-400">
             <HeartPulse size={16} />
           </div>
           <div>
@@ -368,7 +368,7 @@ function DashboardPage() {
         to="/patients/$patientId"
       >
         <div className="flex items-center gap-3">
-          <div className="flex size-10 items-center justify-center rounded-sm bg-sky-50 text-sky-600 shadow-sm dark:bg-sky-950 dark:text-sky-400">
+          <div className="flex size-10 items-center justify-center rounded-sm bg-sky-50 text-sky-600 shadow-md dark:bg-sky-950 dark:text-sky-400">
             <Users size={16} />
           </div>
           <div>
@@ -545,7 +545,7 @@ function DashboardPage() {
                 key={item.to}
                 to={item.to}
               >
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-sm bg-primary/10 text-primary shadow-sm">
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-sm bg-primary/10 text-primary shadow-md">
                   <item.icon size={16} />
                 </div>
                 <div className="min-w-0 flex-1">
@@ -619,9 +619,7 @@ function DashboardPage() {
                   key={item.label}
                 >
                   <div className="flex items-center gap-2">
-                    <div
-                      className={`flex size-6 items-center justify-center rounded-sm shadow-sm ${item.iconBg} ${item.iconColor}`}
-                    >
+                    <div className="flex size-6 items-center justify-center rounded-sm shadow-md">
                       <item.icon size={12} />
                     </div>
                     <p className="font-semibold text-[10px] text-muted-foreground uppercase tracking-wider">
