@@ -1,5 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { Button } from "@wellfit-emr/ui/components/button";
 import {
   Card,
   CardContent,
@@ -7,10 +8,13 @@ import {
   CardTitle,
 } from "@wellfit-emr/ui/components/card";
 import { Skeleton } from "@wellfit-emr/ui/components/skeleton";
+import { Trash2 } from "lucide-react";
+import { useEffect } from "react";
+import { toast } from "sonner";
 
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
-import { orpc } from "@/utils/orpc";
+import { orpc, queryClient } from "@/utils/orpc";
 
 export const Route = createFileRoute(
   "/_authenticated/facilities/sites/$siteId"
@@ -19,6 +23,7 @@ export const Route = createFileRoute(
 });
 
 function SiteDetailPage() {
+  const navigate = useNavigate();
   const { siteId } = Route.useParams();
 
   const { data: listData, isLoading } = useQuery(
@@ -40,7 +45,30 @@ function SiteDetailPage() {
     (o) => o.id === site?.organizationId
   );
 
+  const deleteMutation = useMutation({
+    ...orpc.facilities.deleteSite.mutationOptions(),
+    onSuccess: () => {
+      toast.success("Sede eliminada");
+      queryClient.invalidateQueries({
+        queryKey: orpc.facilities.listSites.key({ type: "query" }),
+      });
+      navigate({ to: "/facilities/sites" });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Error al eliminar sede");
+    },
+  });
+
   const title = isLoading ? "Cargando..." : (site?.name ?? "Detalle de sede");
+
+  useEffect(() => {
+    if (site) {
+      document.title = `${site.name} | WellFit EMR`;
+    }
+    return () => {
+      document.title = "WellFit EMR";
+    };
+  }, [site]);
 
   return (
     <div className="space-y-4 pb-6">
@@ -74,7 +102,15 @@ function SiteDetailPage() {
                 },
                 {
                   label: "Organización",
-                  value: organization?.name ?? site.organizationId,
+                  value: organization?.name ?? (
+                    <Link
+                      className="text-primary hover:underline"
+                      params={{ organizationId: site.organizationId }}
+                      to="/facilities/organizations/$organizationId"
+                    >
+                      {site.organizationId.slice(0, 8)}…
+                    </Link>
+                  ),
                 },
                 {
                   label: "Creada",
@@ -92,6 +128,27 @@ function SiteDetailPage() {
                   <p className="mt-0.5 font-medium">{item.value}</p>
                 </div>
               ))}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Acciones</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Button
+                disabled={deleteMutation.isPending}
+                onClick={() => {
+                  if (confirm("¿Eliminar esta sede permanentemente?")) {
+                    deleteMutation.mutate({ id: siteId });
+                  }
+                }}
+                size="sm"
+                variant="destructive"
+              >
+                <Trash2 size={14} />
+                <span className="ml-1.5">Eliminar</span>
+              </Button>
             </CardContent>
           </Card>
         </div>

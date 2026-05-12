@@ -1,6 +1,6 @@
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useSearch } from "@tanstack/react-router";
 import { Button } from "@wellfit-emr/ui/components/button";
 import {
   Card,
@@ -12,11 +12,23 @@ import { Input } from "@wellfit-emr/ui/components/input";
 import { Label } from "@wellfit-emr/ui/components/label";
 import { SearchSelect } from "@wellfit-emr/ui/components/search-select";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@wellfit-emr/ui/components/select";
+import {
+  AlertTriangle,
   ChevronLeft,
   ChevronRight,
   Circle,
   Clock,
+  FilterX,
+  Pencil,
   Plus,
+  Search,
+  Stethoscope,
   User,
   X,
 } from "lucide-react";
@@ -27,8 +39,13 @@ import { z } from "zod";
 import { authClient } from "@/lib/auth-client";
 import { orpc, queryClient } from "@/utils/orpc";
 
+const searchSchema = z.object({
+  patientId: z.string().optional(),
+});
+
 export const Route = createFileRoute("/_authenticated/appointments/")({
   component: AppointmentsPage,
+  validateSearch: searchSchema,
   beforeLoad: async () => {
     const session = await authClient.getSession();
     if (!session.data) {
@@ -108,18 +125,46 @@ const statusConfig: Record<string, { color: string; label: string }> = {
   "no-show": { color: "bg-amber-500", label: "No asistió" },
 };
 
+interface AppointmentFormValues {
+  durationMinutes: number;
+  notes: string;
+  patientId: string;
+  practitionerId: string;
+  reason: string;
+  scheduledAtDate: string;
+  scheduledAtTime: string;
+  serviceUnitId: string;
+  siteId: string;
+}
+
 function AppointmentForm({
   initialDate,
   onCancel,
   onSuccess,
+  defaultPatientId,
+  editingId,
+  initialValues,
 }: {
   initialDate?: Date;
   onCancel: () => void;
   onSuccess: () => void;
+  defaultPatientId?: string;
+  editingId?: string;
+  initialValues?: Partial<AppointmentFormValues>;
 }) {
-  const now = initialDate ?? new Date();
+  const now = new Date();
   const dateStr = now.toISOString().split("T")[0];
   const timeStr = `${String(now.getHours()).padStart(2, "0")}:00`;
+  const [pendingConflicts, setPendingConflicts] = useState<
+    Array<{
+      appointmentId: string;
+      scheduledAt: Date;
+      durationMinutes: number;
+      reason: string;
+    }>
+  >([]);
+  const [confirmedDespiteConflicts, setConfirmedDespiteConflicts] =
+    useState(false);
 
   const [patientSearch, setPatientSearch] = useState("");
   const [practitionerSearch, setPractitionerSearch] = useState("");
@@ -135,6 +180,13 @@ function AppointmentForm({
       },
     })
   );
+
+  const { data: defaultPatientData } = useQuery({
+    ...orpc.patients.get.queryOptions({
+      input: { id: defaultPatientId ?? "" },
+    }),
+    enabled: !!defaultPatientId,
+  });
 
   const { data: practitionersData, isLoading: practitionersLoading } = useQuery(
     orpc.facilities.listPractitioners.queryOptions({
@@ -168,31 +220,64 @@ function AppointmentForm({
 
   const form = useForm({
     defaultValues: {
-      durationMinutes: 30,
-      notes: "",
-      patientId: "",
-      practitionerId: "",
-      reason: "",
-      scheduledAtDate: dateStr,
-      scheduledAtTime: timeStr,
-      serviceUnitId: "",
-      siteId: "",
+      durationMinutes: initialValues?.durationMinutes ?? 30,
+      notes: initialValues?.notes ?? "",
+      patientId: initialValues?.patientId ?? defaultPatientId ?? "",
+      practitionerId: initialValues?.practitionerId ?? "",
+      reason: initialValues?.reason ?? "",
+      scheduledAtDate:
+        initialValues?.scheduledAtDate ??
+        (initialDate ? initialDate.toISOString().split("T")[0] : dateStr),
+      scheduledAtTime:
+        initialValues?.scheduledAtTime ??
+        (initialDate
+          ? `${String(initialDate.getHours()).padStart(2, "0")}:00`
+          : timeStr),
+      serviceUnitId: initialValues?.serviceUnitId ?? "",
+      siteId: initialValues?.siteId ?? "",
     },
     onSubmit: async ({ value }) => {
       const scheduledAt = new Date(
         `${value.scheduledAtDate}T${value.scheduledAtTime}:00`
       );
 
-      await createMutation.mutateAsync({
-        durationMinutes: value.durationMinutes,
-        notes: value.notes || null,
-        patientId: value.patientId,
-        practitionerId: value.practitionerId || null,
-        reason: value.reason,
-        scheduledAt,
-        serviceUnitId: value.serviceUnitId || null,
-        siteId: value.siteId,
-      });
+      if (value.practitionerId && !confirmedDespiteConflicts) {
+        const result = await checkConflictsMutation.mutateAsync({
+          practitionerId: value.practitionerId,
+          scheduledAt,
+          durationMinutes: value.durationMinutes,
+          excludeAppointmentId: editingId || undefined,
+        });
+        if (result.hasConflict) {
+          setPendingConflicts(result.conflicts);
+          return;
+        }
+      }
+
+      if (editingId) {
+        await updateMutation.mutateAsync({
+          id: editingId,
+          durationMinutes: value.durationMinutes,
+          notes: value.notes || null,
+          patientId: value.patientId,
+          practitionerId: value.practitionerId || null,
+          reason: value.reason,
+          scheduledAt,
+          serviceUnitId: value.serviceUnitId || null,
+          siteId: value.siteId,
+        });
+      } else {
+        await createMutation.mutateAsync({
+          durationMinutes: value.durationMinutes,
+          notes: value.notes || null,
+          patientId: value.patientId,
+          practitionerId: value.practitionerId || null,
+          reason: value.reason,
+          scheduledAt,
+          serviceUnitId: value.serviceUnitId || null,
+          siteId: value.siteId,
+        });
+      }
     },
     validators: {
       onSubmit: z.object({
@@ -223,6 +308,24 @@ function AppointmentForm({
     },
   });
 
+  const updateMutation = useMutation({
+    ...orpc.appointments.update.mutationOptions(),
+    onSuccess: () => {
+      toast.success("Cita actualizada correctamente");
+      queryClient.invalidateQueries({
+        queryKey: orpc.appointments.list.key({ type: "query" }),
+      });
+      onSuccess();
+    },
+    onError: (error) => {
+      toast.error(error.message || "Error al actualizar cita");
+    },
+  });
+
+  const checkConflictsMutation = useMutation({
+    ...orpc.appointments.checkConflicts.mutationOptions(),
+  });
+
   return (
     <form
       className="space-y-4"
@@ -236,19 +339,30 @@ function AppointmentForm({
         <form.Field name="patientId">
           {(field) => (
             <div className="space-y-1.5">
-              <Label htmlFor={field.name}>Paciente</Label>
+              <Label htmlFor={field.name}>Paciente *</Label>
               <SearchSelect
                 emptyMessage="Escribe para buscar pacientes"
                 loading={patientsLoading}
                 onChange={(v) => field.handleChange(v)}
                 onSearchChange={setPatientSearch}
-                options={
-                  patientsData?.patients.map((p) => ({
-                    value: p.id,
-                    label: `${p.firstName} ${p.lastName1}`,
-                    description: `${p.primaryDocumentType} ${p.primaryDocumentNumber}`,
-                  })) ?? []
-                }
+                options={[
+                  ...(defaultPatientData && defaultPatientId
+                    ? [
+                        {
+                          value: defaultPatientData.id,
+                          label: `${defaultPatientData.firstName} ${defaultPatientData.lastName1}`,
+                          description: `${defaultPatientData.primaryDocumentType} ${defaultPatientData.primaryDocumentNumber}`,
+                        },
+                      ]
+                    : []),
+                  ...(patientsData?.patients ?? [])
+                    .filter((p) => p.id !== defaultPatientId)
+                    .map((p) => ({
+                      value: p.id,
+                      label: `${p.firstName} ${p.lastName1}`,
+                      description: `${p.primaryDocumentType} ${p.primaryDocumentNumber}`,
+                    })),
+                ]}
                 placeholder="Buscar paciente..."
                 required
                 search={patientSearch}
@@ -291,7 +405,7 @@ function AppointmentForm({
         <form.Field name="siteId">
           {(field) => (
             <div className="space-y-1.5">
-              <Label htmlFor={field.name}>Sede</Label>
+              <Label htmlFor={field.name}>Sede *</Label>
               <SearchSelect
                 emptyMessage="Escribe para buscar sedes"
                 loading={sitesLoading}
@@ -346,8 +460,9 @@ function AppointmentForm({
         <form.Field name="scheduledAtDate">
           {(field) => (
             <div className="space-y-1.5">
-              <Label htmlFor={field.name}>Fecha</Label>
+              <Label htmlFor={field.name}>Fecha *</Label>
               <Input
+                autoFocus
                 id={field.name}
                 name={field.name}
                 onBlur={field.handleBlur}
@@ -367,7 +482,7 @@ function AppointmentForm({
         <form.Field name="scheduledAtTime">
           {(field) => (
             <div className="space-y-1.5">
-              <Label htmlFor={field.name}>Hora</Label>
+              <Label htmlFor={field.name}>Hora *</Label>
               <Input
                 id={field.name}
                 name={field.name}
@@ -388,7 +503,7 @@ function AppointmentForm({
         <form.Field name="durationMinutes">
           {(field) => (
             <div className="space-y-1.5">
-              <Label htmlFor={field.name}>Duración (minutos)</Label>
+              <Label htmlFor={field.name}>Duración (minutos) *</Label>
               <Input
                 id={field.name}
                 name={field.name}
@@ -406,7 +521,7 @@ function AppointmentForm({
         <form.Field name="reason">
           {(field) => (
             <div className="space-y-1.5 sm:col-span-2">
-              <Label htmlFor={field.name}>Motivo de consulta</Label>
+              <Label htmlFor={field.name}>Motivo de consulta *</Label>
               <Input
                 id={field.name}
                 name={field.name}
@@ -441,6 +556,53 @@ function AppointmentForm({
         </form.Field>
       </div>
 
+      {pendingConflicts.length > 0 && (
+        <div className="space-y-2 border border-amber-200 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950">
+          <p className="flex items-center gap-1.5 font-medium text-amber-800 text-sm dark:text-amber-200">
+            <AlertTriangle size={14} />
+            Se encontraron conflictos de agenda
+          </p>
+          <div className="space-y-1">
+            {pendingConflicts.map((c) => (
+              <div
+                className="text-amber-700 text-xs dark:text-amber-300"
+                key={c.appointmentId}
+              >
+                <p className="font-medium">{c.reason}</p>
+                <p className="text-amber-600 dark:text-amber-400">
+                  {new Date(c.scheduledAt).toLocaleString("es-CO")} (
+                  {c.durationMinutes} min)
+                </p>
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-2 pt-1">
+            <Button
+              onClick={() => {
+                setPendingConflicts([]);
+                setConfirmedDespiteConflicts(false);
+              }}
+              size="sm"
+              type="button"
+              variant="ghost"
+            >
+              Modificar datos
+            </Button>
+            <Button
+              onClick={() => {
+                setConfirmedDespiteConflicts(true);
+                form.handleSubmit();
+              }}
+              size="sm"
+              type="button"
+              variant="outline"
+            >
+              Confirmar de todos modos
+            </Button>
+          </div>
+        </div>
+      )}
+
       <div className="flex justify-end gap-2 pt-2">
         <Button onClick={onCancel} type="button" variant="outline">
           Cancelar
@@ -452,8 +614,17 @@ function AppointmentForm({
           })}
         >
           {({ canSubmit, isSubmitting }) => (
-            <Button disabled={!canSubmit || isSubmitting} type="submit">
-              {isSubmitting ? "Guardando..." : "Guardar cita"}
+            <Button
+              disabled={
+                !canSubmit || isSubmitting || pendingConflicts.length > 0
+              }
+              type="submit"
+            >
+              {isSubmitting
+                ? "Guardando..."
+                : editingId
+                  ? "Actualizar cita"
+                  : "Guardar cita"}
             </Button>
           )}
         </form.Subscribe>
@@ -463,28 +634,66 @@ function AppointmentForm({
 }
 
 function AppointmentsPage() {
+  const { patientId: defaultPatientId } = useSearch({
+    from: "/_authenticated/appointments/",
+  });
   const today = new Date();
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
-  const [showForm, setShowForm] = useState(false);
+  const [showForm, setShowForm] = useState(!!defaultPatientId);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<
     string | null
   >(null);
+  const [editingAppointment, setEditingAppointment] = useState<
+    NonNullable<typeof data>["appointments"][number] | null
+  >(null);
+  const [filterPractitionerId, setFilterPractitionerId] = useState("");
+  const [practitionerSearch, setPractitionerSearch] = useState("");
+  const [filterStatus, setFilterStatus] = useState<
+    "" | "scheduled" | "confirmed" | "cancelled" | "completed" | "no-show"
+  >("");
+  const [searchValue, setSearchValue] = useState("");
+  const [querySearch, setQuerySearch] = useState("");
+
+  useEffect(() => {
+    document.title = "Agenda | WellFit EMR";
+    return () => {
+      document.title = "WellFit EMR";
+    };
+  }, []);
 
   useEffect(() => {
     function handleEscape(e: KeyboardEvent) {
       if (e.key === "Escape") {
         setShowForm(false);
         setSelectedAppointmentId(null);
+        setEditingAppointment(null);
       }
     }
     window.addEventListener("keydown", handleEscape);
     return () => window.removeEventListener("keydown", handleEscape);
   }, []);
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setQuerySearch(searchValue);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchValue]);
+
   const fromDate = new Date(currentYear, currentMonth, 1);
   const toDate = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59);
+
+  const { data: practitionersData, isLoading: practitionersLoading } = useQuery(
+    orpc.facilities.listPractitioners.queryOptions({
+      input: {
+        limit: 20,
+        offset: 0,
+        search: practitionerSearch || undefined,
+      },
+    })
+  );
 
   const { data, isLoading } = useQuery(
     orpc.appointments.list.queryOptions({
@@ -492,8 +701,11 @@ function AppointmentsPage() {
         fromDate,
         limit: 500,
         offset: 0,
+        practitionerId: filterPractitionerId || undefined,
+        search: querySearch || undefined,
         sortBy: "scheduledAt",
         sortDirection: "asc",
+        status: filterStatus || undefined,
         toDate,
       },
     })
@@ -568,6 +780,80 @@ function AppointmentsPage() {
     );
   }, [selectedAppointmentId, data]);
 
+  const { data: selectedPatient } = useQuery({
+    ...orpc.patients.get.queryOptions({
+      input: { id: selectedAppointment?.patientId ?? "" },
+    }),
+    enabled: !!selectedAppointment?.patientId,
+  });
+
+  const { data: selectedPractitioner } = useQuery({
+    ...orpc.facilities.getPractitioner.queryOptions({
+      input: { id: selectedAppointment?.practitionerId ?? "" },
+    }),
+    enabled: !!selectedAppointment?.practitionerId,
+  });
+
+  const createEncounterMutation = useMutation({
+    ...orpc.encounters.create.mutationOptions(),
+    onSuccess: (encounter) => {
+      if (!selectedAppointment) {
+        toast.error("No se encontró la cita para vincular la atención");
+        return;
+      }
+      updateAppointmentMutation.mutate({
+        id: selectedAppointment.id,
+        encounterId: encounter.id,
+      });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Error al crear atención");
+    },
+  });
+
+  const updateAppointmentMutation = useMutation({
+    ...orpc.appointments.update.mutationOptions(),
+    onSuccess: () => {
+      toast.success("Cita convertida a atención");
+      queryClient.invalidateQueries({
+        queryKey: orpc.appointments.list.key({ type: "query" }),
+      });
+      queryClient.invalidateQueries({
+        queryKey: orpc.encounters.list.key({ type: "query" }),
+      });
+      setSelectedAppointmentId(null);
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Error al actualizar cita");
+    },
+  });
+
+  function handleConvertToEncounter() {
+    if (!selectedAppointment) {
+      return;
+    }
+    if (!selectedAppointment.serviceUnitId) {
+      toast.error("La cita no tiene unidad de servicio asignada");
+      return;
+    }
+    createEncounterMutation.mutate({
+      patientId: selectedAppointment.patientId,
+      siteId: selectedAppointment.siteId,
+      serviceUnitId: selectedAppointment.serviceUnitId,
+      encounterClass: "01",
+      careModality: "01",
+      reasonForVisit: selectedAppointment.reason,
+      startedAt: new Date(),
+      status: "in-progress",
+      admissionSource: null,
+      causeExternalCode: null,
+      finalidadConsultaCode: null,
+      modalidadAtencionCode: null,
+      vidaCode: null,
+      condicionDestinoCode: null,
+    });
+  }
+
   return (
     <div className="space-y-6 p-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -583,6 +869,7 @@ function AppointmentsPage() {
           </Button>
           <Button
             onClick={() => {
+              setEditingAppointment(null);
               setSelectedDate(new Date());
               setShowForm(true);
             }}
@@ -594,17 +881,94 @@ function AppointmentsPage() {
         </div>
       </div>
 
+      <div className="flex flex-wrap items-end gap-2">
+        <div className="flex items-center gap-2">
+          <Search className="text-muted-foreground" size={14} />
+          <SearchSelect
+            className="max-w-xs"
+            clearable
+            emptyMessage="Escribe para buscar profesionales"
+            loading={practitionersLoading}
+            onChange={(v) => setFilterPractitionerId(v)}
+            onSearchChange={setPractitionerSearch}
+            options={
+              practitionersData?.practitioners.map((p) => ({
+                value: p.id,
+                label: p.fullName,
+                description: p.documentNumber,
+              })) ?? []
+            }
+            placeholder="Filtrar por profesional..."
+            search={practitionerSearch}
+            value={filterPractitionerId}
+          />
+        </div>
+        <div className="space-y-1">
+          <Label className="text-[10px]">Estado</Label>
+          <Select
+            onValueChange={(v) => setFilterStatus(v as typeof filterStatus)}
+            value={filterStatus}
+          >
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Todos" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">Todos</SelectItem>
+              <SelectItem value="scheduled">Programada</SelectItem>
+              <SelectItem value="confirmed">Confirmada</SelectItem>
+              <SelectItem value="completed">Completada</SelectItem>
+              <SelectItem value="cancelled">Cancelada</SelectItem>
+              <SelectItem value="no-show">No asistió</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1">
+          <Label className="text-[10px]">Buscar</Label>
+          <Input
+            className="w-48"
+            onChange={(e) => setSearchValue(e.target.value)}
+            placeholder="Motivo o notas..."
+            value={searchValue}
+          />
+        </div>
+        {(filterPractitionerId || filterStatus || searchValue) && (
+          <Button
+            onClick={() => {
+              setFilterPractitionerId("");
+              setPractitionerSearch("");
+              setFilterStatus("");
+              setSearchValue("");
+            }}
+            size="sm"
+            variant="ghost"
+          >
+            <FilterX size={14} />
+            Limpiar filtros
+          </Button>
+        )}
+      </div>
+
       <Card>
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Button onClick={goToPrevMonth} size="icon" variant="ghost">
+              <Button
+                aria-label="Mes anterior"
+                onClick={goToPrevMonth}
+                size="icon"
+                variant="ghost"
+              >
                 <ChevronLeft size={16} />
               </Button>
               <h2 className="min-w-40 text-center font-semibold text-lg">
                 {MONTH_NAMES[currentMonth]} {currentYear}
               </h2>
-              <Button onClick={goToNextMonth} size="icon" variant="ghost">
+              <Button
+                aria-label="Mes siguiente"
+                onClick={goToNextMonth}
+                size="icon"
+                variant="ghost"
+              >
                 <ChevronRight size={16} />
               </Button>
             </div>
@@ -663,6 +1027,7 @@ function AppointmentsPage() {
                       } ${isToday ? "bg-blue-50/50 dark:bg-blue-950/20" : ""} hover:bg-muted/40`}
                       key={dateKey}
                       onClick={() => {
+                        setEditingAppointment(null);
                         setSelectedDate(date);
                         setShowForm(true);
                       }}
@@ -724,9 +1089,15 @@ function AppointmentsPage() {
         >
           <Card className="mx-4 max-h-[90vh] w-full max-w-lg overflow-auto">
             <CardHeader className="flex flex-row items-center justify-between pb-4">
-              <CardTitle>Nueva cita</CardTitle>
+              <CardTitle>
+                {editingAppointment ? "Editar cita" : "Nueva cita"}
+              </CardTitle>
               <Button
-                onClick={() => setShowForm(false)}
+                aria-label="Cerrar"
+                onClick={() => {
+                  setShowForm(false);
+                  setEditingAppointment(null);
+                }}
                 size="icon"
                 variant="ghost"
               >
@@ -735,9 +1106,39 @@ function AppointmentsPage() {
             </CardHeader>
             <CardContent>
               <AppointmentForm
+                defaultPatientId={defaultPatientId}
+                editingId={editingAppointment?.id}
                 initialDate={selectedDate}
-                onCancel={() => setShowForm(false)}
-                onSuccess={() => setShowForm(false)}
+                initialValues={
+                  editingAppointment
+                    ? {
+                        durationMinutes: editingAppointment.durationMinutes,
+                        notes: editingAppointment.notes ?? "",
+                        patientId: editingAppointment.patientId,
+                        practitionerId: editingAppointment.practitionerId ?? "",
+                        reason: editingAppointment.reason,
+                        scheduledAtDate: new Date(
+                          editingAppointment.scheduledAt
+                        )
+                          .toISOString()
+                          .split("T")[0],
+                        scheduledAtTime: formatTime(
+                          new Date(editingAppointment.scheduledAt)
+                        ),
+                        serviceUnitId: editingAppointment.serviceUnitId ?? "",
+                        siteId: editingAppointment.siteId,
+                      }
+                    : undefined
+                }
+                key={editingAppointment?.id || "new"}
+                onCancel={() => {
+                  setShowForm(false);
+                  setEditingAppointment(null);
+                }}
+                onSuccess={() => {
+                  setShowForm(false);
+                  setEditingAppointment(null);
+                }}
               />
             </CardContent>
           </Card>
@@ -754,6 +1155,7 @@ function AppointmentsPage() {
             <CardHeader className="flex flex-row items-center justify-between pb-4">
               <CardTitle>Detalle de cita</CardTitle>
               <Button
+                aria-label="Cerrar"
                 onClick={() => setSelectedAppointmentId(null)}
                 size="icon"
                 variant="ghost"
@@ -779,13 +1181,21 @@ function AppointmentsPage() {
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <User className="text-muted-foreground" size={14} />
-                  <span>Paciente: {selectedAppointment.patientId}</span>
+                  <span>
+                    Paciente:{" "}
+                    {selectedPatient
+                      ? `${selectedPatient.firstName} ${selectedPatient.lastName1}`
+                      : `${selectedAppointment.patientId.slice(0, 8)}…`}
+                  </span>
                 </div>
                 {selectedAppointment.practitionerId && (
                   <div className="flex items-center gap-2 text-sm">
                     <User className="text-muted-foreground" size={14} />
                     <span>
-                      Profesional: {selectedAppointment.practitionerId}
+                      Profesional:{" "}
+                      {selectedPractitioner
+                        ? selectedPractitioner.fullName
+                        : `${selectedAppointment.practitionerId.slice(0, 8)}…`}
                     </span>
                   </div>
                 )}
@@ -833,6 +1243,42 @@ function AppointmentsPage() {
                 >
                   Cerrar
                 </Button>
+                {selectedAppointment.status !== "cancelled" &&
+                  selectedAppointment.status !== "completed" && (
+                    <Button
+                      onClick={() => {
+                        setSelectedAppointmentId(null);
+                        setEditingAppointment(selectedAppointment);
+                        setShowForm(true);
+                      }}
+                      size="sm"
+                      variant="outline"
+                    >
+                      <Pencil size={14} />
+                      <span className="ml-1.5">Editar</span>
+                    </Button>
+                  )}
+                {selectedAppointment.status !== "cancelled" &&
+                  selectedAppointment.status !== "completed" &&
+                  !selectedAppointment.encounterId && (
+                    <Button
+                      disabled={
+                        createEncounterMutation.isPending ||
+                        updateAppointmentMutation.isPending
+                      }
+                      onClick={handleConvertToEncounter}
+                      size="sm"
+                      variant="default"
+                    >
+                      <Stethoscope size={14} />
+                      <span className="ml-1.5">
+                        {createEncounterMutation.isPending ||
+                        updateAppointmentMutation.isPending
+                          ? "Convirtiendo..."
+                          : "Convertir a atención"}
+                      </span>
+                    </Button>
+                  )}
                 {selectedAppointment.status !== "cancelled" &&
                   selectedAppointment.status !== "completed" && (
                     <Button

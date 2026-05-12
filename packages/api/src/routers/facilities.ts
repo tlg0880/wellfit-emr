@@ -86,6 +86,40 @@ const createPractitionerSchema = z.object({
   rethusNumber: optionalNullableStringSchema,
 });
 
+const updateOrganizationSchema = z.object({
+  id: nonEmptyStringSchema,
+  name: nonEmptyStringSchema.optional(),
+  repsCode: optionalNullableStringSchema,
+  status: nonEmptyStringSchema.optional(),
+  taxId: optionalNullableStringSchema,
+});
+
+const updateSiteSchema = z.object({
+  id: nonEmptyStringSchema,
+  address: optionalNullableStringSchema,
+  municipalityCode: optionalNullableStringSchema,
+  name: nonEmptyStringSchema.optional(),
+  organizationId: nonEmptyStringSchema.optional(),
+  siteCode: nonEmptyStringSchema.optional(),
+});
+
+const updateServiceUnitSchema = z.object({
+  id: nonEmptyStringSchema,
+  careSetting: nonEmptyStringSchema.optional(),
+  name: nonEmptyStringSchema.optional(),
+  serviceCode: nonEmptyStringSchema.optional(),
+  siteId: nonEmptyStringSchema.optional(),
+});
+
+const updatePractitionerSchema = z.object({
+  id: nonEmptyStringSchema,
+  active: z.boolean().optional(),
+  documentNumber: nonEmptyStringSchema.optional(),
+  documentType: nonEmptyStringSchema.optional(),
+  fullName: nonEmptyStringSchema.optional(),
+  rethusNumber: optionalNullableStringSchema,
+});
+
 const listFacilitiesSchema = z.object({
   limit: z.number().int().min(1).max(100).default(50),
   offset: z.number().int().min(0).default(0),
@@ -340,6 +374,86 @@ const listPractitionersProcedure = protectedProcedure
     };
   });
 
+const updateOrganizationProcedure = protectedProcedure
+  .input(updateOrganizationSchema)
+  .output(organizationSchema)
+  .handler(async ({ context, input }) => {
+    const { id, ...values } = input;
+    const [updated] = await context.db
+      .update(organization)
+      .set(values)
+      .where(eq(organization.id, id))
+      .returning();
+
+    if (!updated) {
+      throw new ORPCError("NOT_FOUND", {
+        message: "Organization not found.",
+      });
+    }
+
+    return updated;
+  });
+
+const updateSiteProcedure = protectedProcedure
+  .input(updateSiteSchema)
+  .output(siteSchema)
+  .handler(async ({ context, input }) => {
+    const { id, ...values } = input;
+    const [updated] = await context.db
+      .update(site)
+      .set(values)
+      .where(eq(site.id, id))
+      .returning();
+
+    if (!updated) {
+      throw new ORPCError("NOT_FOUND", {
+        message: "Site not found.",
+      });
+    }
+
+    return updated;
+  });
+
+const updateServiceUnitProcedure = protectedProcedure
+  .input(updateServiceUnitSchema)
+  .output(serviceUnitSchema)
+  .handler(async ({ context, input }) => {
+    const { id, ...values } = input;
+    const [updated] = await context.db
+      .update(serviceUnit)
+      .set(values)
+      .where(eq(serviceUnit.id, id))
+      .returning();
+
+    if (!updated) {
+      throw new ORPCError("NOT_FOUND", {
+        message: "Service unit not found.",
+      });
+    }
+
+    return updated;
+  });
+
+const updatePractitionerProcedure = protectedProcedure
+  .input(updatePractitionerSchema)
+  .output(practitionerSchema)
+  .handler(async ({ context, input }) => {
+    const { id, ...values } = input;
+    const [updated] = await context.db
+      .update(practitioner)
+      .set(values)
+      .where(eq(practitioner.id, id))
+      .returning();
+
+    if (!updated) {
+      throw new ORPCError("NOT_FOUND", {
+        message: "Practitioner not found.",
+      });
+    }
+
+    return updated;
+  });
+
 const getByIdSchema = z.object({
   id: nonEmptyStringSchema,
 });
@@ -501,6 +615,10 @@ export interface FacilitiesRouter extends Record<string, AnyRouter> {
   listPractitioners: typeof listPractitionersProcedure;
   listServiceUnits: typeof listServiceUnitsProcedure;
   listSites: typeof listSitesProcedure;
+  updateOrganization: typeof updateOrganizationProcedure;
+  updatePractitioner: typeof updatePractitionerProcedure;
+  updateServiceUnit: typeof updateServiceUnitProcedure;
+  updateSite: typeof updateSiteProcedure;
 }
 
 export const facilitiesRouter: FacilitiesRouter = {
@@ -520,4 +638,8 @@ export const facilitiesRouter: FacilitiesRouter = {
   listPractitioners: listPractitionersProcedure,
   listServiceUnits: listServiceUnitsProcedure,
   listSites: listSitesProcedure,
+  updateOrganization: updateOrganizationProcedure,
+  updatePractitioner: updatePractitionerProcedure,
+  updateServiceUnit: updateServiceUnitProcedure,
+  updateSite: updateSiteProcedure,
 };

@@ -21,6 +21,7 @@ import {
   RefreshCw,
   Share2,
 } from "lucide-react";
+import { useEffect } from "react";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { authClient } from "@/lib/auth-client";
@@ -264,6 +265,13 @@ function ComplianceAlertStrip({
 /* ─── page ─── */
 
 function RegulatoryTasksPage() {
+  useEffect(() => {
+    document.title = "Tareas regulatorias | WellFit EMR";
+    return () => {
+      document.title = "WellFit EMR";
+    };
+  }, []);
+
   const docsQuery = useQuery(
     orpc.clinicalDocuments.list.queryOptions({
       input: { limit: 10, offset: 0, status: "draft", sortDirection: "desc" },

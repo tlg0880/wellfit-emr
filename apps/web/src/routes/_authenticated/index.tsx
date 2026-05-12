@@ -26,7 +26,7 @@ import {
   UserPlus,
   Users,
 } from "lucide-react";
-
+import { useEffect } from "react";
 import { authClient } from "@/lib/auth-client";
 import { orpc } from "@/utils/orpc";
 
@@ -214,6 +214,13 @@ function ComplianceSummaryBlock() {
 }
 
 function DashboardPage() {
+  useEffect(() => {
+    document.title = "Panel principal | WellFit EMR";
+    return () => {
+      document.title = "WellFit EMR";
+    };
+  }, []);
+
   const { session } = Route.useRouteContext();
   const { data: patientsData, isLoading: patientsLoading } = useQuery(
     orpc.patients.list.queryOptions({ input: { limit: 5, offset: 0 } })

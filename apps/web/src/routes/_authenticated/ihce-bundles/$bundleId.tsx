@@ -1,5 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { Button } from "@wellfit-emr/ui/components/button";
 import {
   Card,
   CardContent,
@@ -7,10 +8,13 @@ import {
   CardTitle,
 } from "@wellfit-emr/ui/components/card";
 import { Skeleton } from "@wellfit-emr/ui/components/skeleton";
+import { Trash2 } from "lucide-react";
+import { useEffect } from "react";
+import { toast } from "sonner";
 
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
-import { orpc } from "@/utils/orpc";
+import { orpc, queryClient } from "@/utils/orpc";
 
 export const Route = createFileRoute("/_authenticated/ihce-bundles/$bundleId")({
   component: IhceBundleDetailPage,
@@ -18,6 +22,21 @@ export const Route = createFileRoute("/_authenticated/ihce-bundles/$bundleId")({
 
 function IhceBundleDetailPage() {
   const { bundleId } = Route.useParams();
+  const navigate = useNavigate();
+
+  const deleteMutation = useMutation({
+    ...orpc.ihceBundles.delete.mutationOptions(),
+    onSuccess: () => {
+      toast.success("Bundle eliminado");
+      queryClient.invalidateQueries({
+        queryKey: orpc.ihceBundles.list.key({ type: "query" }),
+      });
+      navigate({ to: "/ihce-bundles" });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Error al eliminar bundle");
+    },
+  });
 
   const { data: listData, isLoading } = useQuery(
     orpc.ihceBundles.list.queryOptions({
@@ -31,9 +50,37 @@ function IhceBundleDetailPage() {
     ? "Cargando..."
     : (bundle?.bundleType ?? "Detalle de bundle IHCE");
 
+  useEffect(() => {
+    if (bundle) {
+      document.title = `${bundle.bundleType} | WellFit EMR`;
+    }
+    return () => {
+      document.title = "WellFit EMR";
+    };
+  }, [bundle]);
+
   return (
     <div className="space-y-4 pb-6">
       <PageHeader
+        actions={
+          bundle ? (
+            <Button
+              disabled={deleteMutation.isPending}
+              onClick={() => {
+                if (confirm("¿Eliminar este bundle permanentemente?")) {
+                  deleteMutation.mutate({ id: bundleId });
+                }
+              }}
+              size="sm"
+              variant="outline"
+            >
+              <Trash2 size={14} />
+              <span className="ml-1.5">
+                {deleteMutation.isPending ? "Eliminando..." : "Eliminar"}
+              </span>
+            </Button>
+          ) : undefined
+        }
         backTo="/ihce-bundles"
         description="Información del bundle IHCE/RDA"
         title={title}

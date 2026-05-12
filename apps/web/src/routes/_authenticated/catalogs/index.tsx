@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@wellfit-emr/ui/components/button";
 import { Skeleton } from "@wellfit-emr/ui/components/skeleton";
 import { RefreshCw, Table } from "lucide-react";
+import { useEffect } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/page-header";
 import { authClient } from "@/lib/auth-client";
@@ -24,6 +25,13 @@ export const Route = createFileRoute("/_authenticated/catalogs/")({
 });
 
 function CatalogsPage() {
+  useEffect(() => {
+    document.title = "Catálogos RIPS | WellFit EMR";
+    return () => {
+      document.title = "WellFit EMR";
+    };
+  }, []);
+
   const { data, isLoading, refetch } = useQuery(
     orpc.ripsReference.listTables.queryOptions({
       input: {

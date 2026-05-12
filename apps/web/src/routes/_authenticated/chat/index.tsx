@@ -35,6 +35,13 @@ function ChatPage() {
   const selectedPatientIdRef = useRef<string | null>(selectedPatientId);
   selectedPatientIdRef.current = selectedPatientId;
 
+  useEffect(() => {
+    document.title = "Asistente clínico | WellFit EMR";
+    return () => {
+      document.title = "WellFit EMR";
+    };
+  }, []);
+
   const { data: patientsData, isLoading: patientsLoading } = useQuery(
     orpc.patients.list.queryOptions({
       input: {
@@ -290,6 +297,7 @@ function ChatPage() {
           />
           {isLoading ? (
             <Button
+              aria-label="Detener generación"
               onClick={() => stop()}
               size="icon-sm"
               type="button"
@@ -298,7 +306,12 @@ function ChatPage() {
               <X size={14} />
             </Button>
           ) : (
-            <Button disabled={!input.trim()} size="icon-sm" type="submit">
+            <Button
+              aria-label="Enviar mensaje"
+              disabled={!input.trim()}
+              size="icon-sm"
+              type="submit"
+            >
               <Send size={14} />
             </Button>
           )}
@@ -356,6 +369,7 @@ function ChatHeader({
   return (
     <div className="flex items-center gap-2 border-b px-4 py-3">
       <Button
+        aria-label={sidebarOpen ? "Cerrar panel" : "Abrir panel"}
         onClick={onToggleSidebar}
         size="icon-xs"
         type="button"

@@ -16,6 +16,18 @@
       }
     },
     {
+      "includes": [
+        "apps/web/src/routes/_authenticated/facilities/payers.$payerId.tsx"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "useFilenamingConvention": "off"
+          }
+        }
+      }
+    },
+    {
       "includes": ["apps/web/src/routes/**/*.tsx"],
       "linter": {
         "rules": {
@@ -26,6 +38,7 @@
             "noNestedTernary": "off"
           },
           "suspicious": {
+            "noAlert": "off",
             "noArrayIndexKey": "off"
           }
         }

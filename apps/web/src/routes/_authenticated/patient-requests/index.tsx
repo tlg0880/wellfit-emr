@@ -1,6 +1,6 @@
 import { useForm } from "@tanstack/react-form";
-import { useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Button } from "@wellfit-emr/ui/components/button";
 import {
   Card,
@@ -12,26 +12,31 @@ import { Input } from "@wellfit-emr/ui/components/input";
 import { Label } from "@wellfit-emr/ui/components/label";
 import { SearchSelect } from "@wellfit-emr/ui/components/search-select";
 import {
-  AlertCircle,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@wellfit-emr/ui/components/select";
+import {
   ChevronDown,
   ChevronUp,
   Clock,
+  Eye,
+  FilterX,
+  Pencil,
   Plus,
+  Trash2,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { z } from "zod";
 
 import { DataTable } from "@/components/data-table";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
-import {
-  computeStatus,
-  createRequest,
-  type PatientCopyRequest,
-  usePatientRequests,
-} from "@/contexts/patient-requests-context";
-import { orpc } from "@/utils/orpc";
+import { orpc, queryClient } from "@/utils/orpc";
 
 export const Route = createFileRoute("/_authenticated/patient-requests/")({
   component: PatientRequestsPage,
@@ -74,6 +79,22 @@ function getStatusBadgeClasses(
   }
 }
 
+function computeStatus(
+  row: {
+    status: string;
+    deadline: Date;
+  },
+  now = new Date()
+): "Recibida" | "En preparación" | "Entregada" | "Vencida" {
+  if (row.status === "Entregada") {
+    return "Entregada";
+  }
+  if (new Date(row.deadline) < now) {
+    return "Vencida";
+  }
+  return row.status as "Recibida" | "En preparación" | "Entregada" | "Vencida";
+}
+
 /* ─── schema ─── */
 
 const patientRequestSchema = z.object({
@@ -87,12 +108,26 @@ const patientRequestSchema = z.object({
 
 /* ─── form component ─── */
 
-function CreateRequestForm({
+function RequestForm({
   onCancel,
   onSubmit,
+  editingId,
+  initialValues,
 }: {
   onCancel: () => void;
   onSubmit: () => void;
+  editingId?: string;
+  initialValues?: {
+    patientId: string;
+    patientName: string;
+    scope: string;
+    deliveryChannel: string;
+    requester: string;
+    legalBasis: string;
+    notes: string | null;
+    deadline: Date;
+    status: string;
+  };
 }) {
   const [patientSearch, setPatientSearch] = useState("");
 
@@ -113,32 +148,78 @@ function CreateRequestForm({
       description: `${p.primaryDocumentType} ${p.primaryDocumentNumber}`,
     })) ?? [];
 
-  const { addRequest } = usePatientRequests();
+  const createMutation = useMutation({
+    ...orpc.patientCopyRequests.create.mutationOptions(),
+    onSuccess: () => {
+      toast.success("Solicitud de copia creada");
+      queryClient.invalidateQueries({
+        queryKey: orpc.patientCopyRequests.list.key({ type: "query" }),
+      });
+      onSubmit();
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Error al crear solicitud");
+    },
+  });
+
+  const updateMutation = useMutation({
+    ...orpc.patientCopyRequests.update.mutationOptions(),
+    onSuccess: () => {
+      toast.success("Solicitud actualizada");
+      queryClient.invalidateQueries({
+        queryKey: orpc.patientCopyRequests.list.key({ type: "query" }),
+      });
+      onSubmit();
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Error al actualizar solicitud");
+    },
+  });
 
   const form = useForm({
     defaultValues: {
-      patientId: "",
-      scope: "",
-      deliveryChannel: "",
-      requester: "",
-      legalBasis: "",
-      notes: "",
+      patientId: initialValues?.patientId ?? "",
+      scope: initialValues?.scope ?? "",
+      deliveryChannel: initialValues?.deliveryChannel ?? "",
+      requester: initialValues?.requester ?? "",
+      legalBasis: initialValues?.legalBasis ?? "",
+      notes: initialValues?.notes ?? "",
     },
     onSubmit: ({ value }) => {
       const selectedPatient = patientOptions.find(
         (o) => o.value === value.patientId
       );
-      const request = createRequest({
-        patientId: value.patientId,
-        patientName: selectedPatient?.label ?? "Paciente desconocido",
-        scope: value.scope,
-        deliveryChannel: value.deliveryChannel,
-        requester: value.requester,
-        legalBasis: value.legalBasis,
-        notes: value.notes,
-      });
-      addRequest(request);
-      onSubmit();
+      const fallbackPatientName =
+        initialValues?.patientName ?? "Paciente desconocido";
+      const patientName = selectedPatient?.label ?? fallbackPatientName;
+      if (editingId) {
+        updateMutation.mutate({
+          id: editingId,
+          patientId: value.patientId,
+          patientName,
+          scope: value.scope,
+          deliveryChannel: value.deliveryChannel,
+          requester: value.requester,
+          legalBasis: value.legalBasis,
+          notes: value.notes || null,
+          deadline: initialValues?.deadline ?? new Date(),
+          status: initialValues?.status ?? "Recibida",
+        });
+      } else {
+        const deadline = new Date();
+        deadline.setDate(deadline.getDate() + 5);
+        createMutation.mutate({
+          patientId: value.patientId,
+          patientName,
+          scope: value.scope,
+          deliveryChannel: value.deliveryChannel,
+          requester: value.requester,
+          legalBasis: value.legalBasis,
+          notes: value.notes || null,
+          deadline,
+          status: "Recibida",
+        });
+      }
     },
     validators: {
       onSubmit: patientRequestSchema,
@@ -148,7 +229,9 @@ function CreateRequestForm({
   return (
     <Card className="mx-6">
       <CardHeader>
-        <CardTitle>Nueva solicitud de copia</CardTitle>
+        <CardTitle>
+          {editingId ? "Editar solicitud de copia" : "Nueva solicitud de copia"}
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <form
@@ -162,7 +245,7 @@ function CreateRequestForm({
           <form.Field name="patientId">
             {(field) => (
               <div className="space-y-1">
-                <Label htmlFor={field.name}>Paciente</Label>
+                <Label htmlFor={field.name}>Paciente *</Label>
                 <SearchSelect
                   emptyMessage="No se encontraron pacientes"
                   loading={patientsLoading}
@@ -186,21 +269,20 @@ function CreateRequestForm({
           <form.Field name="scope">
             {(field) => (
               <div className="space-y-1">
-                <Label htmlFor={field.name}>Alcance</Label>
-                <select
-                  className="h-8 w-full rounded-none border border-input bg-transparent px-2.5 text-xs outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50"
-                  id={field.name}
-                  name={field.name}
-                  onBlur={field.handleBlur}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  required
+                <Label htmlFor={field.name}>Alcance *</Label>
+                <Select
+                  onValueChange={(v) => field.handleChange(v as string)}
                   value={field.state.value}
                 >
-                  <option value="">Seleccionar...</option>
-                  <option value="Completa">Completa</option>
-                  <option value="Parcial">Parcial</option>
-                  <option value="Resumen">Resumen</option>
-                </select>
+                  <SelectTrigger id={field.name}>
+                    <SelectValue placeholder="Seleccionar..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Completa">Completa</SelectItem>
+                    <SelectItem value="Parcial">Parcial</SelectItem>
+                    <SelectItem value="Resumen">Resumen</SelectItem>
+                  </SelectContent>
+                </Select>
                 {field.state.meta.errors.map((error) => (
                   <p className="text-destructive text-xs" key={String(error)}>
                     {String(error)}
@@ -213,23 +295,24 @@ function CreateRequestForm({
           <form.Field name="deliveryChannel">
             {(field) => (
               <div className="space-y-1">
-                <Label htmlFor={field.name}>Canal de entrega</Label>
-                <select
-                  className="h-8 w-full rounded-none border border-input bg-transparent px-2.5 text-xs outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50"
-                  id={field.name}
-                  name={field.name}
-                  onBlur={field.handleBlur}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  required
+                <Label htmlFor={field.name}>Canal de entrega *</Label>
+                <Select
+                  onValueChange={(v) => field.handleChange(v as string)}
                   value={field.state.value}
                 >
-                  <option value="">Seleccionar...</option>
-                  <option value="Físico">Físico</option>
-                  <option value="Correo electrónico">Correo electrónico</option>
-                  <option value="Portal del paciente">
-                    Portal del paciente
-                  </option>
-                </select>
+                  <SelectTrigger id={field.name}>
+                    <SelectValue placeholder="Seleccionar..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Físico">Físico</SelectItem>
+                    <SelectItem value="Correo electrónico">
+                      Correo electrónico
+                    </SelectItem>
+                    <SelectItem value="Portal del paciente">
+                      Portal del paciente
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
                 {field.state.meta.errors.map((error) => (
                   <p className="text-destructive text-xs" key={String(error)}>
                     {String(error)}
@@ -242,7 +325,7 @@ function CreateRequestForm({
           <form.Field name="requester">
             {(field) => (
               <div className="space-y-1">
-                <Label htmlFor={field.name}>Solicitante</Label>
+                <Label htmlFor={field.name}>Solicitante *</Label>
                 <Input
                   id={field.name}
                   name={field.name}
@@ -264,30 +347,35 @@ function CreateRequestForm({
           <form.Field name="legalBasis">
             {(field) => (
               <div className="space-y-1">
-                <Label htmlFor={field.name}>Base legal</Label>
-                <select
-                  className="h-8 w-full rounded-none border border-input bg-transparent px-2.5 text-xs outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50"
-                  id={field.name}
-                  name={field.name}
-                  onBlur={field.handleBlur}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  required
+                <Label htmlFor={field.name}>Base legal *</Label>
+                <Select
+                  onValueChange={(v) => field.handleChange(v as string)}
                   value={field.state.value}
                 >
-                  <option value="">Seleccionar...</option>
-                  <option value="Ley 23 de 1981">Ley 23 de 1981</option>
-                  <option value="Ley 1581 de 2012">Ley 1581 de 2012</option>
-                  <option value="Resolución 1995 de 1999">
-                    Resolución 1995 de 1999
-                  </option>
-                  <option value="Ley 2015 de 2020">Ley 2015 de 2020</option>
-                  <option value="Resolución 866 de 2021">
-                    Resolución 866 de 2021
-                  </option>
-                  <option value="Resolución 1888 de 2025">
-                    Resolución 1888 de 2025
-                  </option>
-                </select>
+                  <SelectTrigger id={field.name}>
+                    <SelectValue placeholder="Seleccionar..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Ley 23 de 1981">
+                      Ley 23 de 1981
+                    </SelectItem>
+                    <SelectItem value="Ley 1581 de 2012">
+                      Ley 1581 de 2012
+                    </SelectItem>
+                    <SelectItem value="Resolución 1995 de 1999">
+                      Resolución 1995 de 1999
+                    </SelectItem>
+                    <SelectItem value="Ley 2015 de 2020">
+                      Ley 2015 de 2020
+                    </SelectItem>
+                    <SelectItem value="Resolución 866 de 2021">
+                      Resolución 866 de 2021
+                    </SelectItem>
+                    <SelectItem value="Resolución 1888 de 2025">
+                      Resolución 1888 de 2025
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
                 {field.state.meta.errors.map((error) => (
                   <p className="text-destructive text-xs" key={String(error)}>
                     {String(error)}
@@ -330,11 +418,20 @@ function CreateRequestForm({
             >
               {({ canSubmit, isSubmitting }) => (
                 <Button
-                  disabled={!canSubmit || isSubmitting}
+                  disabled={
+                    !canSubmit ||
+                    isSubmitting ||
+                    createMutation.isPending ||
+                    updateMutation.isPending
+                  }
                   size="sm"
                   type="submit"
                 >
-                  {isSubmitting ? "Guardando..." : "Crear solicitud"}
+                  {createMutation.isPending || updateMutation.isPending
+                    ? "Guardando..."
+                    : editingId
+                      ? "Actualizar solicitud"
+                      : "Crear solicitud"}
                 </Button>
               )}
             </form.Subscribe>
@@ -364,36 +461,132 @@ function StatusBadge({
 /* ─── page ─── */
 
 function PatientRequestsPage() {
-  const { requests, expandedId, setExpandedId, updateRequestStatus } =
-    usePatientRequests();
+  const navigate = useNavigate();
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [offset, setOffset] = useState(0);
+  const [filterPatientId, setFilterPatientId] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
+  const [patientSearch, setPatientSearch] = useState("");
+  const [queryPatientSearch, setQueryPatientSearch] = useState("");
+  const LIMIT = 25;
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setQueryPatientSearch(patientSearch);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [patientSearch]);
+
+  useEffect(() => {
+    document.title = "Solicitudes del paciente | WellFit EMR";
+    return () => {
+      document.title = "WellFit EMR";
+    };
+  }, []);
+
+  const { data: patientsData } = useQuery(
+    orpc.patients.list.queryOptions({
+      input: {
+        limit: 20,
+        offset: 0,
+        search: queryPatientSearch || undefined,
+      },
+    })
+  );
+
+  const patientOptions =
+    patientsData?.patients.map((p) => ({
+      value: p.id,
+      label: `${p.firstName} ${p.lastName1}`,
+    })) ?? [];
+
+  const { data, isLoading } = useQuery(
+    orpc.patientCopyRequests.list.queryOptions({
+      input: {
+        limit: LIMIT,
+        offset,
+        sortDirection: "desc",
+        patientId: filterPatientId || undefined,
+        status: filterStatus || undefined,
+      },
+    })
+  );
+
+  const updateStatusMutation = useMutation({
+    ...orpc.patientCopyRequests.updateStatus.mutationOptions(),
+    onSuccess: () => {
+      toast.success("Estado actualizado");
+      queryClient.invalidateQueries({
+        queryKey: orpc.patientCopyRequests.list.key({ type: "query" }),
+      });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Error al actualizar estado");
+    },
+  });
+
+  const deleteMutation = useMutation({
+    ...orpc.patientCopyRequests.delete.mutationOptions(),
+    onSuccess: () => {
+      toast.success("Solicitud eliminada");
+      setDeleteConfirmId(null);
+      queryClient.invalidateQueries({
+        queryKey: orpc.patientCopyRequests.list.key({ type: "query" }),
+      });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Error al eliminar solicitud");
+    },
+  });
+
+  useEffect(() => {
+    if (!deleteConfirmId) {
+      return;
+    }
+    const timeoutId = window.setTimeout(() => {
+      setDeleteConfirmId(null);
+    }, 5000);
+    return () => window.clearTimeout(timeoutId);
+  }, [deleteConfirmId]);
 
   function handleCreate() {
     setShowForm(false);
+    setEditingId(null);
   }
 
   function handleCancelForm() {
     setShowForm(false);
+    setEditingId(null);
   }
+
+  function startEdit(row: Row) {
+    setEditingId(row.id);
+    setShowForm(true);
+  }
+
+  type Row = NonNullable<typeof data>["items"][0];
 
   const columns = [
     {
       header: "Paciente",
-      accessor: (row: PatientCopyRequest) => (
+      accessor: (row: Row) => (
         <span className="font-medium">{row.patientName}</span>
       ),
     },
     {
       header: "Alcance",
-      accessor: (row: PatientCopyRequest) => row.scope,
+      accessor: (row: Row) => row.scope,
     },
     {
       header: "Canal",
-      accessor: (row: PatientCopyRequest) => row.deliveryChannel,
+      accessor: (row: Row) => row.deliveryChannel,
     },
     {
       header: "Fecha límite",
-      accessor: (row: PatientCopyRequest) => (
+      accessor: (row: Row) => (
         <span className="inline-flex items-center gap-1">
           <Clock size={12} />
           {formatEsCO(row.deadline)}
@@ -402,27 +595,54 @@ function PatientRequestsPage() {
     },
     {
       header: "Estado",
-      accessor: (row: PatientCopyRequest) => (
-        <StatusBadge status={computeStatus(row)} />
-      ),
+      accessor: (row: Row) => <StatusBadge status={computeStatus(row)} />,
     },
     {
       header: "Solicitante",
-      accessor: (row: PatientCopyRequest) => row.requester,
+      accessor: (row: Row) => row.requester,
     },
     {
       header: "Base legal",
-      accessor: (row: PatientCopyRequest) => row.legalBasis,
+      accessor: (row: Row) => row.legalBasis,
+    },
+    {
+      header: "",
+      accessor: (row: Row) => (
+        <div className="flex items-center gap-1">
+          <Link
+            aria-label="Ver solicitud"
+            className="inline-flex text-muted-foreground hover:text-foreground"
+            params={{ requestId: row.id }}
+            to="/patient-requests/$requestId"
+          >
+            <Eye size={14} />
+          </Link>
+          <Button
+            aria-label="Editar solicitud"
+            onClick={() => startEdit(row)}
+            size="icon-xs"
+            variant="ghost"
+          >
+            <Pencil size={12} />
+          </Button>
+        </div>
+      ),
+      className: "w-20",
     },
     {
       header: "Acciones",
-      accessor: (row: PatientCopyRequest) => {
+      accessor: (row: Row) => {
         const currentStatus = computeStatus(row);
         return (
           <div className="flex items-center gap-1">
             {currentStatus === "Recibida" && (
               <Button
-                onClick={() => updateRequestStatus(row.id, "En preparación")}
+                onClick={() =>
+                  updateStatusMutation.mutate({
+                    id: row.id,
+                    status: "En preparación",
+                  })
+                }
                 size="xs"
                 variant="outline"
               >
@@ -431,7 +651,12 @@ function PatientRequestsPage() {
             )}
             {currentStatus === "En preparación" && (
               <Button
-                onClick={() => updateRequestStatus(row.id, "Entregada")}
+                onClick={() =>
+                  updateStatusMutation.mutate({
+                    id: row.id,
+                    status: "Entregada",
+                  })
+                }
                 size="xs"
                 variant="outline"
               >
@@ -439,6 +664,9 @@ function PatientRequestsPage() {
               </Button>
             )}
             <Button
+              aria-label={
+                expandedId === row.id ? "Colapsar detalle" : "Expandir detalle"
+              }
               onClick={() =>
                 setExpandedId(expandedId === row.id ? null : row.id)
               }
@@ -451,10 +679,27 @@ function PatientRequestsPage() {
                 <ChevronDown size={14} />
               )}
             </Button>
+            <Button
+              aria-label="Eliminar solicitud"
+              disabled={deleteMutation.isPending}
+              onClick={() => {
+                if (deleteConfirmId !== row.id) {
+                  setDeleteConfirmId(row.id);
+                  return;
+                }
+                if (deleteConfirmId === row.id) {
+                  deleteMutation.mutate({ id: row.id });
+                }
+              }}
+              size="icon-xs"
+              variant={deleteConfirmId === row.id ? "destructive" : "ghost"}
+            >
+              <Trash2 size={12} />
+            </Button>
           </div>
         );
       },
-      className: "w-24",
+      className: "w-28",
     },
   ];
 
@@ -462,7 +707,17 @@ function PatientRequestsPage() {
     <div className="space-y-4">
       <PageHeader
         actions={
-          <Button onClick={() => setShowForm((s) => !s)} size="sm">
+          <Button
+            onClick={() => {
+              if (showForm) {
+                setEditingId(null);
+                setShowForm(false);
+              } else {
+                setShowForm(true);
+              }
+            }}
+            size="sm"
+          >
             {showForm ? <X size={14} /> : <Plus size={14} />}
             {showForm ? "Cancelar" : "Nueva solicitud de copia"}
           </Button>
@@ -471,24 +726,93 @@ function PatientRequestsPage() {
         title="Solicitudes del paciente"
       />
 
-      {/* Session disclaimer */}
-      <div className="mx-6 flex items-start gap-2 border border-amber-200 bg-amber-50 px-4 py-2">
-        <AlertCircle className="mt-0.5 shrink-0 text-amber-600" size={14} />
-        <p className="text-amber-800 text-xs">
-          Las solicitudes mostradas se almacenan únicamente en memoria durante
-          esta sesión. Se perderán al recargar la página.
-        </p>
+      {/* Filters */}
+      <div className="mx-6 flex flex-wrap items-end gap-2">
+        <div className="space-y-1">
+          <Label className="text-[10px]">Paciente</Label>
+          <SearchSelect
+            emptyMessage="No se encontraron pacientes"
+            loading={false}
+            onChange={(v) => {
+              setFilterPatientId(v);
+              setOffset(0);
+            }}
+            onSearchChange={setPatientSearch}
+            options={patientOptions}
+            placeholder="Buscar paciente..."
+            search={patientSearch}
+            value={filterPatientId}
+          />
+        </div>
+        <div className="space-y-1">
+          <Label className="text-[10px]">Estado</Label>
+          <Select
+            onValueChange={(v) => {
+              setFilterStatus(v as string);
+              setOffset(0);
+            }}
+            value={filterStatus}
+          >
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Todos" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">Todos</SelectItem>
+              <SelectItem value="Recibida">Recibida</SelectItem>
+              <SelectItem value="En preparación">En preparación</SelectItem>
+              <SelectItem value="Entregada">Entregada</SelectItem>
+              <SelectItem value="Vencida">Vencida</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        {(filterPatientId || filterStatus) && (
+          <Button
+            onClick={() => {
+              setFilterPatientId("");
+              setPatientSearch("");
+              setFilterStatus("");
+              setOffset(0);
+            }}
+            size="sm"
+            variant="ghost"
+          >
+            <FilterX size={14} />
+            Limpiar filtros
+          </Button>
+        )}
       </div>
 
       {showForm && (
-        <CreateRequestForm
+        <RequestForm
+          editingId={editingId ?? undefined}
+          initialValues={
+            editingId
+              ? (() => {
+                  const row = data?.items.find((r) => r.id === editingId);
+                  return row
+                    ? {
+                        patientId: row.patientId,
+                        patientName: row.patientName,
+                        scope: row.scope,
+                        deliveryChannel: row.deliveryChannel,
+                        requester: row.requester,
+                        legalBasis: row.legalBasis,
+                        notes: row.notes,
+                        deadline: row.deadline,
+                        status: row.status,
+                      }
+                    : undefined;
+                })()
+              : undefined
+          }
+          key={editingId || "new"}
           onCancel={handleCancelForm}
           onSubmit={handleCreate}
         />
       )}
 
       <div className="px-6">
-        {requests.length === 0 ? (
+        {(data?.items ?? []).length === 0 && !isLoading ? (
           <EmptyState
             actionLabel="Nueva solicitud de copia"
             description="No hay solicitudes de copia registradas. Cree la primera solicitud para comenzar."
@@ -499,18 +823,42 @@ function PatientRequestsPage() {
           <div className="space-y-2">
             <DataTable
               columns={columns}
-              data={requests}
-              emptyDescription="No hay solicitudes de copia registradas."
-              emptyTitle="Sin solicitudes"
-              isLoading={false}
+              data={data?.items ?? []}
+              emptyDescription={
+                filterPatientId || filterStatus
+                  ? "Ninguna solicitud coincide con los filtros aplicados."
+                  : "No hay solicitudes de copia registradas."
+              }
+              emptyTitle={
+                filterPatientId || filterStatus
+                  ? "Sin resultados"
+                  : "Sin solicitudes"
+              }
+              isLoading={isLoading}
               keyExtractor={(row) => row.id}
+              onRowClick={(row) => {
+                navigate({
+                  to: "/patient-requests/$requestId",
+                  params: { requestId: row.id },
+                });
+              }}
+              pagination={
+                data
+                  ? {
+                      limit: LIMIT,
+                      offset,
+                      total: data.total,
+                      onPageChange: setOffset,
+                    }
+                  : undefined
+              }
             />
             {/* Detail expansion rows */}
             {expandedId && (
               <Card className="mx-0">
                 <CardContent className="p-4">
                   {(() => {
-                    const req = requests.find((r) => r.id === expandedId);
+                    const req = data?.items.find((r) => r.id === expandedId);
                     if (!req) {
                       return null;
                     }
@@ -526,7 +874,9 @@ function PatientRequestsPage() {
                           <span className="text-muted-foreground">
                             ID paciente:
                           </span>{" "}
-                          <span className="font-mono">{req.patientId}</span>
+                          <span className="font-mono">
+                            {req.patientId.slice(0, 8)}…
+                          </span>
                         </div>
                         <div>
                           <span className="text-muted-foreground">

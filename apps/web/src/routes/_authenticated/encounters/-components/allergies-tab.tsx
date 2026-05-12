@@ -4,7 +4,14 @@ import { Button } from "@wellfit-emr/ui/components/button";
 import { Input } from "@wellfit-emr/ui/components/input";
 import { Label } from "@wellfit-emr/ui/components/label";
 import { SearchSelect } from "@wellfit-emr/ui/components/search-select";
-import { Plus, X } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@wellfit-emr/ui/components/select";
+import { Pencil, Plus, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -24,6 +31,7 @@ const allergySchema = z.object({
 export function AllergiesTab({ patientId }: { patientId: string }) {
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [practitionerSearch, setPractitionerSearch] = useState("");
 
   const { data, isLoading } = useQuery({
@@ -48,6 +56,23 @@ export function AllergiesTab({ patientId }: { patientId: string }) {
     onSuccess: () => {
       toast.success("Alergia registrada");
       setShowForm(false);
+      setEditingId(null);
+      form.reset();
+      queryClient.invalidateQueries({
+        queryKey: orpc.clinicalRecords.listAllergies.key({ type: "query" }),
+      });
+    },
+    onError: (error: Error) => {
+      toast.error(`Error: ${error.message}`);
+    },
+  });
+
+  const update = useMutation({
+    ...orpc.clinicalRecords.updateAllergy.mutationOptions(),
+    onSuccess: () => {
+      toast.success("Alergia actualizada");
+      setShowForm(false);
+      setEditingId(null);
       form.reset();
       queryClient.invalidateQueries({
         queryKey: orpc.clinicalRecords.listAllergies.key({ type: "query" }),
@@ -68,21 +93,42 @@ export function AllergiesTab({ patientId }: { patientId: string }) {
       recordedBy: "",
     },
     onSubmit: async ({ value }) => {
-      await create.mutateAsync({
-        patientId,
-        substanceCode: value.substanceCode,
-        codeSystem: value.codeSystem,
-        criticality: value.criticality || null,
-        reactionText: value.reactionText || null,
-        status: value.status,
-        recordedBy: value.recordedBy,
-        recordedAt: new Date(),
-      });
+      if (editingId) {
+        await update.mutateAsync({
+          id: editingId,
+          substanceCode: value.substanceCode,
+          codeSystem: value.codeSystem,
+          criticality: value.criticality || null,
+          reactionText: value.reactionText || null,
+          status: value.status,
+        });
+      } else {
+        await create.mutateAsync({
+          patientId,
+          substanceCode: value.substanceCode,
+          codeSystem: value.codeSystem,
+          criticality: value.criticality || null,
+          reactionText: value.reactionText || null,
+          status: value.status,
+          recordedBy: value.recordedBy,
+          recordedAt: new Date(),
+        });
+      }
     },
     validators: {
       onSubmit: allergySchema,
     },
   });
+
+  function startEdit(row: NonNullable<typeof data>[0]) {
+    setEditingId(row.id);
+    form.setFieldValue("substanceCode", row.substanceCode);
+    form.setFieldValue("codeSystem", row.codeSystem);
+    form.setFieldValue("criticality", row.criticality ?? "");
+    form.setFieldValue("reactionText", row.reactionText ?? "");
+    form.setFieldValue("status", row.status);
+    setShowForm(true);
+  }
 
   const columns = [
     {
@@ -109,12 +155,35 @@ export function AllergiesTab({ patientId }: { patientId: string }) {
       header: "Registrado por",
       accessor: (row: NonNullable<typeof data>[0]) => row.recordedBy,
     },
+    {
+      header: "",
+      accessor: (row: NonNullable<typeof data>[0]) => (
+        <Button
+          aria-label="Editar alergia"
+          onClick={() => startEdit(row)}
+          size="icon-xs"
+          variant="ghost"
+        >
+          <Pencil size={12} />
+        </Button>
+      ),
+      className: "w-16",
+    },
   ];
 
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <Button onClick={() => setShowForm(!showForm)} size="sm">
+        <Button
+          onClick={() => {
+            if (showForm) {
+              setEditingId(null);
+              form.reset();
+            }
+            setShowForm(!showForm);
+          }}
+          size="sm"
+        >
           {showForm ? <X size={14} /> : <Plus size={14} />}
           {showForm ? "Cancelar" : "Agregar alergia"}
         </Button>
@@ -132,7 +201,7 @@ export function AllergiesTab({ patientId }: { patientId: string }) {
           <form.Field name="substanceCode">
             {(field) => (
               <div className="space-y-1">
-                <Label htmlFor={field.name}>Código de sustancia</Label>
+                <Label htmlFor={field.name}>Código de sustancia *</Label>
                 <Input
                   className="text-xs"
                   id={field.name}
@@ -153,7 +222,7 @@ export function AllergiesTab({ patientId }: { patientId: string }) {
           <form.Field name="codeSystem">
             {(field) => (
               <div className="space-y-1">
-                <Label htmlFor={field.name}>Sistema de codificación</Label>
+                <Label htmlFor={field.name}>Sistema de codificación *</Label>
                 <Input
                   className="text-xs"
                   id={field.name}
@@ -175,19 +244,21 @@ export function AllergiesTab({ patientId }: { patientId: string }) {
             {(field) => (
               <div className="space-y-1">
                 <Label htmlFor={field.name}>Criticidad</Label>
-                <select
-                  className="h-8 w-full rounded-none border border-input bg-transparent px-2.5 text-xs outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50"
-                  id={field.name}
-                  name={field.name}
-                  onBlur={field.handleBlur}
-                  onChange={(e) => field.handleChange(e.target.value)}
+                <Select
+                  onValueChange={(v) => field.handleChange(v as string)}
                   value={field.state.value}
                 >
-                  <option value="">Seleccione...</option>
-                  <option value="low">Baja</option>
-                  <option value="high">Alta</option>
-                  <option value="unable-to-assess">No evaluable</option>
-                </select>
+                  <SelectTrigger id={field.name}>
+                    <SelectValue placeholder="Seleccione..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Baja</SelectItem>
+                    <SelectItem value="high">Alta</SelectItem>
+                    <SelectItem value="unable-to-assess">
+                      No evaluable
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             )}
           </form.Field>
@@ -212,19 +283,20 @@ export function AllergiesTab({ patientId }: { patientId: string }) {
           <form.Field name="status">
             {(field) => (
               <div className="space-y-1">
-                <Label htmlFor={field.name}>Estado</Label>
-                <select
-                  className="h-8 w-full rounded-none border border-input bg-transparent px-2.5 text-xs outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50"
-                  id={field.name}
-                  name={field.name}
-                  onBlur={field.handleBlur}
-                  onChange={(e) => field.handleChange(e.target.value)}
+                <Label htmlFor={field.name}>Estado *</Label>
+                <Select
+                  onValueChange={(v) => field.handleChange(v as string)}
                   value={field.state.value}
                 >
-                  <option value="active">Activa</option>
-                  <option value="inactive">Inactiva</option>
-                  <option value="resolved">Resuelta</option>
-                </select>
+                  <SelectTrigger id={field.name}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Activa</SelectItem>
+                    <SelectItem value="inactive">Inactiva</SelectItem>
+                    <SelectItem value="resolved">Resuelta</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             )}
           </form.Field>
@@ -232,7 +304,7 @@ export function AllergiesTab({ patientId }: { patientId: string }) {
           <form.Field name="recordedBy">
             {(field) => (
               <div className="space-y-1 md:col-span-2">
-                <Label htmlFor={field.name}>Registrado por</Label>
+                <Label htmlFor={field.name}>Registrado por *</Label>
                 <SearchSelect
                   emptyMessage="Escribe para buscar profesionales"
                   id={field.name}
@@ -261,7 +333,7 @@ export function AllergiesTab({ patientId }: { patientId: string }) {
             )}
           </form.Field>
 
-          <div className="flex items-end">
+          <div className="flex items-end gap-2">
             <form.Subscribe
               selector={(state) => ({
                 canSubmit: state.canSubmit,
@@ -270,14 +342,32 @@ export function AllergiesTab({ patientId }: { patientId: string }) {
             >
               {({ canSubmit, isSubmitting }) => (
                 <Button
-                  disabled={!canSubmit || isSubmitting}
+                  disabled={!canSubmit || isSubmitting || update.isPending}
                   size="sm"
                   type="submit"
                 >
-                  {isSubmitting ? "Guardando..." : "Guardar alergia"}
+                  {isSubmitting || update.isPending
+                    ? "Guardando..."
+                    : editingId
+                      ? "Actualizar alergia"
+                      : "Guardar alergia"}
                 </Button>
               )}
             </form.Subscribe>
+            {editingId && (
+              <Button
+                onClick={() => {
+                  setEditingId(null);
+                  form.reset();
+                  setShowForm(false);
+                }}
+                size="sm"
+                type="button"
+                variant="ghost"
+              >
+                Cancelar
+              </Button>
+            )}
           </div>
         </form>
       )}

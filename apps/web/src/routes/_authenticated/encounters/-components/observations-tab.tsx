@@ -3,7 +3,14 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@wellfit-emr/ui/components/button";
 import { Input } from "@wellfit-emr/ui/components/input";
 import { Label } from "@wellfit-emr/ui/components/label";
-import { Plus, X } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@wellfit-emr/ui/components/select";
+import { Pencil, Plus, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -31,6 +38,7 @@ export function ObservationsTab({
 }) {
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
     ...orpc.clinicalRecords.listObservations.queryOptions({
@@ -44,6 +52,23 @@ export function ObservationsTab({
     onSuccess: () => {
       toast.success("Observación registrada");
       setShowForm(false);
+      setEditingId(null);
+      form.reset();
+      queryClient.invalidateQueries({
+        queryKey: orpc.clinicalRecords.listObservations.key({ type: "query" }),
+      });
+    },
+    onError: (error: Error) => {
+      toast.error(`Error: ${error.message}`);
+    },
+  });
+
+  const update = useMutation({
+    ...orpc.clinicalRecords.updateObservation.mutationOptions(),
+    onSuccess: () => {
+      toast.success("Observación actualizada");
+      setShowForm(false);
+      setEditingId(null);
       form.reset();
       queryClient.invalidateQueries({
         queryKey: orpc.clinicalRecords.listObservations.key({ type: "query" }),
@@ -66,24 +91,53 @@ export function ObservationsTab({
       status: "preliminary",
     },
     onSubmit: async ({ value }) => {
-      await create.mutateAsync({
-        encounterId,
-        patientId,
-        observationType: value.observationType,
-        code: value.code || null,
-        codeSystem: value.codeSystem || null,
-        valueText: value.valueText || null,
-        valueNum: value.valueNum ? Number(value.valueNum) : null,
-        valueUnit: value.valueUnit || null,
-        observedAt: new Date(value.observedAt),
-        status: value.status,
-        documentVersionId: null,
-      });
+      if (editingId) {
+        await update.mutateAsync({
+          id: editingId,
+          observationType: value.observationType,
+          code: value.code || null,
+          codeSystem: value.codeSystem || null,
+          valueText: value.valueText || null,
+          valueNum: value.valueNum ? Number(value.valueNum) : null,
+          valueUnit: value.valueUnit || null,
+          status: value.status,
+        });
+      } else {
+        await create.mutateAsync({
+          encounterId,
+          patientId,
+          observationType: value.observationType,
+          code: value.code || null,
+          codeSystem: value.codeSystem || null,
+          valueText: value.valueText || null,
+          valueNum: value.valueNum ? Number(value.valueNum) : null,
+          valueUnit: value.valueUnit || null,
+          observedAt: new Date(value.observedAt),
+          status: value.status,
+          documentVersionId: null,
+        });
+      }
     },
     validators: {
       onSubmit: observationSchema,
     },
   });
+
+  function startEdit(row: NonNullable<typeof data>[0]) {
+    setEditingId(row.id);
+    form.setFieldValue("observationType", row.observationType);
+    form.setFieldValue("code", row.code ?? "");
+    form.setFieldValue("codeSystem", row.codeSystem ?? "");
+    form.setFieldValue("valueText", row.valueText ?? "");
+    form.setFieldValue("valueNum", row.valueNum?.toString() ?? "");
+    form.setFieldValue("valueUnit", row.valueUnit ?? "");
+    form.setFieldValue(
+      "observedAt",
+      new Date(row.observedAt).toISOString().slice(0, 16)
+    );
+    form.setFieldValue("status", row.status);
+    setShowForm(true);
+  }
 
   const columns = [
     {
@@ -113,12 +167,35 @@ export function ObservationsTab({
       header: "Estado",
       accessor: (row: NonNullable<typeof data>[0]) => row.status,
     },
+    {
+      header: "",
+      accessor: (row: NonNullable<typeof data>[0]) => (
+        <Button
+          aria-label="Editar observación"
+          onClick={() => startEdit(row)}
+          size="icon-xs"
+          variant="ghost"
+        >
+          <Pencil size={12} />
+        </Button>
+      ),
+      className: "w-16",
+    },
   ];
 
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <Button onClick={() => setShowForm(!showForm)} size="sm">
+        <Button
+          onClick={() => {
+            if (showForm) {
+              setEditingId(null);
+              form.reset();
+            }
+            setShowForm(!showForm);
+          }}
+          size="sm"
+        >
           {showForm ? <X size={14} /> : <Plus size={14} />}
           {showForm ? "Cancelar" : "Agregar observación"}
         </Button>
@@ -136,7 +213,7 @@ export function ObservationsTab({
           <form.Field name="observationType">
             {(field) => (
               <div className="space-y-1">
-                <Label htmlFor={field.name}>Tipo de observación</Label>
+                <Label htmlFor={field.name}>Tipo de observación *</Label>
                 <Input
                   className="text-xs"
                   id={field.name}
@@ -243,7 +320,7 @@ export function ObservationsTab({
           <form.Field name="observedAt">
             {(field) => (
               <div className="space-y-1">
-                <Label htmlFor={field.name}>Fecha de observación</Label>
+                <Label htmlFor={field.name}>Fecha de observación *</Label>
                 <Input
                   className="text-xs"
                   id={field.name}
@@ -265,20 +342,21 @@ export function ObservationsTab({
           <form.Field name="status">
             {(field) => (
               <div className="space-y-1">
-                <Label htmlFor={field.name}>Estado</Label>
-                <select
-                  className="h-8 w-full rounded-none border border-input bg-transparent px-2.5 text-xs outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50"
-                  id={field.name}
-                  name={field.name}
-                  onBlur={field.handleBlur}
-                  onChange={(e) => field.handleChange(e.target.value)}
+                <Label htmlFor={field.name}>Estado *</Label>
+                <Select
+                  onValueChange={(v) => field.handleChange(v as string)}
                   value={field.state.value}
                 >
-                  <option value="preliminary">Preliminar</option>
-                  <option value="final">Final</option>
-                  <option value="amended">Modificado</option>
-                  <option value="registered">Registrado</option>
-                </select>
+                  <SelectTrigger id={field.name}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="preliminary">Preliminar</SelectItem>
+                    <SelectItem value="final">Final</SelectItem>
+                    <SelectItem value="amended">Modificado</SelectItem>
+                    <SelectItem value="registered">Registrado</SelectItem>
+                  </SelectContent>
+                </Select>
                 {field.state.meta.errors.map((error) => (
                   <p className="text-destructive text-xs" key={error?.message}>
                     {error?.message}
@@ -288,7 +366,7 @@ export function ObservationsTab({
             )}
           </form.Field>
 
-          <div className="flex items-end">
+          <div className="flex items-end gap-2">
             <form.Subscribe
               selector={(state) => ({
                 canSubmit: state.canSubmit,
@@ -297,14 +375,32 @@ export function ObservationsTab({
             >
               {({ canSubmit, isSubmitting }) => (
                 <Button
-                  disabled={!canSubmit || isSubmitting}
+                  disabled={!canSubmit || isSubmitting || update.isPending}
                   size="sm"
                   type="submit"
                 >
-                  {isSubmitting ? "Guardando..." : "Guardar observación"}
+                  {isSubmitting || update.isPending
+                    ? "Guardando..."
+                    : editingId
+                      ? "Actualizar observación"
+                      : "Guardar observación"}
                 </Button>
               )}
             </form.Subscribe>
+            {editingId && (
+              <Button
+                onClick={() => {
+                  setEditingId(null);
+                  form.reset();
+                  setShowForm(false);
+                }}
+                size="sm"
+                type="button"
+                variant="ghost"
+              >
+                Cancelar
+              </Button>
+            )}
           </div>
         </form>
       )}

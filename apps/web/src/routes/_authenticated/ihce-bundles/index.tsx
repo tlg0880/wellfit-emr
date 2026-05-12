@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Button } from "@wellfit-emr/ui/components/button";
 import {
   Card,
@@ -10,8 +10,15 @@ import {
 import { Input } from "@wellfit-emr/ui/components/input";
 import { Label } from "@wellfit-emr/ui/components/label";
 import { SearchSelect } from "@wellfit-emr/ui/components/search-select";
-import { Plus, Search, Share2 } from "lucide-react";
-import { useState } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@wellfit-emr/ui/components/select";
+import { Eye, FilterX, Plus, Search, Share2, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { DataTable } from "@/components/data-table";
@@ -127,18 +134,23 @@ function CreateIhceBundleForm({ onCancel }: { onCancel: () => void }) {
           </div>
           <div className="space-y-1">
             <Label>Tipo de bundle</Label>
-            <select
-              className="h-8 w-full rounded-none border border-input bg-transparent px-2.5 text-xs outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50"
-              onChange={(e) => setForm({ ...form, bundleType: e.target.value })}
-              required
+            <Select
+              onValueChange={(v) =>
+                setForm((f) => ({ ...f, bundleType: v as string }))
+              }
               value={form.bundleType}
             >
-              <option value="document">Documento</option>
-              <option value="summary">Resumen clínico</option>
-              <option value="transaction">Transacción</option>
-              <option value="collection">Colección</option>
-              <option value="message">Mensaje</option>
-            </select>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="document">Documento</SelectItem>
+                <SelectItem value="summary">Resumen clínico</SelectItem>
+                <SelectItem value="transaction">Transacción</SelectItem>
+                <SelectItem value="collection">Colección</SelectItem>
+                <SelectItem value="message">Mensaje</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-1 md:col-span-3">
             <Label>Bundle JSON</Label>
@@ -167,18 +179,35 @@ function CreateIhceBundleForm({ onCancel }: { onCancel: () => void }) {
 }
 
 function IhceBundlesListPage() {
+  const navigate = useNavigate();
   const [encounterId, setEncounterId] = useState("");
   const [encounterSearch, setEncounterSearch] = useState("");
   const [offset, setOffset] = useState(0);
   const [limit] = useState(25);
   const [showForm, setShowForm] = useState(false);
+  const [queryEncounterSearch, setQueryEncounterSearch] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setQueryEncounterSearch(encounterSearch);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [encounterSearch]);
+
+  useEffect(() => {
+    document.title = "Bundles IHCE | WellFit EMR";
+    return () => {
+      document.title = "WellFit EMR";
+    };
+  }, []);
 
   const { data: encountersData, isLoading: encountersLoading } = useQuery(
     orpc.encounters.list.queryOptions({
       input: {
         limit: 20,
         offset: 0,
-        search: encounterSearch || undefined,
+        search: queryEncounterSearch || undefined,
       },
     })
   );
@@ -189,10 +218,24 @@ function IhceBundlesListPage() {
         limit,
         offset,
         encounterId: encounterId || undefined,
+        status: filterStatus || undefined,
         sortDirection: "desc",
       },
     })
   );
+
+  const deleteMutation = useMutation({
+    ...orpc.ihceBundles.delete.mutationOptions(),
+    onSuccess: () => {
+      toast.success("Bundle eliminado");
+      queryClient.invalidateQueries({
+        queryKey: orpc.ihceBundles.list.key({ type: "query" }),
+      });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Error al eliminar bundle");
+    },
+  });
 
   const columns = [
     {
@@ -206,7 +249,16 @@ function IhceBundlesListPage() {
     },
     {
       header: "Atención ID",
-      accessor: (row: NonNullable<typeof data>["items"][0]) => row.encounterId,
+      accessor: (row: NonNullable<typeof data>["items"][0]) => (
+        <Link
+          className="text-primary hover:underline"
+          params={{ encounterId: row.encounterId }}
+          search={{ tab: undefined }}
+          to="/encounters/$encounterId"
+        >
+          {row.encounterId.slice(0, 8)}…
+        </Link>
+      ),
     },
     {
       header: "Estado",
@@ -234,6 +286,35 @@ function IhceBundlesListPage() {
       accessor: (row: NonNullable<typeof data>["items"][0]) =>
         row.sentAt ? new Date(row.sentAt).toLocaleString("es-CO") : "—",
     },
+    {
+      header: "Acciones",
+      accessor: (row: NonNullable<typeof data>["items"][0]) => (
+        <div className="flex items-center gap-1">
+          <Link
+            aria-label="Ver bundle"
+            className="inline-flex text-muted-foreground hover:text-foreground"
+            params={{ bundleId: row.id }}
+            to="/ihce-bundles/$bundleId"
+          >
+            <Eye size={14} />
+          </Link>
+          <Button
+            aria-label="Eliminar bundle"
+            disabled={deleteMutation.isPending}
+            onClick={() => {
+              if (confirm("¿Eliminar este bundle permanentemente?")) {
+                deleteMutation.mutate({ id: row.id });
+              }
+            }}
+            size="icon-xs"
+            variant="ghost"
+          >
+            <Trash2 size={12} />
+          </Button>
+        </div>
+      ),
+      className: "w-20",
+    },
   ];
 
   return (
@@ -252,38 +333,89 @@ function IhceBundlesListPage() {
       {showForm && <CreateIhceBundleForm onCancel={() => setShowForm(false)} />}
 
       <div className="px-6">
-        <div className="mb-3 flex items-center gap-2">
-          <Search className="text-muted-foreground" size={14} />
-          <SearchSelect
-            className="max-w-xs"
-            clearable
-            emptyMessage="Escribe para buscar atenciones"
-            loading={encountersLoading}
-            onChange={(v) => {
-              setEncounterId(v);
-              setOffset(0);
-            }}
-            onSearchChange={setEncounterSearch}
-            options={
-              encountersData?.encounters.map((e) => ({
-                value: e.id,
-                label: e.reasonForVisit || "Sin motivo",
-                description: new Date(e.startedAt).toLocaleDateString("es-CO"),
-              })) ?? []
-            }
-            placeholder="Filtrar por atención..."
-            search={encounterSearch}
-            value={encounterId}
-          />
+        <div className="mb-3 flex flex-wrap items-end gap-2">
+          <div className="flex items-center gap-2">
+            <Search className="text-muted-foreground" size={14} />
+            <SearchSelect
+              className="max-w-xs"
+              clearable
+              emptyMessage="Escribe para buscar atenciones"
+              loading={encountersLoading}
+              onChange={(v) => {
+                setEncounterId(v);
+                setOffset(0);
+              }}
+              onSearchChange={setEncounterSearch}
+              options={
+                encountersData?.encounters.map((e) => ({
+                  value: e.id,
+                  label: e.reasonForVisit || "Sin motivo",
+                  description: new Date(e.startedAt).toLocaleDateString(
+                    "es-CO"
+                  ),
+                })) ?? []
+              }
+              placeholder="Filtrar por atención..."
+              search={encounterSearch}
+              value={encounterId}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-[10px]">Estado</Label>
+            <Select
+              onValueChange={(v) => {
+                setFilterStatus(v as string);
+                setOffset(0);
+              }}
+              value={filterStatus}
+            >
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Todos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Todos</SelectItem>
+                <SelectItem value="generated">Generado</SelectItem>
+                <SelectItem value="sent">Enviado</SelectItem>
+                <SelectItem value="received">Recibido</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {(encounterId || filterStatus) && (
+            <Button
+              onClick={() => {
+                setEncounterId("");
+                setEncounterSearch("");
+                setFilterStatus("");
+                setOffset(0);
+              }}
+              size="sm"
+              variant="ghost"
+            >
+              <FilterX size={14} />
+              Limpiar filtros
+            </Button>
+          )}
         </div>
 
         <DataTable
           columns={columns}
           data={data?.items ?? []}
-          emptyDescription="No se encontraron bundles IHCE."
-          emptyTitle="Sin bundles"
+          emptyDescription={
+            encounterId || filterStatus
+              ? "Ningún bundle coincide con los filtros aplicados."
+              : "No se encontraron bundles IHCE."
+          }
+          emptyTitle={
+            encounterId || filterStatus ? "Sin resultados" : "Sin bundles"
+          }
           isLoading={isLoading}
           keyExtractor={(row) => row.id}
+          onRowClick={(row) => {
+            navigate({
+              to: "/ihce-bundles/$bundleId",
+              params: { bundleId: row.id },
+            });
+          }}
           pagination={
             data
               ? {

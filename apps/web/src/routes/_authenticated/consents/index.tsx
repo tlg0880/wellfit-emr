@@ -1,6 +1,11 @@
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Link,
+  useNavigate,
+  useSearch,
+} from "@tanstack/react-router";
 import { Button } from "@wellfit-emr/ui/components/button";
 import {
   Card,
@@ -11,8 +16,21 @@ import {
 import { Input } from "@wellfit-emr/ui/components/input";
 import { Label } from "@wellfit-emr/ui/components/label";
 import { SearchSelect } from "@wellfit-emr/ui/components/search-select";
-import { Eye, FileText, Plus, ShieldCheck, X } from "lucide-react";
-import { useState } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@wellfit-emr/ui/components/select";
+import {
+  Tabs,
+  TabsList,
+  TabsPanel,
+  TabsTab,
+} from "@wellfit-emr/ui/components/tabs";
+import { Eye, FileText, Plus, ShieldCheck, Trash2, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -21,8 +39,14 @@ import { PageHeader } from "@/components/page-header";
 import { authClient } from "@/lib/auth-client";
 import { orpc, queryClient } from "@/utils/orpc";
 
+const searchSchema = z.object({
+  patientId: z.string().optional(),
+  encounterId: z.string().optional(),
+});
+
 export const Route = createFileRoute("/_authenticated/consents/")({
   component: ConsentsListPage,
+  validateSearch: searchSchema,
   beforeLoad: async () => {
     const session = await authClient.getSession();
     if (!session.data) {
@@ -43,7 +67,15 @@ const TABS = [
 
 /* ─── Create Consent Form ─── */
 
-function CreateConsentForm({ onCancel }: { onCancel: () => void }) {
+function CreateConsentForm({
+  onCancel,
+  defaultPatientId,
+  defaultEncounterId,
+}: {
+  onCancel: () => void;
+  defaultPatientId?: string;
+  defaultEncounterId?: string;
+}) {
   const [patientSearch, setPatientSearch] = useState("");
   const [encounterSearch, setEncounterSearch] = useState("");
   const [cupsSearch, setCupsSearch] = useState("");
@@ -78,6 +110,20 @@ function CreateConsentForm({ onCancel }: { onCancel: () => void }) {
     })
   );
 
+  const { data: defaultPatient } = useQuery(
+    orpc.patients.get.queryOptions({
+      input: { id: defaultPatientId ?? "" },
+      enabled: !!defaultPatientId,
+    })
+  );
+
+  const { data: defaultEncounter } = useQuery(
+    orpc.encounters.get.queryOptions({
+      input: { id: defaultEncounterId ?? "" },
+      enabled: !!defaultEncounterId,
+    })
+  );
+
   const create = useMutation({
     ...orpc.consents.createConsent.mutationOptions(),
     onSuccess: () => {
@@ -94,14 +140,15 @@ function CreateConsentForm({ onCancel }: { onCancel: () => void }) {
 
   const form = useForm({
     defaultValues: {
-      patientId: "",
-      encounterId: "",
+      patientId: defaultPatientId || "",
+      encounterId: defaultEncounterId || "",
       consentType: "procedimiento",
       procedureCode: "",
       decision: "accepted",
       grantedByPersonName: "",
       representativeRelationship: "",
       signedAt: new Date().toISOString().slice(0, 16),
+      expiresAt: "",
     },
     onSubmit: async ({ value }) => {
       await create.mutateAsync({
@@ -113,6 +160,7 @@ function CreateConsentForm({ onCancel }: { onCancel: () => void }) {
         grantedByPersonName: value.grantedByPersonName,
         representativeRelationship: value.representativeRelationship || null,
         signedAt: new Date(value.signedAt),
+        expiresAt: value.expiresAt ? new Date(value.expiresAt) : null,
       });
     },
     validators: {
@@ -125,6 +173,7 @@ function CreateConsentForm({ onCancel }: { onCancel: () => void }) {
         grantedByPersonName: z.string().min(1, "Requerido"),
         representativeRelationship: z.string(),
         signedAt: z.string().min(1, "Requerido"),
+        expiresAt: z.string(),
       }),
     },
   });
@@ -146,19 +195,28 @@ function CreateConsentForm({ onCancel }: { onCancel: () => void }) {
           <form.Field name="patientId">
             {(field) => (
               <div className="space-y-1">
-                <Label htmlFor={field.name}>Paciente</Label>
+                <Label htmlFor={field.name}>Paciente *</Label>
                 <SearchSelect
                   emptyMessage="Escribe para buscar pacientes"
                   loading={patientsLoading}
                   onChange={(v) => field.handleChange(v)}
                   onSearchChange={setPatientSearch}
-                  options={
-                    patientsData?.patients.map((p) => ({
+                  options={[
+                    ...(defaultPatient
+                      ? [
+                          {
+                            value: defaultPatient.id,
+                            label: `${defaultPatient.firstName} ${defaultPatient.lastName1}`,
+                            description: `${defaultPatient.primaryDocumentType} ${defaultPatient.primaryDocumentNumber}`,
+                          },
+                        ]
+                      : []),
+                    ...(patientsData?.patients.map((p) => ({
                       value: p.id,
                       label: `${p.firstName} ${p.lastName1}`,
                       description: `${p.primaryDocumentType} ${p.primaryDocumentNumber}`,
-                    })) ?? []
-                  }
+                    })) ?? []),
+                  ]}
                   placeholder="Buscar paciente..."
                   required
                   search={patientSearch}
@@ -183,15 +241,27 @@ function CreateConsentForm({ onCancel }: { onCancel: () => void }) {
                   loading={encountersLoading}
                   onChange={(v) => field.handleChange(v)}
                   onSearchChange={setEncounterSearch}
-                  options={
-                    encountersData?.encounters.map((e) => ({
+                  options={[
+                    ...(defaultEncounter
+                      ? [
+                          {
+                            value: defaultEncounter.id,
+                            label:
+                              defaultEncounter.reasonForVisit || "Sin motivo",
+                            description: new Date(
+                              defaultEncounter.startedAt
+                            ).toLocaleDateString("es-CO"),
+                          },
+                        ]
+                      : []),
+                    ...(encountersData?.encounters.map((e) => ({
                       value: e.id,
                       label: e.reasonForVisit || "Sin motivo",
                       description: new Date(e.startedAt).toLocaleDateString(
                         "es-CO"
                       ),
-                    })) ?? []
-                  }
+                    })) ?? []),
+                  ]}
                   placeholder="Buscar atención..."
                   search={encounterSearch}
                   value={field.state.value}
@@ -203,7 +273,7 @@ function CreateConsentForm({ onCancel }: { onCancel: () => void }) {
           <form.Field name="consentType">
             {(field) => (
               <div className="space-y-1">
-                <Label htmlFor={field.name}>Tipo de consentimiento</Label>
+                <Label htmlFor={field.name}>Tipo de consentimiento *</Label>
                 <Input
                   id={field.name}
                   name={field.name}
@@ -249,19 +319,20 @@ function CreateConsentForm({ onCancel }: { onCancel: () => void }) {
           <form.Field name="decision">
             {(field) => (
               <div className="space-y-1">
-                <Label htmlFor={field.name}>Decisión</Label>
-                <select
-                  className="h-8 w-full rounded-none border border-input bg-transparent px-2.5 text-xs outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50"
-                  id={field.name}
-                  name={field.name}
-                  onBlur={field.handleBlur}
-                  onChange={(e) => field.handleChange(e.target.value)}
+                <Label htmlFor={field.name}>Decisión *</Label>
+                <Select
+                  onValueChange={(v) => field.handleChange(v as string)}
                   value={field.state.value}
                 >
-                  <option value="accepted">Aceptado</option>
-                  <option value="rejected">Rechazado</option>
-                  <option value="withdrawn">Retirado</option>
-                </select>
+                  <SelectTrigger id={field.name}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="accepted">Aceptado</SelectItem>
+                    <SelectItem value="rejected">Rechazado</SelectItem>
+                    <SelectItem value="withdrawn">Retirado</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             )}
           </form.Field>
@@ -269,7 +340,7 @@ function CreateConsentForm({ onCancel }: { onCancel: () => void }) {
           <form.Field name="grantedByPersonName">
             {(field) => (
               <div className="space-y-1">
-                <Label htmlFor={field.name}>Firmado por</Label>
+                <Label htmlFor={field.name}>Firmado por *</Label>
                 <Input
                   id={field.name}
                   name={field.name}
@@ -307,13 +378,34 @@ function CreateConsentForm({ onCancel }: { onCancel: () => void }) {
           <form.Field name="signedAt">
             {(field) => (
               <div className="space-y-1">
-                <Label htmlFor={field.name}>Fecha de firma</Label>
+                <Label htmlFor={field.name}>Fecha de firma *</Label>
                 <Input
                   id={field.name}
                   name={field.name}
                   onBlur={field.handleBlur}
                   onChange={(e) => field.handleChange(e.target.value)}
                   required
+                  type="datetime-local"
+                  value={field.state.value}
+                />
+                {field.state.meta.errors.map((error) => (
+                  <p className="text-destructive text-xs" key={String(error)}>
+                    {String(error)}
+                  </p>
+                ))}
+              </div>
+            )}
+          </form.Field>
+
+          <form.Field name="expiresAt">
+            {(field) => (
+              <div className="space-y-1">
+                <Label htmlFor={field.name}>Vencimiento (opcional)</Label>
+                <Input
+                  id={field.name}
+                  name={field.name}
+                  onBlur={field.handleBlur}
+                  onChange={(e) => field.handleChange(e.target.value)}
                   type="datetime-local"
                   value={field.state.value}
                 />
@@ -360,7 +452,13 @@ function CreateConsentForm({ onCancel }: { onCancel: () => void }) {
 
 /* ─── Create Data Disclosure Form ─── */
 
-function CreateDataDisclosureForm({ onCancel }: { onCancel: () => void }) {
+function CreateDataDisclosureForm({
+  onCancel,
+  defaultPatientId,
+}: {
+  onCancel: () => void;
+  defaultPatientId?: string;
+}) {
   const [patientSearch, setPatientSearch] = useState("");
 
   const { data: patientsData, isLoading: patientsLoading } = useQuery(
@@ -370,6 +468,13 @@ function CreateDataDisclosureForm({ onCancel }: { onCancel: () => void }) {
         offset: 0,
         search: patientSearch || undefined,
       },
+    })
+  );
+
+  const { data: defaultPatient } = useQuery(
+    orpc.patients.get.queryOptions({
+      input: { id: defaultPatientId ?? "" },
+      enabled: !!defaultPatientId,
     })
   );
 
@@ -391,7 +496,7 @@ function CreateDataDisclosureForm({ onCancel }: { onCancel: () => void }) {
 
   const form = useForm({
     defaultValues: {
-      patientId: "",
+      patientId: defaultPatientId || "",
       thirdPartyName: "",
       purposeCode: "",
       scopeJson: "",
@@ -462,19 +567,28 @@ function CreateDataDisclosureForm({ onCancel }: { onCancel: () => void }) {
           <form.Field name="patientId">
             {(field) => (
               <div className="space-y-1">
-                <Label htmlFor={field.name}>Paciente</Label>
+                <Label htmlFor={field.name}>Paciente *</Label>
                 <SearchSelect
                   emptyMessage="Escribe para buscar pacientes"
                   loading={patientsLoading}
                   onChange={(v) => field.handleChange(v)}
                   onSearchChange={setPatientSearch}
-                  options={
-                    patientsData?.patients.map((p) => ({
+                  options={[
+                    ...(defaultPatient
+                      ? [
+                          {
+                            value: defaultPatient.id,
+                            label: `${defaultPatient.firstName} ${defaultPatient.lastName1}`,
+                            description: `${defaultPatient.primaryDocumentType} ${defaultPatient.primaryDocumentNumber}`,
+                          },
+                        ]
+                      : []),
+                    ...(patientsData?.patients.map((p) => ({
                       value: p.id,
                       label: `${p.firstName} ${p.lastName1}`,
                       description: `${p.primaryDocumentType} ${p.primaryDocumentNumber}`,
-                    })) ?? []
-                  }
+                    })) ?? []),
+                  ]}
                   placeholder="Buscar paciente..."
                   required
                   search={patientSearch}
@@ -492,7 +606,7 @@ function CreateDataDisclosureForm({ onCancel }: { onCancel: () => void }) {
           <form.Field name="thirdPartyName">
             {(field) => (
               <div className="space-y-1">
-                <Label htmlFor={field.name}>Tercero autorizado</Label>
+                <Label htmlFor={field.name}>Tercero autorizado *</Label>
                 <Input
                   id={field.name}
                   name={field.name}
@@ -513,7 +627,7 @@ function CreateDataDisclosureForm({ onCancel }: { onCancel: () => void }) {
           <form.Field name="purposeCode">
             {(field) => (
               <div className="space-y-1">
-                <Label htmlFor={field.name}>Propósito</Label>
+                <Label htmlFor={field.name}>Propósito *</Label>
                 <Input
                   id={field.name}
                   name={field.name}
@@ -534,7 +648,7 @@ function CreateDataDisclosureForm({ onCancel }: { onCancel: () => void }) {
           <form.Field name="scopeJson">
             {(field) => (
               <div className="space-y-1 md:col-span-2">
-                <Label htmlFor={field.name}>Ámbito (JSON)</Label>
+                <Label htmlFor={field.name}>Ámbito (JSON) *</Label>
                 <Input
                   id={field.name}
                   name={field.name}
@@ -556,7 +670,7 @@ function CreateDataDisclosureForm({ onCancel }: { onCancel: () => void }) {
           <form.Field name="legalBasis">
             {(field) => (
               <div className="space-y-1">
-                <Label htmlFor={field.name}>Base legal</Label>
+                <Label htmlFor={field.name}>Base legal *</Label>
                 <Input
                   id={field.name}
                   name={field.name}
@@ -577,7 +691,7 @@ function CreateDataDisclosureForm({ onCancel }: { onCancel: () => void }) {
           <form.Field name="grantedAt">
             {(field) => (
               <div className="space-y-1">
-                <Label htmlFor={field.name}>Fecha de autorización</Label>
+                <Label htmlFor={field.name}>Fecha de autorización *</Label>
                 <Input
                   id={field.name}
                   name={field.name}
@@ -648,10 +762,17 @@ function CreateDataDisclosureForm({ onCancel }: { onCancel: () => void }) {
 
 /* ─── Consents Tab ─── */
 
-function ConsentsTab({ patientId }: { patientId: string }) {
+function ConsentsTab({
+  patientId,
+  encounterId,
+}: {
+  patientId: string;
+  encounterId?: string;
+}) {
+  const navigate = useNavigate();
   const [offset, setOffset] = useState(0);
   const [limit] = useState(25);
-  const [showForm, setShowForm] = useState(false);
+  const [showForm, setShowForm] = useState(!!patientId);
 
   const { data, isLoading } = useQuery(
     orpc.consents.listConsents.queryOptions({
@@ -659,6 +780,7 @@ function ConsentsTab({ patientId }: { patientId: string }) {
         limit,
         offset,
         patientId: patientId || "patient-id",
+        encounterId: encounterId || undefined,
         sortDirection: "desc",
       },
       enabled: !!patientId,
@@ -720,22 +842,35 @@ function ConsentsTab({ patientId }: { patientId: string }) {
     },
     {
       header: "Acciones",
-      accessor: (row: NonNullable<typeof data>["items"][0]) =>
-        row.revokedAt ? null : (
-          <Button
-            onClick={() =>
-              revokeMutation.mutate({
-                id: row.id,
-                revokedAt: new Date(),
-              })
-            }
-            size="icon-xs"
-            variant="ghost"
-          >
-            <X size={14} />
-          </Button>
-        ),
-      className: "w-16",
+      accessor: (row: NonNullable<typeof data>["items"][0]) => (
+        <div className="flex items-center gap-1">
+          <Link params={{ consentId: row.id }} to="/consents/$consentId">
+            <Button
+              aria-label="Ver consentimiento"
+              size="icon-xs"
+              variant="ghost"
+            >
+              <Eye size={14} />
+            </Button>
+          </Link>
+          {!row.revokedAt && (
+            <Button
+              aria-label="Revocar consentimiento"
+              onClick={() =>
+                revokeMutation.mutate({
+                  id: row.id,
+                  revokedAt: new Date(),
+                })
+              }
+              size="icon-xs"
+              variant="ghost"
+            >
+              <X size={14} />
+            </Button>
+          )}
+        </div>
+      ),
+      className: "w-20",
     },
   ];
 
@@ -748,7 +883,13 @@ function ConsentsTab({ patientId }: { patientId: string }) {
         </Button>
       </div>
 
-      {showForm && <CreateConsentForm onCancel={() => setShowForm(false)} />}
+      {showForm && (
+        <CreateConsentForm
+          defaultEncounterId={encounterId}
+          defaultPatientId={patientId}
+          onCancel={() => setShowForm(false)}
+        />
+      )}
 
       <DataTable
         columns={columns}
@@ -757,6 +898,12 @@ function ConsentsTab({ patientId }: { patientId: string }) {
         emptyTitle="Sin consentimientos"
         isLoading={isLoading}
         keyExtractor={(row) => row.id}
+        onRowClick={(row) => {
+          navigate({
+            to: "/consents/$consentId",
+            params: { consentId: row.id },
+          });
+        }}
         pagination={
           data
             ? {
@@ -775,9 +922,10 @@ function ConsentsTab({ patientId }: { patientId: string }) {
 /* ─── Data Disclosures Tab ─── */
 
 function DataDisclosuresTab({ patientId }: { patientId: string }) {
+  const navigate = useNavigate();
   const [offset, setOffset] = useState(0);
   const [limit] = useState(25);
-  const [showForm, setShowForm] = useState(false);
+  const [showForm, setShowForm] = useState(!!patientId);
 
   const { data, isLoading } = useQuery(
     orpc.consents.listDataDisclosures.queryOptions({
@@ -856,6 +1004,7 @@ function DataDisclosuresTab({ patientId }: { patientId: string }) {
         <div className="flex items-center gap-1">
           {!row.revokedAt && (
             <Button
+              aria-label="Revocar autorización"
               onClick={() =>
                 revokeMutation.mutate({
                   id: row.id,
@@ -869,11 +1018,17 @@ function DataDisclosuresTab({ patientId }: { patientId: string }) {
             </Button>
           )}
           <Button
-            onClick={() => deleteMutation.mutate({ id: row.id })}
+            aria-label="Eliminar autorización"
+            disabled={deleteMutation.isPending}
+            onClick={() => {
+              if (confirm("¿Eliminar este consentimiento permanentemente?")) {
+                deleteMutation.mutate({ id: row.id });
+              }
+            }}
             size="icon-xs"
             variant="ghost"
           >
-            <Eye size={14} />
+            <Trash2 size={14} />
           </Button>
         </div>
       ),
@@ -891,7 +1046,10 @@ function DataDisclosuresTab({ patientId }: { patientId: string }) {
       </div>
 
       {showForm && (
-        <CreateDataDisclosureForm onCancel={() => setShowForm(false)} />
+        <CreateDataDisclosureForm
+          defaultPatientId={patientId}
+          onCancel={() => setShowForm(false)}
+        />
       )}
 
       <DataTable
@@ -901,6 +1059,12 @@ function DataDisclosuresTab({ patientId }: { patientId: string }) {
         emptyTitle="Sin autorizaciones"
         isLoading={isLoading}
         keyExtractor={(row) => row.id}
+        onRowClick={(row) => {
+          navigate({
+            to: "/data-disclosures/$disclosureId",
+            params: { disclosureId: row.id },
+          });
+        }}
         pagination={
           data
             ? {
@@ -919,16 +1083,32 @@ function DataDisclosuresTab({ patientId }: { patientId: string }) {
 /* ─── Main Page ─── */
 
 function ConsentsListPage() {
-  const [patientId, setPatientId] = useState("");
+  const search = useSearch({ from: "/_authenticated/consents/" });
+  const [patientId, setPatientId] = useState(search.patientId || "");
   const [patientSearch, setPatientSearch] = useState("");
+  const [queryPatientSearch, setQueryPatientSearch] = useState("");
   const [activeTab, setActiveTab] = useState("consents");
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setQueryPatientSearch(patientSearch);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [patientSearch]);
+
+  useEffect(() => {
+    document.title = "Consentimientos | WellFit EMR";
+    return () => {
+      document.title = "WellFit EMR";
+    };
+  }, []);
 
   const { data: patientsData, isLoading: patientsLoading } = useQuery(
     orpc.patients.list.queryOptions({
       input: {
         limit: 20,
         offset: 0,
-        search: patientSearch || undefined,
+        search: queryPatientSearch || undefined,
       },
     })
   );
@@ -965,28 +1145,29 @@ function ConsentsListPage() {
           />
         </div>
 
-        <div className="mb-3 flex items-center gap-1 border-b">
-          {TABS.map((tab) => (
-            <button
-              className={`flex items-center gap-1.5 border-b-2 px-3 py-2 font-medium text-xs transition-colors ${
-                activeTab === tab.id
-                  ? "border-primary text-primary"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              type="button"
-            >
-              <tab.icon size={14} />
-              {tab.label}
-            </button>
-          ))}
-        </div>
+        <Tabs
+          onValueChange={(value) => setActiveTab(value as string)}
+          value={activeTab}
+        >
+          <TabsList className="mb-3 w-full justify-start">
+            {TABS.map((tab) => (
+              <TabsTab key={tab.id} value={tab.id}>
+                <tab.icon size={14} />
+                {tab.label}
+              </TabsTab>
+            ))}
+          </TabsList>
 
-        {activeTab === "consents" && <ConsentsTab patientId={patientId} />}
-        {activeTab === "disclosures" && (
-          <DataDisclosuresTab patientId={patientId} />
-        )}
+          <TabsPanel value="consents">
+            <ConsentsTab
+              encounterId={search.encounterId}
+              patientId={patientId}
+            />
+          </TabsPanel>
+          <TabsPanel value="disclosures">
+            <DataDisclosuresTab patientId={patientId} />
+          </TabsPanel>
+        </Tabs>
       </div>
     </div>
   );

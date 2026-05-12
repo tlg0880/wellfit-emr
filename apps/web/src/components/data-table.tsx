@@ -102,7 +102,21 @@ export function DataTable<T>({
                       onRowClick ? "cursor-pointer hover:bg-muted/50" : ""
                     )}
                     key={keyExtractor(row)}
-                    onClick={onRowClick ? () => onRowClick(row) : undefined}
+                    onClick={
+                      onRowClick
+                        ? (e) => {
+                            const target = e.target as HTMLElement;
+                            if (
+                              target.closest(
+                                "button, a, input, select, textarea, [role='button']"
+                              )
+                            ) {
+                              return;
+                            }
+                            onRowClick(row);
+                          }
+                        : undefined
+                    }
                   >
                     {columns.map((col, columnIndex) => (
                       <td
@@ -127,6 +141,7 @@ export function DataTable<T>({
           </span>
           <div className="flex items-center gap-1">
             <Button
+              aria-label="Primera página"
               disabled={currentPage <= 1}
               onClick={() => pagination.onPageChange(0)}
               size="icon-xs"
@@ -135,6 +150,7 @@ export function DataTable<T>({
               <ChevronsLeft size={14} />
             </Button>
             <Button
+              aria-label="Página anterior"
               disabled={currentPage <= 1}
               onClick={() =>
                 pagination.onPageChange(pagination.offset - pagination.limit)
@@ -148,6 +164,7 @@ export function DataTable<T>({
               {currentPage} / {totalPages}
             </span>
             <Button
+              aria-label="Página siguiente"
               disabled={currentPage >= totalPages}
               onClick={() =>
                 pagination.onPageChange(pagination.offset + pagination.limit)
@@ -158,6 +175,7 @@ export function DataTable<T>({
               <ChevronRight size={14} />
             </Button>
             <Button
+              aria-label="Última página"
               disabled={currentPage >= totalPages}
               onClick={() =>
                 pagination.onPageChange((totalPages - 1) * pagination.limit)

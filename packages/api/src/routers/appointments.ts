@@ -50,6 +50,7 @@ const createAppointmentSchema = z.object({
 const updateAppointmentSchema = z
   .object({
     durationMinutes: z.number().int().min(5).max(480).optional(),
+    encounterId: z.string().min(1).nullable().optional(),
     notes: optionalNullableStringSchema,
     patientId: nonEmptyStringSchema.optional(),
     practitionerId: z.string().min(1).nullable().optional(),

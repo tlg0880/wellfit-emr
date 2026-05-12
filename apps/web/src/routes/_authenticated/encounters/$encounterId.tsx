@@ -14,23 +14,51 @@ import {
 } from "@wellfit-emr/ui/components/card";
 import { Skeleton } from "@wellfit-emr/ui/components/skeleton";
 import {
+  Tabs,
+  TabsList,
+  TabsPanel,
+  TabsTab,
+} from "@wellfit-emr/ui/components/tabs";
+import {
   Activity,
   AlertTriangle,
+  ClipboardList,
   Eye,
+  FileCheck,
   FileText,
+  FlaskConical,
+  Mail,
+  Paperclip,
+  Pill,
+  RefreshCw,
   Scissors,
+  Syringe,
+  Trash2,
+  Users,
   XCircle,
 } from "lucide-react";
+import { useEffect } from "react";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/page-header";
-import { orpc } from "@/utils/orpc";
+import { formatAge } from "@/utils/age";
+import { orpc, queryClient } from "@/utils/orpc";
 
 import { AllergiesTab } from "./-components/allergies-tab";
+import { AttachmentsTab } from "./-components/attachments-tab";
+import { ClinicalDocumentsTab } from "./-components/clinical-documents-tab";
+import { ConsentsTab } from "./-components/consents-tab";
 import { DiagnosesTab } from "./-components/diagnoses-tab";
+import { DiagnosticReportsTab } from "./-components/diagnostic-reports-tab";
+import { EncounterParticipantsTab } from "./-components/encounter-participants-tab";
 import { EvolutionTab } from "./-components/evolution-tab";
+import { IncapacityCertificatesTab } from "./-components/incapacity-certificates-tab";
+import { InterconsultationsTab } from "./-components/interconsultations-tab";
+import { MedicationAdministrationsTab } from "./-components/medication-administrations-tab";
+import { MedicationOrdersTab } from "./-components/medication-orders-tab";
 import { ObservationsTab } from "./-components/observations-tab";
 import { ProceduresTab } from "./-components/procedures-tab";
+import { ServiceRequestsTab } from "./-components/service-requests-tab";
 
 const TABS = [
   { id: "diagnoses", label: "Diagnósticos", icon: Activity },
@@ -38,6 +66,16 @@ const TABS = [
   { id: "observations", label: "Observaciones", icon: Eye },
   { id: "procedures", label: "Procedimientos", icon: Scissors },
   { id: "evolution", label: "Evolución", icon: FileText },
+  { id: "participants", label: "Participantes", icon: Users },
+  { id: "medicationOrders", label: "Medicamentos", icon: Pill },
+  { id: "medicationAdministrations", label: "Administraciones", icon: Syringe },
+  { id: "serviceRequests", label: "Órdenes", icon: FlaskConical },
+  { id: "diagnosticReports", label: "Informes", icon: ClipboardList },
+  { id: "clinicalDocuments", label: "Documentos", icon: FileText },
+  { id: "attachments", label: "Anexos", icon: Paperclip },
+  { id: "consents", label: "Consentimientos", icon: FileCheck },
+  { id: "interconsultations", label: "Interconsultas", icon: Mail },
+  { id: "incapacityCertificates", label: "Incapacidades", icon: FileText },
 ];
 
 const DEFAULT_TAB = "diagnoses";
@@ -90,7 +128,11 @@ function EncounterDetailPage() {
       ? search.tab
       : DEFAULT_TAB;
 
-  const { data: encounter, isLoading: encounterLoading } = useQuery(
+  const {
+    data: encounter,
+    isLoading: encounterLoading,
+    isError: encounterError,
+  } = useQuery(
     orpc.encounters.get.queryOptions({ input: { id: encounterId } })
   );
 
@@ -108,6 +150,20 @@ function EncounterDetailPage() {
     },
     onError: (error: Error) => {
       toast.error(`Error al cerrar: ${error.message}`);
+    },
+  });
+
+  const deleteMutation = useMutation({
+    ...orpc.encounters.delete.mutationOptions(),
+    onSuccess: () => {
+      toast.success("Atención eliminada");
+      queryClient.invalidateQueries({
+        queryKey: orpc.encounters.list.key({ type: "query" }),
+      });
+      navigate({ to: "/encounters" });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Error al eliminar atención");
     },
   });
 
@@ -130,20 +186,48 @@ function EncounterDetailPage() {
         ? "Finalizada"
         : (encounter?.status ?? "—");
 
+  useEffect(() => {
+    if (encounter) {
+      document.title = `${encounter.reasonForVisit} | WellFit EMR`;
+    }
+    return () => {
+      document.title = "WellFit EMR";
+    };
+  }, [encounter]);
+
   return (
     <div className="space-y-4">
       <PageHeader
         actions={
-          encounter?.status === "in-progress" ? (
-            <Button
-              disabled={closeMutation.isPending}
-              onClick={handleClose}
-              size="sm"
-              variant="destructive"
-            >
-              <XCircle size={14} />
-              {closeMutation.isPending ? "Cerrando..." : "Cerrar atención"}
-            </Button>
+          encounter ? (
+            <div className="flex items-center gap-2">
+              {encounter.status === "in-progress" && (
+                <Button
+                  disabled={closeMutation.isPending}
+                  onClick={handleClose}
+                  size="sm"
+                  variant="destructive"
+                >
+                  <XCircle size={14} />
+                  {closeMutation.isPending ? "Cerrando..." : "Cerrar atención"}
+                </Button>
+              )}
+              <Button
+                disabled={deleteMutation.isPending}
+                onClick={() => {
+                  if (confirm("¿Eliminar esta atención permanentemente?")) {
+                    deleteMutation.mutate({ id: encounterId });
+                  }
+                }}
+                size="sm"
+                variant="outline"
+              >
+                <Trash2 size={14} />
+                <span className="ml-1.5">
+                  {deleteMutation.isPending ? "Eliminando..." : "Eliminar"}
+                </span>
+              </Button>
+            </div>
           ) : null
         }
         backTo="/encounters"
@@ -154,6 +238,30 @@ function EncounterDetailPage() {
             : (encounter?.reasonForVisit ?? "Atención")
         }
       />
+
+      {encounterError && (
+        <div className="px-6">
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center gap-2 py-12">
+              <p className="text-destructive text-sm">
+                Error al cargar atención
+              </p>
+              <Button
+                onClick={() =>
+                  queryClient.invalidateQueries({
+                    queryKey: orpc.encounters.get.key({ type: "query" }),
+                  })
+                }
+                size="sm"
+                variant="outline"
+              >
+                <RefreshCw size={12} />
+                Reintentar
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-4 px-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">
@@ -205,6 +313,38 @@ function EncounterDetailPage() {
                     <Skeleton className="h-4 w-24" />
                   ),
                 },
+                ...(encounter.admissionSource
+                  ? [
+                      {
+                        label: "Vía de ingreso",
+                        value: encounter.admissionSource,
+                      },
+                    ]
+                  : []),
+                ...(encounter.causeExternalCode
+                  ? [
+                      {
+                        label: "Causa externa",
+                        value: encounter.causeExternalCode,
+                      },
+                    ]
+                  : []),
+                ...(encounter.finalidadConsultaCode
+                  ? [
+                      {
+                        label: "Finalidad consulta",
+                        value: encounter.finalidadConsultaCode,
+                      },
+                    ]
+                  : []),
+                ...(encounter.modalidadAtencionCode
+                  ? [
+                      {
+                        label: "Modalidad atención (RIPS)",
+                        value: encounter.modalidadAtencionCode,
+                      },
+                    ]
+                  : []),
               ].map((item) => (
                 <div key={item.label}>
                   <p className="text-[10px] text-muted-foreground">
@@ -251,6 +391,10 @@ function EncounterDetailPage() {
                   </p>
                 </div>
                 <div>
+                  <p className="text-[10px] text-muted-foreground">Edad</p>
+                  <p className="font-medium">{formatAge(patient.birthDate)}</p>
+                </div>
+                <div>
                   <p className="text-[10px] text-muted-foreground">Sexo</p>
                   <p className="font-medium">{patient.sexAtBirth}</p>
                 </div>
@@ -274,48 +418,95 @@ function EncounterDetailPage() {
       </div>
 
       <div className="px-6">
-        <div className="mb-3 flex items-center gap-1 border-b">
-          {TABS.map((tab) => (
-            <button
-              className={`flex items-center gap-1.5 border-b-2 px-3 py-2 font-medium text-xs transition-colors ${
-                activeTab === tab.id
-                  ? "border-primary text-primary"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-              key={tab.id}
-              onClick={() => setTab(tab.id)}
-              type="button"
-            >
-              <tab.icon size={14} />
-              {tab.label}
-            </button>
-          ))}
-        </div>
+        <Tabs
+          onValueChange={(value) => setTab(value as string)}
+          value={activeTab}
+        >
+          <TabsList className="mb-3 w-full justify-start">
+            {TABS.map((tab) => (
+              <TabsTab key={tab.id} value={tab.id}>
+                <tab.icon size={14} />
+                {tab.label}
+              </TabsTab>
+            ))}
+          </TabsList>
 
-        {activeTab === "diagnoses" && (
-          <DiagnosesTab encounterId={encounterId} />
-        )}
-        {activeTab === "allergies" && (
-          <AllergiesTab patientId={encounter?.patientId ?? ""} />
-        )}
-        {activeTab === "observations" && (
-          <ObservationsTab
-            encounterId={encounterId}
-            patientId={encounter?.patientId ?? ""}
-          />
-        )}
-        {activeTab === "procedures" && (
-          <ProceduresTab
-            encounterId={encounterId}
-            patientId={encounter?.patientId ?? ""}
-          />
-        )}
-        {activeTab === "evolution" && (
-          <EvolutionTab
-            encounterId={encounterId}
-            patientId={encounter?.patientId ?? ""}
-          />
-        )}
+          <TabsPanel value="diagnoses">
+            <DiagnosesTab encounterId={encounterId} />
+          </TabsPanel>
+          <TabsPanel value="allergies">
+            <AllergiesTab patientId={encounter?.patientId ?? ""} />
+          </TabsPanel>
+          <TabsPanel value="observations">
+            <ObservationsTab
+              encounterId={encounterId}
+              patientId={encounter?.patientId ?? ""}
+            />
+          </TabsPanel>
+          <TabsPanel value="procedures">
+            <ProceduresTab
+              encounterId={encounterId}
+              patientId={encounter?.patientId ?? ""}
+            />
+          </TabsPanel>
+          <TabsPanel value="evolution">
+            <EvolutionTab
+              encounterId={encounterId}
+              patientId={encounter?.patientId ?? ""}
+            />
+          </TabsPanel>
+          <TabsPanel value="participants">
+            <EncounterParticipantsTab encounterId={encounterId} />
+          </TabsPanel>
+          <TabsPanel value="medicationOrders">
+            <MedicationOrdersTab
+              encounterId={encounterId}
+              patientId={encounter?.patientId ?? ""}
+            />
+          </TabsPanel>
+          <TabsPanel value="medicationAdministrations">
+            <MedicationAdministrationsTab
+              encounterId={encounterId}
+              patientId={encounter?.patientId ?? ""}
+            />
+          </TabsPanel>
+          <TabsPanel value="serviceRequests">
+            <ServiceRequestsTab
+              encounterId={encounterId}
+              patientId={encounter?.patientId ?? ""}
+            />
+          </TabsPanel>
+          <TabsPanel value="diagnosticReports">
+            <DiagnosticReportsTab
+              encounterId={encounterId}
+              patientId={encounter?.patientId ?? ""}
+            />
+          </TabsPanel>
+          <TabsPanel value="clinicalDocuments">
+            <ClinicalDocumentsTab
+              encounterId={encounterId}
+              patientId={encounter?.patientId ?? ""}
+            />
+          </TabsPanel>
+          <TabsPanel value="attachments">
+            <AttachmentsTab encounterId={encounterId} />
+          </TabsPanel>
+          <TabsPanel value="consents">
+            <ConsentsTab
+              encounterId={encounterId}
+              patientId={encounter?.patientId ?? ""}
+            />
+          </TabsPanel>
+          <TabsPanel value="interconsultations">
+            <InterconsultationsTab encounterId={encounterId} />
+          </TabsPanel>
+          <TabsPanel value="incapacityCertificates">
+            <IncapacityCertificatesTab
+              encounterId={encounterId}
+              patientId={encounter?.patientId ?? ""}
+            />
+          </TabsPanel>
+        </Tabs>
       </div>
     </div>
   );

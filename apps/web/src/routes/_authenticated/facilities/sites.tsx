@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Button } from "@wellfit-emr/ui/components/button";
 import {
   Card,
@@ -10,13 +10,20 @@ import {
 import { Input } from "@wellfit-emr/ui/components/input";
 import { Label } from "@wellfit-emr/ui/components/label";
 import { SearchSelect } from "@wellfit-emr/ui/components/search-select";
-import { Plus, Search } from "lucide-react";
-import { useState } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@wellfit-emr/ui/components/select";
+import { Eye, FilterX, Pencil, Plus, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { DataTable } from "@/components/data-table";
 import { PageHeader } from "@/components/page-header";
 import { authClient } from "@/lib/auth-client";
-import { orpc } from "@/utils/orpc";
+import { orpc, queryClient } from "@/utils/orpc";
 
 export const Route = createFileRoute("/_authenticated/facilities/sites")({
   component: SitesPage,
@@ -36,10 +43,13 @@ export const Route = createFileRoute("/_authenticated/facilities/sites")({
 const LIMIT = 50;
 
 function SitesPage() {
+  const navigate = useNavigate();
   const [offset, setOffset] = useState(0);
   const [search, setSearch] = useState("");
   const [querySearch, setQuerySearch] = useState("");
+  const [filterOrgId, setFilterOrgId] = useState("");
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [siteCode, setSiteCode] = useState("");
   const [organizationId, setOrganizationId] = useState("");
@@ -47,12 +57,28 @@ function SitesPage() {
   const [municipalitySearch, setMunicipalitySearch] = useState("");
   const [address, setAddress] = useState("");
 
+  useEffect(() => {
+    document.title = "Sedes | WellFit EMR";
+    return () => {
+      document.title = "WellFit EMR";
+    };
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setQuerySearch(search);
+      setOffset(0);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
   const { data, isLoading, refetch } = useQuery(
     orpc.facilities.listSites.queryOptions({
       input: {
         limit: LIMIT,
         offset,
         search: querySearch || undefined,
+        organizationId: filterOrgId || undefined,
       },
     })
   );
@@ -95,23 +121,83 @@ function SitesPage() {
     },
   });
 
-  const handleSearch = () => {
-    setOffset(0);
-    setQuerySearch(search);
-  };
+  const deleteMutation = useMutation({
+    ...orpc.facilities.deleteSite.mutationOptions(),
+    onSuccess: () => {
+      toast.success("Sede eliminada");
+      queryClient.invalidateQueries({
+        queryKey: orpc.facilities.listSites.key({ type: "query" }),
+      });
+    },
+    onError: (error: Error) => {
+      toast.error(`Error al eliminar sede: ${error.message}`);
+    },
+  });
+
+  const updateMutation = useMutation({
+    ...orpc.facilities.updateSite.mutationOptions(),
+    onSuccess: () => {
+      toast.success("Sede actualizada");
+      setEditingId(null);
+      setName("");
+      setSiteCode("");
+      setOrganizationId("");
+      setMunicipalityCode("");
+      setMunicipalitySearch("");
+      setAddress("");
+      setShowForm(false);
+      queryClient.invalidateQueries({
+        queryKey: orpc.facilities.listSites.key({ type: "query" }),
+      });
+    },
+    onError: (error: Error) => {
+      toast.error(`Error al actualizar sede: ${error.message}`);
+    },
+  });
+
+  function resetForm() {
+    setEditingId(null);
+    setName("");
+    setSiteCode("");
+    setOrganizationId("");
+    setMunicipalityCode("");
+    setMunicipalitySearch("");
+    setAddress("");
+  }
+
+  function startEdit(row: Site) {
+    setEditingId(row.id);
+    setName(row.name);
+    setSiteCode(row.siteCode);
+    setOrganizationId(row.organizationId);
+    setMunicipalityCode(row.municipalityCode ?? "");
+    setAddress(row.address ?? "");
+    setShowForm(true);
+  }
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
     if (!(name.trim() && siteCode.trim() && organizationId)) {
       return;
     }
-    createMutation.mutate({
-      name: name.trim(),
-      siteCode: siteCode.trim(),
-      organizationId,
-      municipalityCode: municipalityCode.trim() || null,
-      address: address.trim() || null,
-    });
+    if (editingId) {
+      updateMutation.mutate({
+        id: editingId,
+        name: name.trim(),
+        siteCode: siteCode.trim(),
+        organizationId,
+        municipalityCode: municipalityCode.trim() || null,
+        address: address.trim() || null,
+      });
+    } else {
+      createMutation.mutate({
+        name: name.trim(),
+        siteCode: siteCode.trim(),
+        organizationId,
+        municipalityCode: municipalityCode.trim() || null,
+        address: address.trim() || null,
+      });
+    }
   };
 
   const orgMap = new Map(
@@ -126,9 +212,19 @@ function SitesPage() {
     <div className="flex flex-col">
       <PageHeader
         actions={
-          <Button onClick={() => setShowForm((s) => !s)} size="sm">
+          <Button
+            onClick={() => {
+              if (showForm) {
+                resetForm();
+                setShowForm(false);
+              } else {
+                setShowForm(true);
+              }
+            }}
+            size="sm"
+          >
             <Plus size={14} />
-            <span className="ml-1.5">Nueva</span>
+            <span className="ml-1.5">{showForm ? "Cancelar" : "Nueva"}</span>
           </Button>
         }
         description="Administre las sedes de atencion"
@@ -137,9 +233,9 @@ function SitesPage() {
 
       <div className="p-6">
         {showForm && (
-          <Card className="mb-6">
+          <Card className="mb-6" key={editingId || "new"}>
             <CardHeader>
-              <CardTitle>Nueva sede</CardTitle>
+              <CardTitle>{editingId ? "Editar sede" : "Nueva sede"}</CardTitle>
             </CardHeader>
             <CardContent>
               <form
@@ -168,22 +264,23 @@ function SitesPage() {
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="site-org">Organizacion *</Label>
-                  <select
-                    className="h-8 w-full rounded-none border border-input bg-transparent px-2.5 py-1 text-xs outline-none"
-                    id="site-org"
-                    onChange={(e) => setOrganizationId(e.target.value)}
-                    required
+                  <Select
+                    onValueChange={(v) => setOrganizationId(v as string)}
                     value={organizationId}
                   >
-                    <option value="">Seleccionar...</option>
-                    {orgsData?.organizations.map(
-                      (org: { id: string; name: string }) => (
-                        <option key={org.id} value={org.id}>
-                          {org.name}
-                        </option>
-                      )
-                    )}
-                  </select>
+                    <SelectTrigger id="site-org">
+                      <SelectValue placeholder="Seleccionar..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {orgsData?.organizations.map(
+                        (org: { id: string; name: string }) => (
+                          <SelectItem key={org.id} value={org.id}>
+                            {org.name}
+                          </SelectItem>
+                        )
+                      )}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="site-muni">Codigo municipio</Label>
@@ -217,15 +314,25 @@ function SitesPage() {
                 </div>
                 <div className="flex items-end gap-2 sm:col-span-3">
                   <Button
-                    disabled={createMutation.isPending}
+                    disabled={
+                      createMutation.isPending || updateMutation.isPending
+                    }
                     size="sm"
                     type="submit"
                   >
-                    Guardar
+                    {createMutation.isPending || updateMutation.isPending
+                      ? "Guardando..."
+                      : editingId
+                        ? "Actualizar"
+                        : "Guardar"}
                   </Button>
                   <Button
-                    onClick={() => setShowForm(false)}
+                    onClick={() => {
+                      resetForm();
+                      setShowForm(false);
+                    }}
                     size="sm"
+                    type="button"
                     variant="ghost"
                   >
                     Cancelar
@@ -236,17 +343,51 @@ function SitesPage() {
           </Card>
         )}
 
-        <div className="mb-4 flex items-center gap-2">
+        <div className="mb-4 flex flex-wrap items-end gap-2">
           <Input
             className="max-w-xs"
             onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
             placeholder="Buscar por nombre o codigo..."
             value={search}
           />
-          <Button onClick={handleSearch} size="sm" variant="outline">
-            <Search size={14} />
-          </Button>
+          <div className="space-y-1">
+            <Label className="text-[10px]">Organizacion</Label>
+            <Select
+              onValueChange={(v) => {
+                setFilterOrgId(v as string);
+                setOffset(0);
+              }}
+              value={filterOrgId}
+            >
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Todas" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Todas</SelectItem>
+                {orgsData?.organizations.map(
+                  (org: { id: string; name: string }) => (
+                    <SelectItem key={org.id} value={org.id}>
+                      {org.name}
+                    </SelectItem>
+                  )
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+          {(search || filterOrgId) && (
+            <Button
+              onClick={() => {
+                setSearch("");
+                setFilterOrgId("");
+                setOffset(0);
+              }}
+              size="sm"
+              variant="ghost"
+            >
+              <FilterX size={14} />
+              Limpiar filtros
+            </Button>
+          )}
         </div>
 
         <DataTable
@@ -280,12 +421,55 @@ function SitesPage() {
                   year: "numeric",
                 }),
             },
+            {
+              header: "Acciones",
+              accessor: (row: Site) => (
+                <div className="flex items-center gap-1">
+                  <Link
+                    aria-label="Ver sede"
+                    className="inline-flex text-muted-foreground hover:text-foreground"
+                    params={{ siteId: row.id }}
+                    to="/facilities/sites/$siteId"
+                  >
+                    <Eye size={14} />
+                  </Link>
+                  <Button
+                    aria-label="Editar sede"
+                    onClick={() => startEdit(row)}
+                    size="icon-xs"
+                    variant="ghost"
+                  >
+                    <Pencil size={12} />
+                  </Button>
+                  <Button
+                    aria-label="Eliminar sede"
+                    disabled={deleteMutation.isPending}
+                    onClick={() => {
+                      if (confirm("¿Eliminar esta sede permanentemente?")) {
+                        deleteMutation.mutate({ id: row.id });
+                      }
+                    }}
+                    size="icon-xs"
+                    variant="ghost"
+                  >
+                    <Trash2 size={12} />
+                  </Button>
+                </div>
+              ),
+              className: "w-24",
+            },
           ]}
           data={data?.sites ?? []}
           emptyDescription="No se encontraron sedes."
           emptyTitle="Sin sedes"
           isLoading={isLoading}
           keyExtractor={(row: Site) => row.id}
+          onRowClick={(row) =>
+            navigate({
+              to: "/facilities/sites/$siteId",
+              params: { siteId: row.id },
+            })
+          }
           pagination={
             data
               ? {

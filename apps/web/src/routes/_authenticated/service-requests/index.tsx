@@ -1,6 +1,11 @@
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Link,
+  useNavigate,
+  useSearch,
+} from "@tanstack/react-router";
 import { Button } from "@wellfit-emr/ui/components/button";
 import {
   Card,
@@ -11,8 +16,24 @@ import {
 import { Input } from "@wellfit-emr/ui/components/input";
 import { Label } from "@wellfit-emr/ui/components/label";
 import { SearchSelect } from "@wellfit-emr/ui/components/search-select";
-import { FileCheck, FlaskConical, Plus, Search, X } from "lucide-react";
-import { useState } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@wellfit-emr/ui/components/select";
+import {
+  Eye,
+  FileCheck,
+  FilterX,
+  FlaskConical,
+  Plus,
+  Search,
+  Trash2,
+  X,
+} from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -21,8 +42,14 @@ import { PageHeader } from "@/components/page-header";
 import { authClient } from "@/lib/auth-client";
 import { orpc, queryClient } from "@/utils/orpc";
 
+const searchSchema = z.object({
+  encounterId: z.string().optional(),
+  patientId: z.string().optional(),
+});
+
 export const Route = createFileRoute("/_authenticated/service-requests/")({
   component: ServiceRequestsListPage,
+  validateSearch: searchSchema,
   beforeLoad: async () => {
     const session = await authClient.getSession();
     if (!session.data) {
@@ -36,7 +63,15 @@ export const Route = createFileRoute("/_authenticated/service-requests/")({
   },
 });
 
-function CreateServiceRequestForm({ onCancel }: { onCancel: () => void }) {
+function CreateServiceRequestForm({
+  onCancel,
+  defaultPatientId,
+  defaultEncounterId,
+}: {
+  onCancel: () => void;
+  defaultPatientId?: string;
+  defaultEncounterId?: string;
+}) {
   const [patientSearch, setPatientSearch] = useState("");
   const [encounterSearch, setEncounterSearch] = useState("");
   const [practitionerSearch, setPractitionerSearch] = useState("");
@@ -52,6 +87,13 @@ function CreateServiceRequestForm({ onCancel }: { onCancel: () => void }) {
     })
   );
 
+  const { data: defaultPatientData } = useQuery({
+    ...orpc.patients.get.queryOptions({
+      input: { id: defaultPatientId ?? "" },
+    }),
+    enabled: !!defaultPatientId,
+  });
+
   const { data: encountersData, isLoading: encountersLoading } = useQuery(
     orpc.encounters.list.queryOptions({
       input: {
@@ -61,6 +103,13 @@ function CreateServiceRequestForm({ onCancel }: { onCancel: () => void }) {
       },
     })
   );
+
+  const { data: defaultEncounterData } = useQuery({
+    ...orpc.encounters.get.queryOptions({
+      input: { id: defaultEncounterId ?? "" },
+    }),
+    enabled: !!defaultEncounterId,
+  });
 
   const { data: practitionersData, isLoading: practitionersLoading } = useQuery(
     orpc.facilities.listPractitioners.queryOptions({
@@ -98,8 +147,8 @@ function CreateServiceRequestForm({ onCancel }: { onCancel: () => void }) {
 
   const form = useForm({
     defaultValues: {
-      patientId: "",
-      encounterId: "",
+      patientId: defaultPatientId ?? "",
+      encounterId: defaultEncounterId ?? "",
       requestType: "laboratory",
       requestCode: "",
       priority: "routine",
@@ -148,19 +197,30 @@ function CreateServiceRequestForm({ onCancel }: { onCancel: () => void }) {
           <form.Field name="patientId">
             {(field) => (
               <div className="space-y-1">
-                <Label htmlFor={field.name}>Paciente</Label>
+                <Label htmlFor={field.name}>Paciente *</Label>
                 <SearchSelect
                   emptyMessage="Escribe para buscar pacientes"
                   loading={patientsLoading}
                   onChange={(v) => field.handleChange(v)}
                   onSearchChange={setPatientSearch}
-                  options={
-                    patientsData?.patients.map((p) => ({
-                      value: p.id,
-                      label: `${p.firstName} ${p.lastName1}`,
-                      description: `${p.primaryDocumentType} ${p.primaryDocumentNumber}`,
-                    })) ?? []
-                  }
+                  options={[
+                    ...(defaultPatientData && defaultPatientId
+                      ? [
+                          {
+                            value: defaultPatientData.id,
+                            label: `${defaultPatientData.firstName} ${defaultPatientData.lastName1}`,
+                            description: `${defaultPatientData.primaryDocumentType} ${defaultPatientData.primaryDocumentNumber}`,
+                          },
+                        ]
+                      : []),
+                    ...(patientsData?.patients ?? [])
+                      .filter((p) => p.id !== defaultPatientId)
+                      .map((p) => ({
+                        value: p.id,
+                        label: `${p.firstName} ${p.lastName1}`,
+                        description: `${p.primaryDocumentType} ${p.primaryDocumentNumber}`,
+                      })),
+                  ]}
                   placeholder="Buscar paciente..."
                   required
                   search={patientSearch}
@@ -178,21 +238,36 @@ function CreateServiceRequestForm({ onCancel }: { onCancel: () => void }) {
           <form.Field name="encounterId">
             {(field) => (
               <div className="space-y-1">
-                <Label htmlFor={field.name}>Atención</Label>
+                <Label htmlFor={field.name}>Atención *</Label>
                 <SearchSelect
                   emptyMessage="Escribe para buscar atenciones"
                   loading={encountersLoading}
                   onChange={(v) => field.handleChange(v)}
                   onSearchChange={setEncounterSearch}
-                  options={
-                    encountersData?.encounters.map((e) => ({
-                      value: e.id,
-                      label: e.reasonForVisit || "Sin motivo",
-                      description: new Date(e.startedAt).toLocaleDateString(
-                        "es-CO"
-                      ),
-                    })) ?? []
-                  }
+                  options={[
+                    ...(defaultEncounterData && defaultEncounterId
+                      ? [
+                          {
+                            value: defaultEncounterData.id,
+                            label:
+                              defaultEncounterData.reasonForVisit ||
+                              "Sin motivo",
+                            description: new Date(
+                              defaultEncounterData.startedAt
+                            ).toLocaleDateString("es-CO"),
+                          },
+                        ]
+                      : []),
+                    ...(encountersData?.encounters ?? [])
+                      .filter((e) => e.id !== defaultEncounterId)
+                      .map((e) => ({
+                        value: e.id,
+                        label: e.reasonForVisit || "Sin motivo",
+                        description: new Date(e.startedAt).toLocaleDateString(
+                          "es-CO"
+                        ),
+                      })),
+                  ]}
                   placeholder="Buscar atención..."
                   required
                   search={encounterSearch}
@@ -210,20 +285,21 @@ function CreateServiceRequestForm({ onCancel }: { onCancel: () => void }) {
           <form.Field name="requestType">
             {(field) => (
               <div className="space-y-1">
-                <Label htmlFor={field.name}>Tipo de solicitud</Label>
-                <select
-                  className="h-8 w-full rounded-none border border-input bg-transparent px-2.5 text-xs outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50"
-                  id={field.name}
-                  name={field.name}
-                  onBlur={field.handleBlur}
-                  onChange={(e) => field.handleChange(e.target.value)}
+                <Label htmlFor={field.name}>Tipo de solicitud *</Label>
+                <Select
+                  onValueChange={(v) => field.handleChange(v as string)}
                   value={field.state.value}
                 >
-                  <option value="laboratory">Laboratorio</option>
-                  <option value="imaging">Imagenología</option>
-                  <option value="procedure">Procedimiento</option>
-                  <option value="consultation">Consulta</option>
-                </select>
+                  <SelectTrigger id={field.name}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="laboratory">Laboratorio</SelectItem>
+                    <SelectItem value="imaging">Imagenología</SelectItem>
+                    <SelectItem value="procedure">Procedimiento</SelectItem>
+                    <SelectItem value="consultation">Consulta</SelectItem>
+                  </SelectContent>
+                </Select>
                 {field.state.meta.errors.map((error) => (
                   <p className="text-destructive text-xs" key={String(error)}>
                     {String(error)}
@@ -236,7 +312,7 @@ function CreateServiceRequestForm({ onCancel }: { onCancel: () => void }) {
           <form.Field name="requestCode">
             {(field) => (
               <div className="space-y-1">
-                <Label htmlFor={field.name}>Código CUPS</Label>
+                <Label htmlFor={field.name}>Código CUPS *</Label>
                 <SearchSelect
                   emptyMessage="Escribe para buscar en CUPS"
                   loading={cupsLoading}
@@ -266,19 +342,20 @@ function CreateServiceRequestForm({ onCancel }: { onCancel: () => void }) {
           <form.Field name="priority">
             {(field) => (
               <div className="space-y-1">
-                <Label htmlFor={field.name}>Prioridad</Label>
-                <select
-                  className="h-8 w-full rounded-none border border-input bg-transparent px-2.5 text-xs outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50"
-                  id={field.name}
-                  name={field.name}
-                  onBlur={field.handleBlur}
-                  onChange={(e) => field.handleChange(e.target.value)}
+                <Label htmlFor={field.name}>Prioridad *</Label>
+                <Select
+                  onValueChange={(v) => field.handleChange(v as string)}
                   value={field.state.value}
                 >
-                  <option value="routine">Rutina</option>
-                  <option value="urgent">Urgente</option>
-                  <option value="stat">STAT</option>
-                </select>
+                  <SelectTrigger id={field.name}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="routine">Rutina</SelectItem>
+                    <SelectItem value="urgent">Urgente</SelectItem>
+                    <SelectItem value="stat">STAT</SelectItem>
+                  </SelectContent>
+                </Select>
                 {field.state.meta.errors.map((error) => (
                   <p className="text-destructive text-xs" key={String(error)}>
                     {String(error)}
@@ -291,7 +368,7 @@ function CreateServiceRequestForm({ onCancel }: { onCancel: () => void }) {
           <form.Field name="requestedBy">
             {(field) => (
               <div className="space-y-1">
-                <Label htmlFor={field.name}>Solicitado por</Label>
+                <Label htmlFor={field.name}>Solicitado por *</Label>
                 <SearchSelect
                   emptyMessage="Escribe para buscar profesionales"
                   loading={practitionersLoading}
@@ -321,8 +398,9 @@ function CreateServiceRequestForm({ onCancel }: { onCancel: () => void }) {
           <form.Field name="requestedAt">
             {(field) => (
               <div className="space-y-1">
-                <Label htmlFor={field.name}>Fecha solicitud</Label>
+                <Label htmlFor={field.name}>Fecha solicitud *</Label>
                 <Input
+                  autoFocus
                   id={field.name}
                   name={field.name}
                   onBlur={field.handleBlur}
@@ -383,6 +461,16 @@ function DiagnosticReportModal({
   encounterId: string;
   onClose: () => void;
 }) {
+  useEffect(() => {
+    function handleEscape(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    }
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [onClose]);
+
   const { data: report, isLoading } = useQuery(
     orpc.serviceRequests.getReport.queryOptions({
       input: { requestId },
@@ -439,7 +527,12 @@ function DiagnosticReportModal({
       <Card className="mx-4 max-h-[90vh] w-full max-w-lg overflow-auto">
         <CardHeader className="flex flex-row items-center justify-between pb-4">
           <CardTitle>Reporte diagnóstico</CardTitle>
-          <Button onClick={onClose} size="icon" variant="ghost">
+          <Button
+            aria-label="Cerrar"
+            onClick={onClose}
+            size="icon"
+            variant="ghost"
+          >
             <X size={16} />
           </Button>
         </CardHeader>
@@ -606,6 +699,7 @@ function ServiceRequestRowActions({
   return (
     <>
       <Button
+        aria-label="Ver reporte diagnóstico"
         onClick={() => setShowModal(true)}
         size="icon-xs"
         variant={hasReport ? "default" : "ghost"}
@@ -630,18 +724,41 @@ function ServiceRequestRowActions({
 /* ─── Main Page ─── */
 
 function ServiceRequestsListPage() {
-  const [encounterId, setEncounterId] = useState("");
+  const navigate = useNavigate();
+  const { encounterId: defaultEncounterId, patientId: defaultPatientId } =
+    useSearch({
+      from: "/_authenticated/service-requests/",
+    });
+  const [encounterId, setEncounterId] = useState(defaultEncounterId ?? "");
   const [encounterSearch, setEncounterSearch] = useState("");
+  const [queryEncounterSearch, setQueryEncounterSearch] = useState("");
   const [offset, setOffset] = useState(0);
   const [limit] = useState(25);
-  const [showForm, setShowForm] = useState(false);
+  const [showForm, setShowForm] = useState(
+    !!(defaultEncounterId || defaultPatientId)
+  );
+  const [filterStatus, setFilterStatus] = useState("");
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setQueryEncounterSearch(encounterSearch);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [encounterSearch]);
+
+  useEffect(() => {
+    document.title = "Órdenes de servicio | WellFit EMR";
+    return () => {
+      document.title = "WellFit EMR";
+    };
+  }, []);
 
   const { data: encountersData, isLoading: encountersLoading } = useQuery(
     orpc.encounters.list.queryOptions({
       input: {
         limit: 20,
         offset: 0,
-        search: encounterSearch || undefined,
+        search: queryEncounterSearch || undefined,
       },
     })
   );
@@ -652,10 +769,24 @@ function ServiceRequestsListPage() {
         limit,
         offset,
         encounterId: encounterId || undefined,
+        status: filterStatus || undefined,
         sortDirection: "desc",
       },
     })
   );
+
+  const deleteMutation = useMutation({
+    ...orpc.serviceRequests.delete.mutationOptions(),
+    onSuccess: () => {
+      toast.success("Orden eliminada");
+      queryClient.invalidateQueries({
+        queryKey: orpc.serviceRequests.list.key({ type: "query" }),
+      });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Error al eliminar orden");
+    },
+  });
 
   const columns = [
     {
@@ -697,11 +828,34 @@ function ServiceRequestsListPage() {
         new Date(row.requestedAt).toLocaleString("es-CO"),
     },
     {
-      header: "Reporte",
+      header: "Acciones",
       accessor: (row: NonNullable<typeof data>["items"][0]) => (
-        <ServiceRequestRowActions row={row} />
+        <div className="flex items-center gap-1">
+          <ServiceRequestRowActions row={row} />
+          <Link
+            aria-label="Ver orden"
+            className="inline-flex text-muted-foreground hover:text-foreground"
+            params={{ requestId: row.id }}
+            to="/service-requests/$requestId"
+          >
+            <Eye size={14} />
+          </Link>
+          <Button
+            aria-label="Eliminar orden"
+            disabled={deleteMutation.isPending}
+            onClick={() => {
+              if (confirm("¿Eliminar esta orden permanentemente?")) {
+                deleteMutation.mutate({ id: row.id });
+              }
+            }}
+            size="icon-xs"
+            variant="ghost"
+          >
+            <Trash2 size={12} />
+          </Button>
+        </div>
       ),
-      className: "w-16",
+      className: "w-24",
     },
   ];
 
@@ -719,42 +873,97 @@ function ServiceRequestsListPage() {
       />
 
       {showForm && (
-        <CreateServiceRequestForm onCancel={() => setShowForm(false)} />
+        <CreateServiceRequestForm
+          defaultEncounterId={defaultEncounterId}
+          defaultPatientId={defaultPatientId}
+          onCancel={() => setShowForm(false)}
+        />
       )}
 
       <div className="px-6">
-        <div className="mb-3 flex items-center gap-2">
-          <Search className="text-muted-foreground" size={14} />
-          <SearchSelect
-            className="max-w-xs"
-            clearable
-            emptyMessage="Escribe para buscar atenciones"
-            loading={encountersLoading}
-            onChange={(v) => {
-              setEncounterId(v);
-              setOffset(0);
-            }}
-            onSearchChange={setEncounterSearch}
-            options={
-              encountersData?.encounters.map((e) => ({
-                value: e.id,
-                label: e.reasonForVisit || "Sin motivo",
-                description: new Date(e.startedAt).toLocaleDateString("es-CO"),
-              })) ?? []
-            }
-            placeholder="Filtrar por atención..."
-            search={encounterSearch}
-            value={encounterId}
-          />
+        <div className="mb-3 flex flex-wrap items-end gap-2">
+          <div className="flex items-center gap-2">
+            <Search className="text-muted-foreground" size={14} />
+            <SearchSelect
+              className="max-w-xs"
+              clearable
+              emptyMessage="Escribe para buscar atenciones"
+              loading={encountersLoading}
+              onChange={(v) => {
+                setEncounterId(v);
+                setOffset(0);
+              }}
+              onSearchChange={setEncounterSearch}
+              options={
+                encountersData?.encounters.map((e) => ({
+                  value: e.id,
+                  label: e.reasonForVisit || "Sin motivo",
+                  description: new Date(e.startedAt).toLocaleDateString(
+                    "es-CO"
+                  ),
+                })) ?? []
+              }
+              placeholder="Filtrar por atención..."
+              search={encounterSearch}
+              value={encounterId}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-[10px]">Estado</Label>
+            <Select
+              onValueChange={(v) => {
+                setFilterStatus(v as string);
+                setOffset(0);
+              }}
+              value={filterStatus}
+            >
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Todos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Todos</SelectItem>
+                <SelectItem value="active">Activa</SelectItem>
+                <SelectItem value="completed">Completada</SelectItem>
+                <SelectItem value="cancelled">Cancelada</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {(encounterId || filterStatus) && (
+            <Button
+              onClick={() => {
+                setEncounterId("");
+                setEncounterSearch("");
+                setFilterStatus("");
+                setOffset(0);
+              }}
+              size="sm"
+              variant="ghost"
+            >
+              <FilterX size={14} />
+              Limpiar filtros
+            </Button>
+          )}
         </div>
 
         <DataTable
           columns={columns}
           data={data?.items ?? []}
-          emptyDescription="No se encontraron órdenes de servicio."
-          emptyTitle="Sin órdenes"
+          emptyDescription={
+            encounterId || filterStatus
+              ? "Ninguna orden coincide con los filtros aplicados."
+              : "No se encontraron órdenes de servicio."
+          }
+          emptyTitle={
+            encounterId || filterStatus ? "Sin resultados" : "Sin órdenes"
+          }
           isLoading={isLoading}
           keyExtractor={(row) => row.id}
+          onRowClick={(row) => {
+            navigate({
+              to: "/service-requests/$requestId",
+              params: { requestId: row.id },
+            });
+          }}
           pagination={
             data
               ? {

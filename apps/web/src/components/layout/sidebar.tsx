@@ -1,6 +1,7 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { cn } from "@wellfit-emr/ui/lib/utils";
 import {
+  Archive,
   Building2,
   Calendar,
   ChevronLeft,
@@ -22,6 +23,7 @@ import {
   Share2,
   ShieldCheck,
   Stethoscope,
+  Unlock,
   Users,
 } from "lucide-react";
 import { useState } from "react";
@@ -71,6 +73,11 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     items: [
       { icon: Paperclip, label: "Anexos", to: "/attachments" },
       { icon: Eye, label: "Auditoría", to: "/audit-events" },
+      {
+        icon: Unlock,
+        label: "Autorizaciones de datos",
+        to: "/data-disclosures",
+      },
     ],
   },
   {
@@ -81,6 +88,11 @@ const navGroups: { label: string; items: NavItem[] }[] = [
         icon: Copy,
         label: "Solicitudes del paciente",
         to: "/patient-requests",
+      },
+      {
+        icon: Archive,
+        label: "Retención documental",
+        to: "/retention-records",
       },
       { icon: FileOutput, label: "RIPS", to: "/rips-exports" },
       { icon: Share2, label: "IHCE", to: "/ihce-bundles" },
@@ -94,6 +106,31 @@ const navGroups: { label: string; items: NavItem[] }[] = [
         icon: Building2,
         label: "Institución",
         to: "/facilities/organizations",
+      },
+      {
+        icon: Building2,
+        label: "Pagadores",
+        to: "/facilities/payers",
+      },
+      {
+        icon: Building2,
+        label: "Sedes",
+        to: "/facilities/sites",
+      },
+      {
+        icon: Building2,
+        label: "Unidades de servicio",
+        to: "/facilities/service-units",
+      },
+      {
+        icon: Users,
+        label: "Profesionales",
+        to: "/facilities/practitioners",
+      },
+      {
+        icon: Users,
+        label: "Roles",
+        to: "/facilities/practitioner-roles",
       },
     ],
   },

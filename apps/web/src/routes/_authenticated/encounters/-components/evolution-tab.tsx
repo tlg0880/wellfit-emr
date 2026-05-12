@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@wellfit-emr/ui/components/button";
 import { Label } from "@wellfit-emr/ui/components/label";
 import { SearchSelect } from "@wellfit-emr/ui/components/search-select";
+import { Textarea } from "@wellfit-emr/ui/components/textarea";
 import { FileText, Plus, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -176,9 +177,6 @@ export function EvolutionTab({
     },
   ];
 
-  const textareaClass =
-    "min-h-[80px] w-full resize-y rounded-none border border-input bg-transparent px-3 py-2 text-xs outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50";
-
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
@@ -200,7 +198,7 @@ export function EvolutionTab({
           <form.Field name="authorPractitionerId">
             {(field) => (
               <div className="space-y-1">
-                <Label htmlFor={field.name}>Profesional autor</Label>
+                <Label htmlFor={field.name}>Profesional autor *</Label>
                 <SearchSelect
                   emptyMessage="Escribe para buscar profesionales"
                   id={field.name}
@@ -232,14 +230,14 @@ export function EvolutionTab({
           <form.Field name="subjective">
             {(field) => (
               <div className="space-y-1">
-                <Label htmlFor={field.name}>Subjetivo</Label>
-                <textarea
-                  className={textareaClass}
+                <Label htmlFor={field.name}>Subjetivo *</Label>
+                <Textarea
                   id={field.name}
                   name={field.name}
                   onBlur={field.handleBlur}
                   onChange={(e) => field.handleChange(e.target.value)}
                   placeholder="Motivo de consulta, síntomas, historia del paciente..."
+                  rows={4}
                   value={field.state.value}
                 />
                 {field.state.meta.errors.map((error) => (
@@ -254,14 +252,14 @@ export function EvolutionTab({
           <form.Field name="objective">
             {(field) => (
               <div className="space-y-1">
-                <Label htmlFor={field.name}>Objetivo</Label>
-                <textarea
-                  className={textareaClass}
+                <Label htmlFor={field.name}>Objetivo *</Label>
+                <Textarea
                   id={field.name}
                   name={field.name}
                   onBlur={field.handleBlur}
                   onChange={(e) => field.handleChange(e.target.value)}
                   placeholder="Examen físico, signos vitales, hallazgos..."
+                  rows={4}
                   value={field.state.value}
                 />
                 {field.state.meta.errors.map((error) => (
@@ -276,14 +274,14 @@ export function EvolutionTab({
           <form.Field name="assessment">
             {(field) => (
               <div className="space-y-1">
-                <Label htmlFor={field.name}>Análisis</Label>
-                <textarea
-                  className={textareaClass}
+                <Label htmlFor={field.name}>Análisis *</Label>
+                <Textarea
                   id={field.name}
                   name={field.name}
                   onBlur={field.handleBlur}
                   onChange={(e) => field.handleChange(e.target.value)}
                   placeholder="Impresión diagnóstica, interpretación de hallazgos..."
+                  rows={4}
                   value={field.state.value}
                 />
                 {field.state.meta.errors.map((error) => (
@@ -298,14 +296,14 @@ export function EvolutionTab({
           <form.Field name="plan">
             {(field) => (
               <div className="space-y-1">
-                <Label htmlFor={field.name}>Plan</Label>
-                <textarea
-                  className={textareaClass}
+                <Label htmlFor={field.name}>Plan *</Label>
+                <Textarea
                   id={field.name}
                   name={field.name}
                   onBlur={field.handleBlur}
                   onChange={(e) => field.handleChange(e.target.value)}
                   placeholder="Tratamiento, estudios, interconsultas, indicaciones..."
+                  rows={4}
                   value={field.state.value}
                 />
                 {field.state.meta.errors.map((error) => (

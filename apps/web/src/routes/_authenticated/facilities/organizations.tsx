@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Button } from "@wellfit-emr/ui/components/button";
 import {
   Card,
@@ -9,13 +9,13 @@ import {
 } from "@wellfit-emr/ui/components/card";
 import { Input } from "@wellfit-emr/ui/components/input";
 import { Label } from "@wellfit-emr/ui/components/label";
-import { Plus, Search } from "lucide-react";
-import { useState } from "react";
+import { Eye, Pencil, Plus, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { DataTable } from "@/components/data-table";
 import { PageHeader } from "@/components/page-header";
 import { authClient } from "@/lib/auth-client";
-import { orpc } from "@/utils/orpc";
+import { orpc, queryClient } from "@/utils/orpc";
 
 export const Route = createFileRoute(
   "/_authenticated/facilities/organizations"
@@ -37,13 +37,30 @@ export const Route = createFileRoute(
 const LIMIT = 50;
 
 function OrganizationsPage() {
+  const navigate = useNavigate();
   const [offset, setOffset] = useState(0);
   const [search, setSearch] = useState("");
   const [querySearch, setQuerySearch] = useState("");
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [repsCode, setRepsCode] = useState("");
   const [taxId, setTaxId] = useState("");
+
+  useEffect(() => {
+    document.title = "Organizaciones | WellFit EMR";
+    return () => {
+      document.title = "WellFit EMR";
+    };
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setQuerySearch(search);
+      setOffset(0);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   const { data, isLoading, refetch } = useQuery(
     orpc.facilities.listOrganizations.queryOptions({
@@ -70,22 +87,72 @@ function OrganizationsPage() {
     },
   });
 
-  const handleSearch = () => {
-    setOffset(0);
-    setQuerySearch(search);
-  };
+  const deleteMutation = useMutation({
+    ...orpc.facilities.deleteOrganization.mutationOptions(),
+    onSuccess: () => {
+      toast.success("Organizacion eliminada");
+      queryClient.invalidateQueries({
+        queryKey: orpc.facilities.listOrganizations.key({ type: "query" }),
+      });
+    },
+    onError: (error: Error) => {
+      toast.error(`Error al eliminar organizacion: ${error.message}`);
+    },
+  });
+
+  const updateMutation = useMutation({
+    ...orpc.facilities.updateOrganization.mutationOptions(),
+    onSuccess: () => {
+      toast.success("Organizacion actualizada");
+      setEditingId(null);
+      setName("");
+      setRepsCode("");
+      setTaxId("");
+      setShowForm(false);
+      queryClient.invalidateQueries({
+        queryKey: orpc.facilities.listOrganizations.key({ type: "query" }),
+      });
+    },
+    onError: (error: Error) => {
+      toast.error(`Error al actualizar organizacion: ${error.message}`);
+    },
+  });
+
+  function resetForm() {
+    setEditingId(null);
+    setName("");
+    setRepsCode("");
+    setTaxId("");
+  }
+
+  function startEdit(row: Org) {
+    setEditingId(row.id);
+    setName(row.name);
+    setRepsCode(row.repsCode ?? "");
+    setTaxId(row.taxId ?? "");
+    setShowForm(true);
+  }
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
       return;
     }
-    createMutation.mutate({
-      name: name.trim(),
-      repsCode: repsCode.trim() || null,
-      taxId: taxId.trim() || null,
-      status: "active",
-    });
+    if (editingId) {
+      updateMutation.mutate({
+        id: editingId,
+        name: name.trim(),
+        repsCode: repsCode.trim() || null,
+        taxId: taxId.trim() || null,
+      });
+    } else {
+      createMutation.mutate({
+        name: name.trim(),
+        repsCode: repsCode.trim() || null,
+        taxId: taxId.trim() || null,
+        status: "active",
+      });
+    }
   };
 
   type Org = NonNullable<typeof data>["organizations"][0];
@@ -94,9 +161,19 @@ function OrganizationsPage() {
     <div className="flex flex-col">
       <PageHeader
         actions={
-          <Button onClick={() => setShowForm((s) => !s)} size="sm">
+          <Button
+            onClick={() => {
+              if (showForm) {
+                resetForm();
+                setShowForm(false);
+              } else {
+                setShowForm(true);
+              }
+            }}
+            size="sm"
+          >
             <Plus size={14} />
-            <span className="ml-1.5">Nueva</span>
+            <span className="ml-1.5">{showForm ? "Cancelar" : "Nueva"}</span>
           </Button>
         }
         description="Administre las organizaciones de salud registradas"
@@ -105,9 +182,11 @@ function OrganizationsPage() {
 
       <div className="p-6">
         {showForm && (
-          <Card className="mb-6">
+          <Card className="mb-6" key={editingId || "new"}>
             <CardHeader>
-              <CardTitle>Nueva organizacion</CardTitle>
+              <CardTitle>
+                {editingId ? "Editar organizacion" : "Nueva organizacion"}
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <form
@@ -144,15 +223,25 @@ function OrganizationsPage() {
                 </div>
                 <div className="flex items-end gap-2 sm:col-span-3">
                   <Button
-                    disabled={createMutation.isPending}
+                    disabled={
+                      createMutation.isPending || updateMutation.isPending
+                    }
                     size="sm"
                     type="submit"
                   >
-                    Guardar
+                    {createMutation.isPending || updateMutation.isPending
+                      ? "Guardando..."
+                      : editingId
+                        ? "Actualizar"
+                        : "Guardar"}
                   </Button>
                   <Button
-                    onClick={() => setShowForm(false)}
+                    onClick={() => {
+                      resetForm();
+                      setShowForm(false);
+                    }}
                     size="sm"
+                    type="button"
                     variant="ghost"
                   >
                     Cancelar
@@ -167,13 +256,9 @@ function OrganizationsPage() {
           <Input
             className="max-w-xs"
             onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
             placeholder="Buscar por nombre, REPS o NIT..."
             value={search}
           />
-          <Button onClick={handleSearch} size="sm" variant="outline">
-            <Search size={14} />
-          </Button>
         </div>
 
         <DataTable
@@ -213,12 +298,57 @@ function OrganizationsPage() {
                   year: "numeric",
                 }),
             },
+            {
+              header: "Acciones",
+              accessor: (row: Org) => (
+                <div className="flex items-center gap-1">
+                  <Link
+                    aria-label="Ver organización"
+                    className="inline-flex text-muted-foreground hover:text-foreground"
+                    params={{ organizationId: row.id }}
+                    to="/facilities/organizations/$organizationId"
+                  >
+                    <Eye size={14} />
+                  </Link>
+                  <Button
+                    aria-label="Editar organización"
+                    onClick={() => startEdit(row)}
+                    size="icon-xs"
+                    variant="ghost"
+                  >
+                    <Pencil size={12} />
+                  </Button>
+                  <Button
+                    aria-label="Eliminar organización"
+                    disabled={deleteMutation.isPending}
+                    onClick={() => {
+                      if (
+                        confirm("¿Eliminar esta organizacion permanentemente?")
+                      ) {
+                        deleteMutation.mutate({ id: row.id });
+                      }
+                    }}
+                    size="icon-xs"
+                    variant="ghost"
+                  >
+                    <Trash2 size={12} />
+                  </Button>
+                </div>
+              ),
+              className: "w-24",
+            },
           ]}
           data={data?.organizations ?? []}
           emptyDescription="No se encontraron organizaciones."
           emptyTitle="Sin organizaciones"
           isLoading={isLoading}
           keyExtractor={(row: Org) => row.id}
+          onRowClick={(row) =>
+            navigate({
+              to: "/facilities/organizations/$organizationId",
+              params: { organizationId: row.id },
+            })
+          }
           pagination={
             data
               ? {
