@@ -20,6 +20,7 @@ import {
 } from "@wellfit-emr/ui/components/select";
 import {
   AlertTriangle,
+  Calendar,
   ChevronLeft,
   ChevronRight,
   Circle,
@@ -36,6 +37,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 
+import { PageHeader } from "@/components/page-header";
 import { authClient } from "@/lib/auth-client";
 import { orpc, queryClient } from "@/utils/orpc";
 
@@ -855,31 +857,31 @@ function AppointmentsPage() {
   }
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="font-semibold text-2xl tracking-tight">Agenda</h1>
-          <p className="text-muted-foreground text-sm">
-            Gestión de citas médicas programadas
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button onClick={goToToday} size="sm" variant="outline">
-            Hoy
-          </Button>
-          <Button
-            onClick={() => {
-              setEditingAppointment(null);
-              setSelectedDate(new Date());
-              setShowForm(true);
-            }}
-            size="sm"
-          >
-            <Plus size={14} />
-            Nueva cita
-          </Button>
-        </div>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        actions={
+          <div className="flex items-center gap-2">
+            <Button onClick={goToToday} size="sm" variant="outline">
+              Hoy
+            </Button>
+            <Button
+              onClick={() => {
+                setEditingAppointment(null);
+                setSelectedDate(new Date());
+                setShowForm(true);
+              }}
+              size="sm"
+            >
+              <Plus size={14} />
+              Nueva cita
+            </Button>
+          </div>
+        }
+        description="Gestión de citas médicas programadas"
+        icon={Calendar}
+        iconBgClass="bg-rose-100 text-rose-600"
+        title="Agenda"
+      />
 
       <div className="flex flex-wrap items-end gap-2">
         <div className="flex items-center gap-2">
