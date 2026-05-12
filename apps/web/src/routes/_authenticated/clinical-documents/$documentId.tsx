@@ -174,7 +174,7 @@ function renderReadablePayload(payload: SectionPayload): React.ReactNode {
       const value = payload[key];
       if (typeof value === "string" && value.length > 0) {
         return (
-          <div className="rounded-none border border-muted p-2" key={key}>
+          <div className="rounded-sm border border-muted p-2" key={key}>
             <p className="font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
               {label}
             </p>
@@ -194,7 +194,7 @@ function renderReadablePayload(payload: SectionPayload): React.ReactNode {
 
   if (diagnoses.length > 0) {
     knownBlocks.push(
-      <div className="rounded-none border border-muted p-2" key="diagnoses">
+      <div className="rounded-sm border border-muted p-2" key="diagnoses">
         <p className="font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
           Diagnósticos
         </p>
@@ -221,7 +221,7 @@ function renderReadablePayload(payload: SectionPayload): React.ReactNode {
   return (
     <div className="grid grid-cols-1 gap-2">
       {entries.map(([key, value]) => (
-        <div className="rounded-none border border-muted p-2" key={key}>
+        <div className="rounded-sm border border-muted p-2" key={key}>
           <p className="font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
             {key}
           </p>
@@ -306,7 +306,7 @@ function SignDocumentDialog({
 
   return (
     <Dialog onOpenChange={setOpen} open={open}>
-      <DialogTrigger className="inline-flex h-8 items-center gap-1.5 rounded-none border border-transparent bg-primary px-2.5 font-medium text-primary-foreground text-xs outline-none transition-all focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50">
+      <DialogTrigger className="inline-flex h-8 items-center gap-1.5 rounded-sm border border-transparent bg-primary px-2.5 font-medium text-primary-foreground text-xs outline-none transition-all focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50">
         <ShieldCheck size={14} />
         Firmar documento
       </DialogTrigger>
@@ -420,7 +420,7 @@ function CorrectDocumentDialog({
 
   return (
     <Dialog onOpenChange={setOpen} open={open}>
-      <DialogTrigger className="inline-flex h-7 items-center gap-1.5 rounded-none border border-border bg-background px-2.5 font-medium text-xs outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50">
+      <DialogTrigger className="inline-flex h-7 items-center gap-1.5 rounded-sm border border-border bg-background px-2.5 font-medium text-xs outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50">
         <Pencil size={14} />
         Corregir
       </DialogTrigger>
