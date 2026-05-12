@@ -68,6 +68,11 @@ _Ninguno. Todos los routers planificados están implementados._
 
 ### Cambios recientes (2026-05-12)
 
+- **Iteración 10 — Iconos en encabezados de página**: Décima ronda de refinamiento visual enfocada en identidad visual de cada vista.
+  - **PageHeader con icono**: El componente `PageHeader` ahora acepta props `icon` (componente Lucide) e `iconBgClass`. Cuando se proporciona, renderiza un círculo de fondo coloreado (`size-9 rounded-md shadow-sm`) con el icono centrado a la izquierda del título, creando una identidad visual distintiva por página.
+  - **Pacientes**: Icono `Users` con fondo `bg-teal-50 text-teal-600`.
+  - **Atenciones**: Icono `ClipboardList` con fondo `bg-teal-50 text-teal-600`.
+  - **Documentos clínicos**: Icono `FileText` con fondo `bg-teal-50 text-teal-600`.
 - **Iteración 9 — Toolbar unificado en documentos clínicos y fondo en tablas**: Novena ronda de refinamiento visual enfocada en consistencia de páginas de datos y profundidad de tablas.
   - **Toolbar unificado en documentos clínicos**: Los filtros de estado y tipo en `/clinical-documents` ahora viven dentro de una tarjeta toolbar unificada (`rounded-lg border bg-card shadow-sm px-3 py-2.5`), consistente con las páginas de pacientes y atenciones. Los selectores internos usan `bg-background` para jerarquía visual.
   - **Fondo en contenedor de tabla**: El contenedor de `DataTable` ahora tiene `bg-card`, creando una ligera elevación que separa visualmente la tabla del fondo de la página.

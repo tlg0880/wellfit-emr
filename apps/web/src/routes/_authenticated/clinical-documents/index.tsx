@@ -607,6 +607,8 @@ function ClinicalDocumentsListPage() {
           </Button>
         }
         description="Documentos clínicos con versionado inmutable"
+        icon={FileText}
+        iconBgClass="bg-teal-50 text-teal-600"
         title="Documentos clínicos"
       />
 

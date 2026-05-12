@@ -23,7 +23,16 @@ import {
   SelectValue,
 } from "@wellfit-emr/ui/components/select";
 import { Skeleton } from "@wellfit-emr/ui/components/skeleton";
-import { Eye, Pencil, Plus, Search, Trash2, User, X } from "lucide-react";
+import {
+  ClipboardList,
+  Eye,
+  Pencil,
+  Plus,
+  Search,
+  Trash2,
+  User,
+  X,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -927,6 +936,8 @@ function EncountersPage() {
           </Button>
         }
         description="Gestión de atenciones clínicas y registro de consultas"
+        icon={ClipboardList}
+        iconBgClass="bg-teal-50 text-teal-600"
         title="Atenciones"
       />
 

@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@wellfit-emr/ui/components/select";
-import { Eye, Pencil, Plus, Search, Trash2, X } from "lucide-react";
+import { Eye, Pencil, Plus, Search, Trash2, Users, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import z from "zod";
@@ -754,6 +754,8 @@ function PatientsListPage() {
           </Button>
         }
         description="Gestión de pacientes del sistema"
+        icon={Users}
+        iconBgClass="bg-teal-50 text-teal-600"
         title="Pacientes"
       />
 

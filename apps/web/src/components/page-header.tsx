@@ -13,6 +13,8 @@ interface PageHeaderProps {
   breadcrumbs?: Breadcrumb[];
   className?: string;
   description?: string;
+  icon?: React.ComponentType<{ size?: number; className?: string }>;
+  iconBgClass?: string;
   title: string;
 }
 
@@ -23,6 +25,8 @@ export function PageHeader({
   actions,
   className,
   breadcrumbs,
+  icon: Icon,
+  iconBgClass = "bg-primary/10 text-primary",
 }: PageHeaderProps) {
   return (
     <div
@@ -40,6 +44,13 @@ export function PageHeader({
             >
               <ChevronLeft size={18} />
             </Link>
+          )}
+          {Icon && (
+            <div
+              className={`flex size-9 items-center justify-center rounded-md shadow-sm ${iconBgClass}`}
+            >
+              <Icon size={18} />
+            </div>
           )}
           <div className="min-w-0">
             {breadcrumbs && breadcrumbs.length > 0 && (
