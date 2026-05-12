@@ -168,7 +168,7 @@ export function DataTable<T>({
             >
               <ChevronLeft size={14} />
             </Button>
-            <span className="px-2 font-medium text-xs tabular-nums">
+            <span className="rounded-sm bg-muted/50 px-2 py-0.5 font-medium text-xs tabular-nums">
               {currentPage} / {totalPages}
             </span>
             <Button
