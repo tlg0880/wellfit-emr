@@ -1313,10 +1313,20 @@
       ],
       "importsChanged": true,
       "lastEdit": "2026-05-12T23:58:16.296Z"
+    },
+    "src/routes/_authenticated/facilities/practitioners/$practitionerId.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 233,
+          "end": 234
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-12T23:58:38.014Z"
     }
   },
   "turnCycles": 0,
   "maxCycles": 3,
-  "lastUpdated": "2026-05-12T23:58:16.296Z",
+  "lastUpdated": "2026-05-12T23:58:38.014Z",
   "sessionId": "lens-mp32rgkz-3e9ca4af"
 }

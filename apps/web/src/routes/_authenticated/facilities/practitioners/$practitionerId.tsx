@@ -230,6 +230,8 @@ function PractitionerDetailPage() {
       <PageHeader
         backTo="/facilities/practitioners"
         description="Información del profesional de salud"
+        icon={UserCheck}
+        iconBgClass="bg-cyan-100 text-cyan-600"
         title={title}
       />
 
