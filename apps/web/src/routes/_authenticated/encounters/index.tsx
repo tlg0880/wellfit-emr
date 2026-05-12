@@ -26,6 +26,7 @@ import { Skeleton } from "@wellfit-emr/ui/components/skeleton";
 import {
   ClipboardList,
   Eye,
+  FilterX,
   Pencil,
   Plus,
   Search,
@@ -1003,7 +1004,7 @@ function EncountersPage() {
               size="xs"
               variant="ghost"
             >
-              <X size={12} />
+              <FilterX size={12} />
               Limpiar filtros
             </Button>
           )}
