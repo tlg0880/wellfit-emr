@@ -42,7 +42,7 @@ export function PageHeader({
               className="inline-flex size-9 items-center justify-center rounded-sm text-muted-foreground shadow-md transition-colors hover:bg-primary/10 hover:text-primary"
               to={backTo}
             >
-              <ChevronLeft size={18} />
+              <ChevronLeft size={20} />
             </Link>
           )}
           {Icon && (
