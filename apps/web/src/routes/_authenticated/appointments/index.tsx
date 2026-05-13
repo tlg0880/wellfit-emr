@@ -983,7 +983,7 @@ function AppointmentsPage() {
             <div className="hidden items-center gap-3 text-xs sm:flex">
               {Object.entries(statusConfig).map(([key, cfg]) => (
                 <div className="flex items-center gap-1.5" key={key}>
-                  <Circle className={cfg.color} fill="currentColor" size={10} />
+                  <Circle className={cfg.color} fill="currentColor" size={12} />
                   <span>{cfg.label}</span>
                 </div>
               ))}

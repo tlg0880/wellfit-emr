@@ -203,7 +203,7 @@ export function Sidebar() {
                   <li key={item.to}>
                     <Link
                       className={cn(
-                        "group relative flex items-center gap-3 rounded-sm px-3 py-2 text-[13px] transition-all duration-150",
+                        "group relative flex items-center gap-3 rounded-sm px-3 py-2 text-sm transition-all duration-150",
                         collapsed && "justify-center px-2",
                         isActive
                           ? "bg-sidebar-primary/20 font-medium text-sidebar-primary shadow-md"
