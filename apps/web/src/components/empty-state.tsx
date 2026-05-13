@@ -28,7 +28,7 @@ export function EmptyState({
         <FolderOpen size={28} />
       </div>
       <p className="font-semibold text-base text-foreground/90">{title}</p>
-      <p className="mt-1.5 max-w-xs text-muted-foreground text-xs leading-relaxed">
+      <p className="mt-1.5 max-w-xs text-muted-foreground text-sm leading-relaxed">
         {description}
       </p>
       {actionLabel && onAction && (
