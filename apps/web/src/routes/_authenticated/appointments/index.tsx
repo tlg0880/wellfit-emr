@@ -1097,7 +1097,7 @@ function AppointmentsPage() {
                           );
                         })}
                         {dayAppointments.length > 3 && (
-                          <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 font-medium text-[10px] text-primary shadow-sm">
+                          <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-1 font-medium text-[10px] text-primary shadow-sm">
                             +{dayAppointments.length - 3} más
                           </span>
                         )}
