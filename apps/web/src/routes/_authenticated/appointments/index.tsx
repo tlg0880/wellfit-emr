@@ -872,6 +872,7 @@ function AppointmentsPage() {
               <span className="ml-1.5">Hoy</span>
             </Button>
             <Button
+              className="shadow-md"
               onClick={() => {
                 setEditingAppointment(null);
                 setSelectedDate(new Date());
