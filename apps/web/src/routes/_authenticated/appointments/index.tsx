@@ -607,7 +607,12 @@ function AppointmentForm({
       )}
 
       <div className="flex justify-end gap-3 pt-2">
-        <Button onClick={onCancel} type="button" variant="outline">
+        <Button
+          className="shadow-sm"
+          onClick={onCancel}
+          type="button"
+          variant="outline"
+        >
           Cancelar
         </Button>
         <form.Subscribe
