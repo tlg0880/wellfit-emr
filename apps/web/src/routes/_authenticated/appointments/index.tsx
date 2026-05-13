@@ -1261,7 +1261,7 @@ function AppointmentsPage() {
                   </div>
                 )}
                 {selectedAppointment.cancelledReason && (
-                  <div className="border border-red-200 bg-red-50 p-3 text-sm dark:border-red-900 dark:bg-red-950">
+                  <div className="border border-red-200 bg-red-50 p-4 text-sm shadow-sm dark:border-red-900 dark:bg-red-950">
                     <p className="font-medium text-red-700 text-xs dark:text-red-300">
                       Motivo de cancelación
                     </p>
