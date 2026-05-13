@@ -984,7 +984,7 @@ function AppointmentsPage() {
               {Object.entries(statusConfig).map(([key, cfg]) => (
                 <div className="flex items-center gap-1.5" key={key}>
                   <Circle className={cfg.color} fill="currentColor" size={12} />
-                  <span>{cfg.label}</span>
+                  <span className="font-medium">{cfg.label}</span>
                 </div>
               ))}
             </div>
