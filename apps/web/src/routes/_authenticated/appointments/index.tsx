@@ -1122,7 +1122,7 @@ function AppointmentsPage() {
                 size="icon"
                 variant="ghost"
               >
-                <X size={16} />
+                <X size={18} />
               </Button>
             </CardHeader>
             <CardContent>
@@ -1186,7 +1186,7 @@ function AppointmentsPage() {
                 size="icon"
                 variant="ghost"
               >
-                <X size={16} />
+                <X size={18} />
               </Button>
             </CardHeader>
             <CardContent className="space-y-4">
