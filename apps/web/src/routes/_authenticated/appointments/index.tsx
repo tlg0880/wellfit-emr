@@ -898,7 +898,7 @@ function AppointmentsPage() {
       />
 
       <Card className="shadow-sm">
-        <CardContent className="flex flex-wrap items-end gap-2 py-3">
+        <CardContent className="flex flex-wrap items-end gap-3 py-3">
           <div className="flex items-center gap-2">
             <div className="flex size-7 items-center justify-center rounded-sm bg-primary/10 text-primary shadow-sm">
               <Search size={14} />
