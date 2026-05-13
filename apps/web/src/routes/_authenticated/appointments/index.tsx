@@ -1244,14 +1244,14 @@ function AppointmentsPage() {
                       selectedAppointment.status}
                   </span>
                 </div>
-                <div className="rounded-sm border bg-card p-3 text-sm shadow-sm">
+                <div className="rounded-sm border bg-card p-4 text-sm shadow-sm">
                   <p className="font-medium text-muted-foreground text-xs">
                     Motivo
                   </p>
                   <p className="mt-1">{selectedAppointment.reason}</p>
                 </div>
                 {selectedAppointment.notes && (
-                  <div className="rounded-sm border bg-card p-3 text-sm shadow-sm">
+                  <div className="rounded-sm border bg-card p-4 text-sm shadow-sm">
                     <p className="font-medium text-muted-foreground text-xs">
                       Notas
                     </p>
