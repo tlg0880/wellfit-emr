@@ -1,5 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { Button } from "@wellfit-emr/ui/components/button";
 import {
   Card,
   CardContent,
@@ -7,11 +8,14 @@ import {
   CardTitle,
 } from "@wellfit-emr/ui/components/card";
 import { Skeleton } from "@wellfit-emr/ui/components/skeleton";
+import { Pill, RefreshCw, Trash2 } from "lucide-react";
+import { useEffect } from "react";
+import { toast } from "sonner";
 
 import { DataTable } from "@/components/data-table";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
-import { orpc } from "@/utils/orpc";
+import { orpc, queryClient } from "@/utils/orpc";
 
 export const Route = createFileRoute(
   "/_authenticated/medication-orders/$orderId"
@@ -21,8 +25,27 @@ export const Route = createFileRoute(
 
 function MedicationOrderDetailPage() {
   const { orderId } = Route.useParams();
+  const navigate = useNavigate();
 
-  const { data: order, isLoading } = useQuery(
+  const deleteMutation = useMutation({
+    ...orpc.medicationOrders.delete.mutationOptions(),
+    onSuccess: () => {
+      toast.success("Prescripción eliminada");
+      queryClient.invalidateQueries({
+        queryKey: orpc.medicationOrders.list.key({ type: "query" }),
+      });
+      navigate({ to: "/medication-orders" });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Error al eliminar prescripción");
+    },
+  });
+
+  const {
+    data: order,
+    isLoading,
+    isError,
+  } = useQuery(
     orpc.medicationOrders.get.queryOptions({ input: { id: orderId } })
   );
 
@@ -34,9 +57,36 @@ function MedicationOrderDetailPage() {
       enabled: !!orderId,
     });
 
+  const { data: diagnosesData } = useQuery({
+    ...orpc.clinicalRecords.listDiagnoses.queryOptions({
+      input: { encounterId: order?.encounterId ?? "" },
+    }),
+    enabled: !!order?.encounterId,
+  });
+
+  const diagnosis = order?.diagnosisId
+    ? diagnosesData?.find((d) => d.id === order.diagnosisId)
+    : undefined;
+
+  const { data: prescriberData } = useQuery({
+    ...orpc.facilities.getPractitioner.queryOptions({
+      input: { id: order?.prescriberId ?? "" },
+    }),
+    enabled: !!order?.prescriberId,
+  });
+
   const title = isLoading
     ? "Cargando..."
     : (order?.genericName ?? "Detalle de prescripción");
+
+  useEffect(() => {
+    if (order) {
+      document.title = `${title} | WellFit EMR`;
+    }
+    return () => {
+      document.title = "WellFit EMR";
+    };
+  }, [order, title]);
 
   const infoRows = order
     ? [
@@ -68,7 +118,20 @@ function MedicationOrderDetailPage() {
           label: "Firmado",
           value: new Date(order.signedAt).toLocaleString("es-CO"),
         },
+        {
+          label: "Prescriptor",
+          value:
+            prescriberData?.fullName ?? `${order.prescriberId.slice(0, 8)}…`,
+        },
         { label: "ATC", value: order.atcCode ?? "—" },
+        {
+          label: "Diagnóstico",
+          value: diagnosis
+            ? `${diagnosis.description} (${diagnosis.code})`
+            : order.diagnosisId
+              ? "Cargando..."
+              : "—",
+        },
       ]
     : [];
 
@@ -103,12 +166,51 @@ function MedicationOrderDetailPage() {
   return (
     <div className="space-y-4 pb-6">
       <PageHeader
+        actions={
+          order ? (
+            <Button
+              disabled={deleteMutation.isPending}
+              onClick={() => {
+                if (confirm("¿Eliminar esta prescripción permanentemente?")) {
+                  deleteMutation.mutate({ id: orderId });
+                }
+              }}
+              size="sm"
+              variant="outline"
+            >
+              <Trash2 size={14} />
+              <span className="ml-1.5">
+                {deleteMutation.isPending ? "Eliminando..." : "Eliminar"}
+              </span>
+            </Button>
+          ) : undefined
+        }
         backTo="/medication-orders"
         description="Detalle de la orden de medicamento"
+        icon={Pill}
+        iconBgClass="bg-rose-100 text-rose-600"
         title={title}
       />
 
-      {isLoading ? (
+      {isError ? (
+        <div className="mx-6 flex flex-col items-center justify-center gap-2 py-12">
+          <p className="text-destructive text-sm">
+            Error al cargar prescripción
+          </p>
+          <Button
+            onClick={() =>
+              queryClient.invalidateQueries({
+                queryKey: orpc.medicationOrders.get.key({ type: "query" }),
+              })
+            }
+            size="sm"
+            variant="outline"
+          >
+            <RefreshCw size={12} />
+            Reintentar
+          </Button>
+        </div>
+      ) : isLoading ? (
         <div className="mx-6 space-y-4">
           <Skeleton className="h-48 w-full" />
           <Skeleton className="h-40 w-full" />

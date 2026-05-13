@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Button } from "@wellfit-emr/ui/components/button";
 import {
   Card,
@@ -10,8 +10,15 @@ import {
 import { Input } from "@wellfit-emr/ui/components/input";
 import { Label } from "@wellfit-emr/ui/components/label";
 import { SearchSelect } from "@wellfit-emr/ui/components/search-select";
-import { FileOutput, Plus, Search } from "lucide-react";
-import { useState } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@wellfit-emr/ui/components/select";
+import { Eye, FileOutput, Plus, Search, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { DataTable } from "@/components/data-table";
@@ -90,7 +97,7 @@ function CreateRipsExportForm({ onCancel }: { onCancel: () => void }) {
           onSubmit={handleSubmit}
         >
           <div className="space-y-1">
-            <Label>Pagador</Label>
+            <Label>Pagador *</Label>
             <SearchSelect
               emptyMessage="Escribe para buscar organizaciones"
               loading={organizationsLoading}
@@ -110,7 +117,7 @@ function CreateRipsExportForm({ onCancel }: { onCancel: () => void }) {
             />
           </div>
           <div className="space-y-1">
-            <Label>Periodo desde</Label>
+            <Label>Periodo desde *</Label>
             <Input
               onChange={(e) => setForm({ ...form, periodFrom: e.target.value })}
               required
@@ -119,7 +126,7 @@ function CreateRipsExportForm({ onCancel }: { onCancel: () => void }) {
             />
           </div>
           <div className="space-y-1">
-            <Label>Periodo hasta</Label>
+            <Label>Periodo hasta *</Label>
             <Input
               onChange={(e) => setForm({ ...form, periodTo: e.target.value })}
               required
@@ -147,10 +154,18 @@ function CreateRipsExportForm({ onCancel }: { onCancel: () => void }) {
 }
 
 function RipsExportsListPage() {
+  const navigate = useNavigate();
   const [status, setStatus] = useState("");
   const [offset, setOffset] = useState(0);
   const [limit] = useState(25);
   const [showForm, setShowForm] = useState(false);
+
+  useEffect(() => {
+    document.title = "RIPS | WellFit EMR";
+    return () => {
+      document.title = "WellFit EMR";
+    };
+  }, []);
 
   const { data, isLoading } = useQuery(
     orpc.ripsExports.list.queryOptions({
@@ -163,13 +178,26 @@ function RipsExportsListPage() {
     })
   );
 
+  const deleteMutation = useMutation({
+    ...orpc.ripsExports.delete.mutationOptions(),
+    onSuccess: () => {
+      toast.success("Exportación eliminada");
+      queryClient.invalidateQueries({
+        queryKey: orpc.ripsExports.list.key({ type: "query" }),
+      });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Error al eliminar exportación");
+    },
+  });
+
   const columns = [
     {
       header: "Pagador ID",
       accessor: (row: NonNullable<typeof data>["items"][0]) => (
         <span className="inline-flex items-center gap-1.5">
           <FileOutput size={14} />
-          {row.payerId}
+          {row.payerId.slice(0, 8)}…
         </span>
       ),
     },
@@ -199,6 +227,35 @@ function RipsExportsListPage() {
       accessor: (row: NonNullable<typeof data>["items"][0]) =>
         new Date(row.generatedAt).toLocaleString("es-CO"),
     },
+    {
+      header: "Acciones",
+      accessor: (row: NonNullable<typeof data>["items"][0]) => (
+        <div className="flex items-center gap-1">
+          <Link
+            aria-label="Ver exportación"
+            className="inline-flex text-muted-foreground hover:text-foreground"
+            params={{ exportId: row.id }}
+            to="/rips-exports/$exportId"
+          >
+            <Eye size={14} />
+          </Link>
+          <Button
+            aria-label="Eliminar exportación"
+            disabled={deleteMutation.isPending}
+            onClick={() => {
+              if (confirm("¿Eliminar esta exportación permanentemente?")) {
+                deleteMutation.mutate({ id: row.id });
+              }
+            }}
+            size="icon-xs"
+            variant="ghost"
+          >
+            <Trash2 size={12} />
+          </Button>
+        </div>
+      ),
+      className: "w-20",
+    },
   ];
 
   return (
@@ -211,6 +268,8 @@ function RipsExportsListPage() {
           </Button>
         }
         description="Generación y seguimiento de lotes RIPS"
+        icon={FileOutput}
+        iconBgClass="bg-sky-100 text-sky-600"
         title="Exportaciones RIPS"
       />
 
@@ -219,24 +278,42 @@ function RipsExportsListPage() {
       <div className="px-6">
         <div className="mb-3 flex items-center gap-2">
           <Search className="text-muted-foreground" size={14} />
-          <Input
-            className="h-7 max-w-xs text-xs"
-            onChange={(e) => {
-              setStatus(e.target.value);
+          <Select
+            onValueChange={(v) => {
+              setStatus(v === "all" ? "" : (v as string));
               setOffset(0);
             }}
-            placeholder="Filtrar por estado..."
-            value={status}
-          />
+            value={status || "all"}
+          >
+            <SelectTrigger className="h-7 max-w-xs text-xs">
+              <SelectValue placeholder="Filtrar por estado..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos los estados</SelectItem>
+              <SelectItem value="draft">Borrador</SelectItem>
+              <SelectItem value="sent">Enviado</SelectItem>
+              <SelectItem value="validated">Validado</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <DataTable
           columns={columns}
           data={data?.items ?? []}
-          emptyDescription="No se encontraron exportaciones RIPS."
-          emptyTitle="Sin exportaciones"
+          emptyDescription={
+            status
+              ? "Ninguna exportación coincide con los filtros aplicados."
+              : "No se encontraron exportaciones RIPS."
+          }
+          emptyTitle={status ? "Sin resultados" : "Sin exportaciones"}
           isLoading={isLoading}
           keyExtractor={(row) => row.id}
+          onRowClick={(row) => {
+            navigate({
+              to: "/rips-exports/$exportId",
+              params: { exportId: row.id },
+            });
+          }}
           pagination={
             data
               ? {

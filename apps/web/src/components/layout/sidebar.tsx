@@ -1,6 +1,7 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { cn } from "@wellfit-emr/ui/lib/utils";
 import {
+  Archive,
   Building2,
   Calendar,
   ChevronLeft,
@@ -12,6 +13,7 @@ import {
   FileText,
   FlaskConical,
   Gavel,
+  HeartPulse,
   Home,
   Mail,
   MessageSquare,
@@ -22,6 +24,7 @@ import {
   Share2,
   ShieldCheck,
   Stethoscope,
+  Unlock,
   Users,
 } from "lucide-react";
 import { useState } from "react";
@@ -71,6 +74,11 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     items: [
       { icon: Paperclip, label: "Anexos", to: "/attachments" },
       { icon: Eye, label: "Auditoría", to: "/audit-events" },
+      {
+        icon: Unlock,
+        label: "Autorizaciones de datos",
+        to: "/data-disclosures",
+      },
     ],
   },
   {
@@ -81,6 +89,11 @@ const navGroups: { label: string; items: NavItem[] }[] = [
         icon: Copy,
         label: "Solicitudes del paciente",
         to: "/patient-requests",
+      },
+      {
+        icon: Archive,
+        label: "Retención documental",
+        to: "/retention-records",
       },
       { icon: FileOutput, label: "RIPS", to: "/rips-exports" },
       { icon: Share2, label: "IHCE", to: "/ihce-bundles" },
@@ -94,6 +107,31 @@ const navGroups: { label: string; items: NavItem[] }[] = [
         icon: Building2,
         label: "Institución",
         to: "/facilities/organizations",
+      },
+      {
+        icon: Building2,
+        label: "Pagadores",
+        to: "/facilities/payers",
+      },
+      {
+        icon: Building2,
+        label: "Sedes",
+        to: "/facilities/sites",
+      },
+      {
+        icon: Building2,
+        label: "Unidades de servicio",
+        to: "/facilities/service-units",
+      },
+      {
+        icon: Users,
+        label: "Profesionales",
+        to: "/facilities/practitioners",
+      },
+      {
+        icon: Users,
+        label: "Roles",
+        to: "/facilities/practitioner-roles",
       },
     ],
   },
@@ -110,18 +148,36 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        "flex flex-col border-r bg-sidebar transition-all duration-200 ease-out",
-        collapsed ? "w-14" : "w-56"
+        "flex flex-col border-sidebar-border border-r bg-sidebar shadow-md transition-all duration-200 ease-out",
+        collapsed ? "w-16" : "w-60"
       )}
     >
-      <div className="flex h-12 items-center justify-between border-b px-3">
+      <div className="flex h-14 items-center justify-between border-sidebar-border border-b px-4">
         {!collapsed && (
-          <span className="font-semibold text-sidebar-foreground text-sm tracking-tight">
-            WellFit EMR
-          </span>
+          <div className="flex items-center gap-2.5">
+            <div className="flex size-8 items-center justify-center rounded-sm bg-sidebar-primary text-sidebar-primary-foreground shadow-md">
+              <HeartPulse size={18} strokeWidth={2.5} />
+            </div>
+            <div className="flex flex-col">
+              <span className="font-bold text-sidebar-foreground text-sm leading-none tracking-tight">
+                WellFit EMR
+              </span>
+              <span className="mt-0.5 text-[9px] text-sidebar-foreground/50 uppercase leading-none tracking-wider">
+                Sistema Hospitalario
+              </span>
+            </div>
+          </div>
+        )}
+        {collapsed && (
+          <div className="mx-auto flex size-9 items-center justify-center rounded-sm bg-sidebar-primary text-sidebar-primary-foreground shadow-md">
+            <HeartPulse size={18} strokeWidth={2.5} />
+          </div>
         )}
         <button
-          className="ml-auto inline-flex size-7 items-center justify-center text-sidebar-foreground/70 hover:text-sidebar-foreground"
+          className={cn(
+            "inline-flex size-7 items-center justify-center rounded-sm text-sidebar-foreground/60 transition-colors hover:bg-primary/10 hover:text-sidebar-primary",
+            collapsed && "mx-auto mt-2"
+          )}
           onClick={() => setCollapsed((c) => !c)}
           type="button"
         >
@@ -129,15 +185,17 @@ export function Sidebar() {
         </button>
       </div>
 
-      <nav className="flex-1 space-y-5 overflow-auto py-4">
+      <nav className="flex-1 space-y-6 overflow-auto py-5">
         {navGroups.map((group) => (
           <div key={group.label}>
             {!collapsed && (
-              <div className="mb-1 px-3 font-medium text-[10px] text-sidebar-foreground/50 uppercase tracking-wider">
-                {group.label}
+              <div className="mb-2 px-4">
+                <span className="inline-block rounded-sm border border-sidebar-border bg-sidebar-accent/60 px-2 py-0.5 font-bold text-[10px] text-sidebar-foreground/60 uppercase tracking-widest">
+                  {group.label}
+                </span>
               </div>
             )}
-            <ul className="space-y-0.5">
+            <ul className="space-y-0.5 px-2">
               {group.items.map((item) => {
                 const isActive =
                   pathname === item.to || pathname.startsWith(`${item.to}/`);
@@ -145,16 +203,31 @@ export function Sidebar() {
                   <li key={item.to}>
                     <Link
                       className={cn(
-                        "flex items-center gap-2.5 px-3 py-1.5 text-xs transition-colors",
+                        "group relative flex items-center gap-3 rounded-sm px-3 py-2 text-sm transition-all duration-150",
                         collapsed && "justify-center px-2",
                         isActive
-                          ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                          : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                          ? "bg-sidebar-primary/20 font-medium text-sidebar-primary shadow-md"
+                          : "text-sidebar-foreground/70 hover:bg-primary/10 hover:text-sidebar-primary hover:shadow-sm"
                       )}
                       to={item.to}
                     >
-                      <item.icon size={16} />
+                      {isActive && (
+                        <span className="absolute top-1/2 left-0 h-5 w-1.5 -translate-y-1/2 rounded-full bg-sidebar-primary" />
+                      )}
+                      <div
+                        className={cn(
+                          "flex items-center justify-center transition-colors",
+                          isActive
+                            ? "text-sidebar-primary"
+                            : "text-sidebar-foreground/50 group-hover:text-sidebar-foreground/80"
+                        )}
+                      >
+                        <item.icon size={18} />
+                      </div>
                       {!collapsed && <span>{item.label}</span>}
+                      {isActive && !collapsed && (
+                        <div className="ml-auto size-2.5 rounded-full bg-sidebar-primary" />
+                      )}
                     </Link>
                   </li>
                 );
@@ -164,11 +237,19 @@ export function Sidebar() {
         ))}
       </nav>
 
-      <div className="border-t p-3">
+      <div className="border-sidebar-border border-t p-4">
         {!collapsed && (
-          <div className="text-[10px] text-sidebar-foreground/50">
-            WellFit EMR v0.1
+          <div className="space-y-1">
+            <div className="font-medium text-[10px] text-sidebar-foreground/70">
+              WellFit EMR
+            </div>
+            <div className="text-[9px] text-sidebar-foreground/40">
+              v1.0 · Resolución 1888 de 2025
+            </div>
           </div>
+        )}
+        {collapsed && (
+          <div className="mx-auto size-2.5 rounded-full bg-sidebar-foreground/30" />
         )}
       </div>
     </aside>

@@ -1,6 +1,11 @@
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Link,
+  useNavigate,
+  useSearch,
+} from "@tanstack/react-router";
 import { Button } from "@wellfit-emr/ui/components/button";
 import {
   Card,
@@ -11,8 +16,23 @@ import {
 import { Input } from "@wellfit-emr/ui/components/input";
 import { Label } from "@wellfit-emr/ui/components/label";
 import { SearchSelect } from "@wellfit-emr/ui/components/search-select";
-import { Mail, Plus, Search } from "lucide-react";
-import { useState } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@wellfit-emr/ui/components/select";
+import {
+  Eye,
+  FilterX,
+  Mail,
+  MessageSquare,
+  Plus,
+  Search,
+  Trash2,
+} from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -21,8 +41,13 @@ import { PageHeader } from "@/components/page-header";
 import { authClient } from "@/lib/auth-client";
 import { orpc, queryClient } from "@/utils/orpc";
 
+const searchSchema = z.object({
+  encounterId: z.string().optional(),
+});
+
 export const Route = createFileRoute("/_authenticated/interconsultations/")({
   component: InterconsultationsListPage,
+  validateSearch: searchSchema,
   beforeLoad: async () => {
     const session = await authClient.getSession();
     if (!session.data) {
@@ -44,7 +69,13 @@ const interconsultationSchema = z.object({
   requestedAt: z.string().min(1, "Requerido"),
 });
 
-function CreateInterconsultationForm({ onCancel }: { onCancel: () => void }) {
+function CreateInterconsultationForm({
+  onCancel,
+  defaultEncounterId,
+}: {
+  onCancel: () => void;
+  defaultEncounterId?: string;
+}) {
   const [encounterSearch, setEncounterSearch] = useState("");
   const [practitionerSearch, setPractitionerSearch] = useState("");
 
@@ -57,6 +88,13 @@ function CreateInterconsultationForm({ onCancel }: { onCancel: () => void }) {
       },
     })
   );
+
+  const { data: defaultEncounterData } = useQuery({
+    ...orpc.encounters.get.queryOptions({
+      input: { id: defaultEncounterId ?? "" },
+    }),
+    enabled: !!defaultEncounterId,
+  });
 
   const { data: practitionersData, isLoading: practitionersLoading } = useQuery(
     orpc.facilities.listPractitioners.queryOptions({
@@ -84,7 +122,7 @@ function CreateInterconsultationForm({ onCancel }: { onCancel: () => void }) {
 
   const form = useForm({
     defaultValues: {
-      encounterId: "",
+      encounterId: defaultEncounterId ?? "",
       requestedSpecialty: "",
       requestedBy: "",
       reasonText: "",
@@ -122,21 +160,36 @@ function CreateInterconsultationForm({ onCancel }: { onCancel: () => void }) {
           <form.Field name="encounterId">
             {(field) => (
               <div className="space-y-1">
-                <Label htmlFor={field.name}>Atención</Label>
+                <Label htmlFor={field.name}>Atención *</Label>
                 <SearchSelect
                   emptyMessage="Escribe para buscar atenciones"
                   loading={encountersLoading}
                   onChange={(v) => field.handleChange(v)}
                   onSearchChange={setEncounterSearch}
-                  options={
-                    encountersData?.encounters.map((e) => ({
-                      value: e.id,
-                      label: e.reasonForVisit || "Sin motivo",
-                      description: new Date(e.startedAt).toLocaleDateString(
-                        "es-CO"
-                      ),
-                    })) ?? []
-                  }
+                  options={[
+                    ...(defaultEncounterData && defaultEncounterId
+                      ? [
+                          {
+                            value: defaultEncounterData.id,
+                            label:
+                              defaultEncounterData.reasonForVisit ||
+                              "Sin motivo",
+                            description: new Date(
+                              defaultEncounterData.startedAt
+                            ).toLocaleDateString("es-CO"),
+                          },
+                        ]
+                      : []),
+                    ...(encountersData?.encounters ?? [])
+                      .filter((e) => e.id !== defaultEncounterId)
+                      .map((e) => ({
+                        value: e.id,
+                        label: e.reasonForVisit || "Sin motivo",
+                        description: new Date(e.startedAt).toLocaleDateString(
+                          "es-CO"
+                        ),
+                      })),
+                  ]}
                   placeholder="Buscar atención..."
                   required
                   search={encounterSearch}
@@ -154,7 +207,7 @@ function CreateInterconsultationForm({ onCancel }: { onCancel: () => void }) {
           <form.Field name="requestedSpecialty">
             {(field) => (
               <div className="space-y-1">
-                <Label htmlFor={field.name}>Especialidad solicitada</Label>
+                <Label htmlFor={field.name}>Especialidad solicitada *</Label>
                 <Input
                   id={field.name}
                   name={field.name}
@@ -176,7 +229,7 @@ function CreateInterconsultationForm({ onCancel }: { onCancel: () => void }) {
           <form.Field name="requestedBy">
             {(field) => (
               <div className="space-y-1">
-                <Label htmlFor={field.name}>Solicitado por</Label>
+                <Label htmlFor={field.name}>Solicitado por *</Label>
                 <SearchSelect
                   emptyMessage="Escribe para buscar profesionales"
                   loading={practitionersLoading}
@@ -206,7 +259,7 @@ function CreateInterconsultationForm({ onCancel }: { onCancel: () => void }) {
           <form.Field name="reasonText">
             {(field) => (
               <div className="space-y-1 md:col-span-2">
-                <Label htmlFor={field.name}>Motivo</Label>
+                <Label htmlFor={field.name}>Motivo *</Label>
                 <Input
                   id={field.name}
                   name={field.name}
@@ -227,7 +280,7 @@ function CreateInterconsultationForm({ onCancel }: { onCancel: () => void }) {
           <form.Field name="requestedAt">
             {(field) => (
               <div className="space-y-1">
-                <Label htmlFor={field.name}>Fecha solicitud</Label>
+                <Label htmlFor={field.name}>Fecha solicitud *</Label>
                 <Input
                   id={field.name}
                   name={field.name}
@@ -279,18 +332,38 @@ function CreateInterconsultationForm({ onCancel }: { onCancel: () => void }) {
 }
 
 function InterconsultationsListPage() {
+  const navigate = useNavigate();
+  const { encounterId: defaultEncounterId } = useSearch({
+    from: "/_authenticated/interconsultations/",
+  });
   const [encounterId, setEncounterId] = useState("");
   const [encounterSearch, setEncounterSearch] = useState("");
+  const [queryEncounterSearch, setQueryEncounterSearch] = useState("");
   const [offset, setOffset] = useState(0);
   const [limit] = useState(25);
-  const [showForm, setShowForm] = useState(false);
+  const [showForm, setShowForm] = useState(!!defaultEncounterId);
+  const [filterStatus, setFilterStatus] = useState("");
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setQueryEncounterSearch(encounterSearch);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [encounterSearch]);
+
+  useEffect(() => {
+    document.title = "Interconsultas | WellFit EMR";
+    return () => {
+      document.title = "WellFit EMR";
+    };
+  }, []);
 
   const { data: encountersData, isLoading: encountersLoading } = useQuery(
     orpc.encounters.list.queryOptions({
       input: {
         limit: 20,
         offset: 0,
-        search: encounterSearch || undefined,
+        search: queryEncounterSearch || undefined,
       },
     })
   );
@@ -301,10 +374,24 @@ function InterconsultationsListPage() {
         limit,
         offset,
         encounterId: encounterId || undefined,
+        status: filterStatus || undefined,
         sortDirection: "desc",
       },
     })
   );
+
+  const deleteMutation = useMutation({
+    ...orpc.interconsultations.delete.mutationOptions(),
+    onSuccess: () => {
+      toast.success("Interconsulta eliminada");
+      queryClient.invalidateQueries({
+        queryKey: orpc.interconsultations.list.key({ type: "query" }),
+      });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Error al eliminar interconsulta");
+    },
+  });
 
   const respondMutation = useMutation({
     ...orpc.interconsultations.respond.mutationOptions(),
@@ -356,22 +443,46 @@ function InterconsultationsListPage() {
     },
     {
       header: "Acciones",
-      accessor: (row: NonNullable<typeof data>["items"][0]) =>
-        row.status === "requested" ? (
-          <Button
-            onClick={() =>
-              respondMutation.mutate({
-                id: row.id,
-                status: "completed",
-              })
-            }
-            size="sm"
-            variant="outline"
+      accessor: (row: NonNullable<typeof data>["items"][0]) => (
+        <div className="flex items-center gap-1">
+          <Link
+            aria-label="Ver interconsulta"
+            className="inline-flex text-muted-foreground hover:text-foreground"
+            params={{ interconsultationId: row.id }}
+            to="/interconsultations/$interconsultationId"
           >
-            Completar
+            <Eye size={14} />
+          </Link>
+          {row.status === "requested" && (
+            <Button
+              onClick={() =>
+                respondMutation.mutate({
+                  id: row.id,
+                  status: "completed",
+                })
+              }
+              size="xs"
+              variant="outline"
+            >
+              Completar
+            </Button>
+          )}
+          <Button
+            aria-label="Eliminar interconsulta"
+            disabled={deleteMutation.isPending}
+            onClick={() => {
+              if (confirm("¿Eliminar esta interconsulta permanentemente?")) {
+                deleteMutation.mutate({ id: row.id });
+              }
+            }}
+            size="icon-xs"
+            variant="ghost"
+          >
+            <Trash2 size={12} />
           </Button>
-        ) : null,
-      className: "w-24",
+        </div>
+      ),
+      className: "w-32",
     },
   ];
 
@@ -385,46 +496,104 @@ function InterconsultationsListPage() {
           </Button>
         }
         description="Solicitudes de interconsulta y remisión entre especialidades"
+        icon={MessageSquare}
+        iconBgClass="bg-teal-50 text-teal-600"
         title="Interconsultas"
       />
 
       {showForm && (
-        <CreateInterconsultationForm onCancel={() => setShowForm(false)} />
+        <CreateInterconsultationForm
+          defaultEncounterId={defaultEncounterId}
+          onCancel={() => setShowForm(false)}
+        />
       )}
 
       <div className="px-6">
-        <div className="mb-3 flex items-center gap-2">
-          <Search className="text-muted-foreground" size={14} />
-          <SearchSelect
-            className="max-w-xs"
-            clearable
-            emptyMessage="Escribe para buscar atenciones"
-            loading={encountersLoading}
-            onChange={(v) => {
-              setEncounterId(v);
-              setOffset(0);
-            }}
-            onSearchChange={setEncounterSearch}
-            options={
-              encountersData?.encounters.map((e) => ({
-                value: e.id,
-                label: e.reasonForVisit || "Sin motivo",
-                description: new Date(e.startedAt).toLocaleDateString("es-CO"),
-              })) ?? []
-            }
-            placeholder="Filtrar por atención..."
-            search={encounterSearch}
-            value={encounterId}
-          />
+        <div className="mb-3 flex flex-wrap items-end gap-2">
+          <div className="flex items-center gap-2">
+            <Search className="text-muted-foreground" size={14} />
+            <SearchSelect
+              className="max-w-xs"
+              clearable
+              emptyMessage="Escribe para buscar atenciones"
+              loading={encountersLoading}
+              onChange={(v) => {
+                setEncounterId(v);
+                setOffset(0);
+              }}
+              onSearchChange={setEncounterSearch}
+              options={
+                encountersData?.encounters.map((e) => ({
+                  value: e.id,
+                  label: e.reasonForVisit || "Sin motivo",
+                  description: new Date(e.startedAt).toLocaleDateString(
+                    "es-CO"
+                  ),
+                })) ?? []
+              }
+              placeholder="Filtrar por atención..."
+              search={encounterSearch}
+              value={encounterId}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-[10px]">Estado</Label>
+            <Select
+              onValueChange={(v) => {
+                setFilterStatus(v as string);
+                setOffset(0);
+              }}
+              value={filterStatus}
+            >
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Todos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Todos</SelectItem>
+                <SelectItem value="requested">Solicitada</SelectItem>
+                <SelectItem value="completed">Completada</SelectItem>
+                <SelectItem value="cancelled">Cancelada</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {(encounterId || filterStatus) && (
+            <Button
+              onClick={() => {
+                setEncounterId("");
+                setEncounterSearch("");
+                setFilterStatus("");
+                setOffset(0);
+              }}
+              size="sm"
+              variant="ghost"
+            >
+              <FilterX size={14} />
+              Limpiar filtros
+            </Button>
+          )}
         </div>
 
         <DataTable
           columns={columns}
           data={data?.items ?? []}
-          emptyDescription="No se encontraron interconsultas."
-          emptyTitle="Sin interconsultas"
+          emptyDescription={
+            encounterId || filterStatus
+              ? "Ninguna interconsulta coincide con los filtros aplicados."
+              : "No se encontraron interconsultas."
+          }
+          emptyTitle={
+            encounterId || filterStatus
+              ? "Sin resultados"
+              : "Sin interconsultas"
+          }
           isLoading={isLoading}
           keyExtractor={(row) => row.id}
+          onRowClick={(row) => {
+            navigate({
+              to: "/interconsultations/$interconsultationId",
+              params: { interconsultationId: row.id },
+            });
+          }}
           pagination={
             data
               ? {

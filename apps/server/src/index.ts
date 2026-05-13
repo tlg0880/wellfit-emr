@@ -86,4 +86,5 @@ app.get("/", (c) => c.text("OK"));
 export default {
   fetch: app.fetch,
   idleTimeout: 120,
+  port: 3004,
 };

@@ -1,6 +1,10 @@
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  useNavigate,
+  useSearch,
+} from "@tanstack/react-router";
 import { Button } from "@wellfit-emr/ui/components/button";
 import {
   Card,
@@ -11,18 +15,40 @@ import {
 import { Input } from "@wellfit-emr/ui/components/input";
 import { Label } from "@wellfit-emr/ui/components/label";
 import { SearchSelect } from "@wellfit-emr/ui/components/search-select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@wellfit-emr/ui/components/select";
 import { Skeleton } from "@wellfit-emr/ui/components/skeleton";
-import { ChevronRight, Plus, Search, User, X } from "lucide-react";
-import { useState } from "react";
+import {
+  ClipboardList,
+  Eye,
+  FilterX,
+  Pencil,
+  Plus,
+  Search,
+  Trash2,
+  User,
+  X,
+} from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 
 import { DataTable } from "@/components/data-table";
 import { PageHeader } from "@/components/page-header";
-import { orpc } from "@/utils/orpc";
+import { orpc, queryClient } from "@/utils/orpc";
+
+const searchSchema = z.object({
+  patientId: z.string().optional(),
+});
 
 export const Route = createFileRoute("/_authenticated/encounters/")({
   component: EncountersPage,
+  validateSearch: searchSchema,
 });
 
 const STATUS_OPTIONS = [
@@ -66,7 +92,38 @@ function PatientName({ patientId }: { patientId: string }) {
   );
 }
 
-function CreateEncounterForm({ onCancel }: { onCancel: () => void }) {
+interface EncounterRow {
+  admissionSource: string | null;
+  careModality: string;
+  causeExternalCode: string | null;
+  condicionDestinoCode: string | null;
+  createdAt: Date | string;
+  encounterClass: string;
+  endedAt: Date | string | null;
+  finalidadConsultaCode: string | null;
+  id: string;
+  modalidadAtencionCode: string | null;
+  patientId: string;
+  reasonForVisit: string;
+  serviceUnitId: string;
+  siteId: string;
+  startedAt: Date | string;
+  status: string;
+  updatedAt: Date | string;
+  vidaCode: string | null;
+}
+
+function EncounterForm({
+  onCancel,
+  defaultPatientId,
+  editingId,
+  initialValues,
+}: {
+  onCancel: () => void;
+  defaultPatientId?: string;
+  editingId?: string;
+  initialValues?: EncounterRow;
+}) {
   const queryClient = useQueryClient();
 
   const [patientSearch, setPatientSearch] = useState("");
@@ -85,6 +142,54 @@ function CreateEncounterForm({ onCancel }: { onCancel: () => void }) {
       },
     })
   );
+
+  const { data: defaultPatientData } = useQuery({
+    ...orpc.patients.get.queryOptions({
+      input: { id: defaultPatientId ?? "" },
+    }),
+    enabled: !!defaultPatientId,
+  });
+
+  const { data: editingPatientData } = useQuery({
+    ...orpc.patients.get.queryOptions({
+      input: { id: initialValues?.patientId ?? "" },
+    }),
+    enabled:
+      !!initialValues?.patientId &&
+      initialValues.patientId !== defaultPatientId,
+  });
+
+  const defaultPatientOption =
+    defaultPatientData && defaultPatientId
+      ? {
+          value: defaultPatientData.id,
+          label: `${defaultPatientData.firstName} ${defaultPatientData.lastName1}`,
+          description: `${defaultPatientData.primaryDocumentType} ${defaultPatientData.primaryDocumentNumber}`,
+        }
+      : null;
+
+  const editingPatientOption =
+    editingPatientData && initialValues?.patientId
+      ? {
+          value: editingPatientData.id,
+          label: `${editingPatientData.firstName} ${editingPatientData.lastName1}`,
+          description: `${editingPatientData.primaryDocumentType} ${editingPatientData.primaryDocumentNumber}`,
+        }
+      : null;
+
+  const patientOptions = [
+    ...(editingPatientOption ? [editingPatientOption] : []),
+    ...(defaultPatientOption ? [defaultPatientOption] : []),
+    ...(patientsData?.patients ?? [])
+      .filter(
+        (p) => p.id !== defaultPatientId && p.id !== initialValues?.patientId
+      )
+      .map((p) => ({
+        value: p.id,
+        label: `${p.firstName} ${p.lastName1}`,
+        description: `${p.primaryDocumentType} ${p.primaryDocumentNumber}`,
+      })),
+  ];
 
   const { data: sitesData } = useQuery(
     orpc.facilities.listSites.queryOptions({
@@ -159,37 +264,70 @@ function CreateEncounterForm({ onCancel }: { onCancel: () => void }) {
     },
   });
 
+  const updateMutation = useMutation({
+    ...orpc.encounters.update.mutationOptions(),
+    onSuccess: () => {
+      toast.success("Atención actualizada");
+      onCancel();
+      queryClient.invalidateQueries({
+        queryKey: orpc.encounters.list.key({ type: "query" }),
+      });
+    },
+    onError: (error: Error) => {
+      toast.error(`Error al actualizar atención: ${error.message}`);
+    },
+  });
+
   const form = useForm({
     defaultValues: {
-      patientId: "",
-      siteId: "",
-      serviceUnitId: "",
-      encounterClass: "",
-      careModality: "",
-      reasonForVisit: "",
-      startedAt: new Date().toISOString().slice(0, 16),
-      admissionSource: "",
-      causeExternalCode: "",
-      finalidadConsultaCode: "",
-      modalidadAtencionCode: "",
+      patientId: initialValues?.patientId ?? defaultPatientId ?? "",
+      siteId: initialValues?.siteId ?? "",
+      serviceUnitId: initialValues?.serviceUnitId ?? "",
+      encounterClass: initialValues?.encounterClass ?? "",
+      careModality: initialValues?.careModality ?? "",
+      reasonForVisit: initialValues?.reasonForVisit ?? "",
+      startedAt: initialValues?.startedAt
+        ? new Date(initialValues.startedAt).toISOString().slice(0, 16)
+        : new Date().toISOString().slice(0, 16),
+      admissionSource: initialValues?.admissionSource ?? "",
+      causeExternalCode: initialValues?.causeExternalCode ?? "",
+      finalidadConsultaCode: initialValues?.finalidadConsultaCode ?? "",
+      modalidadAtencionCode: initialValues?.modalidadAtencionCode ?? "",
     },
     onSubmit: async ({ value }) => {
-      await createMutation.mutateAsync({
-        patientId: value.patientId,
-        siteId: value.siteId,
-        serviceUnitId: value.serviceUnitId,
-        encounterClass: value.encounterClass,
-        careModality: value.careModality,
-        reasonForVisit: value.reasonForVisit,
-        startedAt: new Date(value.startedAt),
-        status: "in-progress",
-        admissionSource: value.admissionSource || null,
-        causeExternalCode: value.causeExternalCode || null,
-        finalidadConsultaCode: value.finalidadConsultaCode || null,
-        modalidadAtencionCode: value.modalidadAtencionCode || null,
-        vidaCode: null,
-        condicionDestinoCode: null,
-      });
+      if (editingId) {
+        await updateMutation.mutateAsync({
+          id: editingId,
+          patientId: value.patientId,
+          siteId: value.siteId,
+          serviceUnitId: value.serviceUnitId,
+          encounterClass: value.encounterClass,
+          careModality: value.careModality,
+          reasonForVisit: value.reasonForVisit,
+          startedAt: new Date(value.startedAt),
+          admissionSource: value.admissionSource || null,
+          causeExternalCode: value.causeExternalCode || null,
+          finalidadConsultaCode: value.finalidadConsultaCode || null,
+          modalidadAtencionCode: value.modalidadAtencionCode || null,
+        });
+      } else {
+        await createMutation.mutateAsync({
+          patientId: value.patientId,
+          siteId: value.siteId,
+          serviceUnitId: value.serviceUnitId,
+          encounterClass: value.encounterClass,
+          careModality: value.careModality,
+          reasonForVisit: value.reasonForVisit,
+          startedAt: new Date(value.startedAt),
+          status: "in-progress",
+          admissionSource: value.admissionSource || null,
+          causeExternalCode: value.causeExternalCode || null,
+          finalidadConsultaCode: value.finalidadConsultaCode || null,
+          modalidadAtencionCode: value.modalidadAtencionCode || null,
+          vidaCode: null,
+          condicionDestinoCode: null,
+        });
+      }
     },
     validators: {
       onSubmit: encounterSchema,
@@ -214,7 +352,9 @@ function CreateEncounterForm({ onCancel }: { onCancel: () => void }) {
   return (
     <Card className="mx-6">
       <CardHeader>
-        <CardTitle>Nueva atención</CardTitle>
+        <CardTitle>
+          {editingId ? "Editar atención" : "Nueva atención"}
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <form
@@ -228,7 +368,7 @@ function CreateEncounterForm({ onCancel }: { onCancel: () => void }) {
             <form.Field name="patientId">
               {(field) => (
                 <div className={fieldGrid}>
-                  <Label htmlFor={field.name}>Paciente</Label>
+                  <Label htmlFor={field.name}>Paciente *</Label>
                   <SearchSelect
                     emptyMessage="Escribe para buscar pacientes"
                     id={field.name}
@@ -236,13 +376,7 @@ function CreateEncounterForm({ onCancel }: { onCancel: () => void }) {
                     onBlur={field.handleBlur}
                     onChange={(v) => field.handleChange(v)}
                     onSearchChange={setPatientSearch}
-                    options={
-                      patientsData?.patients.map((p) => ({
-                        value: p.id,
-                        label: `${p.firstName} ${p.lastName1}`,
-                        description: `${p.primaryDocumentType} ${p.primaryDocumentNumber}`,
-                      })) ?? []
-                    }
+                    options={patientOptions}
                     placeholder="Buscar paciente..."
                     search={patientSearch}
                     value={field.state.value}
@@ -259,25 +393,27 @@ function CreateEncounterForm({ onCancel }: { onCancel: () => void }) {
             <form.Field name="siteId">
               {(field) => (
                 <div className={fieldGrid}>
-                  <Label htmlFor={field.name}>Sede</Label>
-                  <select
-                    className="h-8 w-full rounded-none border border-input bg-transparent px-2.5 text-xs outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50"
-                    id={field.name}
-                    name={field.name}
-                    onBlur={field.handleBlur}
-                    onChange={(e) => {
-                      field.handleChange(e.target.value);
+                  <Label htmlFor={field.name}>Sede *</Label>
+                  <Select
+                    onValueChange={(v) => {
+                      field.handleChange(v as string);
                       form.setFieldValue("serviceUnitId", "");
                     }}
                     value={field.state.value}
                   >
-                    <option value="">Seleccione sede</option>
-                    {sitesData?.sites.map((s: (typeof sitesData.sites)[0]) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger id={field.name}>
+                      <SelectValue placeholder="Seleccione sede" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {sitesData?.sites.map(
+                        (s: (typeof sitesData.sites)[0]) => (
+                          <SelectItem key={s.id} value={s.id}>
+                            {s.name}
+                          </SelectItem>
+                        )
+                      )}
+                    </SelectContent>
+                  </Select>
                   {field.state.meta.errors.map((error) => (
                     <p className="text-destructive text-xs" key={String(error)}>
                       {String(error)}
@@ -290,31 +426,33 @@ function CreateEncounterForm({ onCancel }: { onCancel: () => void }) {
             <form.Field name="serviceUnitId">
               {(field) => (
                 <div className={fieldGrid}>
-                  <Label htmlFor={field.name}>Unidad de servicio</Label>
-                  <select
-                    className="h-8 w-full rounded-none border border-input bg-transparent px-2.5 text-xs outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50 disabled:opacity-50"
+                  <Label htmlFor={field.name}>Unidad de servicio *</Label>
+                  <Select
                     disabled={!(selectedSiteId && serviceUnitsData)}
-                    id={field.name}
-                    name={field.name}
-                    onBlur={field.handleBlur}
-                    onChange={(e) => field.handleChange(e.target.value)}
+                    onValueChange={(v) => field.handleChange(v as string)}
                     value={field.state.value}
                   >
-                    <option value="">
-                      {selectedSiteId
-                        ? serviceUnitsData?.serviceUnits.length === 0
-                          ? "Sin unidades"
-                          : "Seleccione unidad"
-                        : "Seleccione sede primero"}
-                    </option>
-                    {serviceUnitsData?.serviceUnits.map(
-                      (u: (typeof serviceUnitsData.serviceUnits)[0]) => (
-                        <option key={u.id} value={u.id}>
-                          {u.name}
-                        </option>
-                      )
-                    )}
-                  </select>
+                    <SelectTrigger id={field.name}>
+                      <SelectValue
+                        placeholder={
+                          selectedSiteId
+                            ? serviceUnitsData?.serviceUnits.length === 0
+                              ? "Sin unidades"
+                              : "Seleccione unidad"
+                            : "Seleccione sede primero"
+                        }
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {serviceUnitsData?.serviceUnits.map(
+                        (u: (typeof serviceUnitsData.serviceUnits)[0]) => (
+                          <SelectItem key={u.id} value={u.id}>
+                            {u.name}
+                          </SelectItem>
+                        )
+                      )}
+                    </SelectContent>
+                  </Select>
                   {field.state.meta.errors.map((error) => (
                     <p className="text-destructive text-xs" key={String(error)}>
                       {String(error)}
@@ -328,7 +466,7 @@ function CreateEncounterForm({ onCancel }: { onCancel: () => void }) {
               {(field) => (
                 <div className={fieldGrid}>
                   <Label htmlFor={field.name}>
-                    Clase de atención (grupo servicios)
+                    Clase de atención (grupo servicios) *
                   </Label>
                   <SearchSelect
                     emptyMessage="Escribe para buscar grupo"
@@ -361,7 +499,7 @@ function CreateEncounterForm({ onCancel }: { onCancel: () => void }) {
             <form.Field name="careModality">
               {(field) => (
                 <div className={fieldGrid}>
-                  <Label htmlFor={field.name}>Modalidad de atención</Label>
+                  <Label htmlFor={field.name}>Modalidad de atención *</Label>
                   <SearchSelect
                     emptyMessage="Escribe para buscar modalidad"
                     id={field.name}
@@ -401,7 +539,7 @@ function CreateEncounterForm({ onCancel }: { onCancel: () => void }) {
             <form.Field name="reasonForVisit">
               {(field) => (
                 <div className={`${fieldGrid} md:col-span-2`}>
-                  <Label htmlFor={field.name}>Motivo de consulta</Label>
+                  <Label htmlFor={field.name}>Motivo de consulta *</Label>
                   <Input
                     className="text-xs"
                     id={field.name}
@@ -423,7 +561,7 @@ function CreateEncounterForm({ onCancel }: { onCancel: () => void }) {
             <form.Field name="startedAt">
               {(field) => (
                 <div className={fieldGrid}>
-                  <Label htmlFor={field.name}>Fecha y hora de inicio</Label>
+                  <Label htmlFor={field.name}>Fecha y hora de inicio *</Label>
                   <Input
                     className="text-xs"
                     id={field.name}
@@ -578,11 +716,22 @@ function CreateEncounterForm({ onCancel }: { onCancel: () => void }) {
             >
               {({ canSubmit, isSubmitting }) => (
                 <Button
-                  disabled={!canSubmit || isSubmitting}
+                  disabled={
+                    !canSubmit ||
+                    isSubmitting ||
+                    createMutation.isPending ||
+                    updateMutation.isPending
+                  }
                   size="sm"
                   type="submit"
                 >
-                  {isSubmitting ? "Guardando..." : "Guardar atención"}
+                  {isSubmitting ||
+                  createMutation.isPending ||
+                  updateMutation.isPending
+                    ? "Guardando..."
+                    : editingId
+                      ? "Actualizar atención"
+                      : "Guardar atención"}
                 </Button>
               )}
             </form.Subscribe>
@@ -594,22 +743,64 @@ function CreateEncounterForm({ onCancel }: { onCancel: () => void }) {
 }
 
 function EncountersPage() {
+  const navigate = useNavigate();
+  const { patientId } = useSearch({ from: "/_authenticated/encounters/" });
   const [offset, setOffset] = useState(0);
   const [limit] = useState(25);
   const [search, setSearch] = useState("");
+  const [querySearch, setQuerySearch] = useState("");
   const [status, setStatus] = useState("");
-  const [showForm, setShowForm] = useState(false);
+  const [siteId, setSiteId] = useState("");
+  const [showForm, setShowForm] = useState(!!patientId);
+  const [editingEncounter, setEditingEncounter] = useState<EncounterRow | null>(
+    null
+  );
+
+  useEffect(() => {
+    document.title = "Atenciones | WellFit EMR";
+    return () => {
+      document.title = "WellFit EMR";
+    };
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setQuerySearch(search);
+      setOffset(0);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  const { data: sitesData } = useQuery(
+    orpc.facilities.listSites.queryOptions({
+      input: { limit: 100, offset: 0 },
+    })
+  );
 
   const { data, isLoading } = useQuery(
     orpc.encounters.list.queryOptions({
       input: {
         limit,
         offset,
-        search: search || undefined,
+        search: querySearch || undefined,
         status: status || undefined,
+        siteId: siteId || undefined,
       },
     })
   );
+
+  const deleteMutation = useMutation({
+    ...orpc.encounters.delete.mutationOptions(),
+    onSuccess: () => {
+      toast.success("Atención eliminada");
+      queryClient.invalidateQueries({
+        queryKey: orpc.encounters.list.key({ type: "query" }),
+      });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Error al eliminar atención");
+    },
+  });
 
   const columns = [
     {
@@ -645,14 +836,23 @@ function EncountersPage() {
       header: "Estado",
       accessor: (row: NonNullable<typeof data>["encounters"][0]) => (
         <span
-          className={`inline-flex border px-1.5 py-0.5 text-[10px] ${
+          className={`inline-flex items-center rounded-full border px-2.5 py-1 font-medium text-[11px] shadow-sm ${
             row.status === "in-progress"
-              ? "border-amber-200 bg-amber-50 text-amber-700"
+              ? "border-amber-300 bg-amber-100 text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300"
               : row.status === "finished"
-                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                : "border-gray-200 bg-gray-50 text-gray-700"
+                ? "border-teal-300 bg-teal-100 text-teal-700 dark:border-teal-800 dark:bg-teal-950 dark:text-teal-300"
+                : "border-slate-300 bg-slate-100 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
           }`}
         >
+          <span
+            className={`mr-1.5 size-2 rounded-full ${
+              row.status === "in-progress"
+                ? "bg-amber-500"
+                : row.status === "finished"
+                  ? "bg-teal-500"
+                  : "bg-slate-400"
+            }`}
+          />
           {row.status === "in-progress"
             ? "En progreso"
             : row.status === "finished"
@@ -662,71 +862,204 @@ function EncountersPage() {
       ),
     },
     {
-      header: "Acciones",
+      header: "",
       accessor: (row: NonNullable<typeof data>["encounters"][0]) => (
-        <Link
-          className="inline-flex items-center gap-1 text-[10px] text-primary hover:underline"
-          params={{ encounterId: row.id }}
-          search={{ tab: undefined }}
-          to="/encounters/$encounterId"
-        >
-          Ver <ChevronRight size={12} />
-        </Link>
+        <div className="flex items-center gap-1">
+          <Button
+            aria-label="Ver atención"
+            className="hover:bg-teal-50 hover:text-teal-700"
+            onClick={() => {
+              navigate({
+                params: { encounterId: row.id },
+                search: { tab: undefined },
+                to: "/encounters/$encounterId",
+              });
+            }}
+            size="icon-xs"
+            variant="ghost"
+          >
+            <Eye size={14} />
+          </Button>
+          <Button
+            aria-label="Editar atención"
+            className="hover:bg-amber-50 hover:text-amber-700"
+            onClick={() => {
+              setEditingEncounter(row);
+              setShowForm(true);
+            }}
+            size="icon-xs"
+            variant="ghost"
+          >
+            <Pencil size={12} />
+          </Button>
+          <Button
+            aria-label="Eliminar atención"
+            className="hover:bg-red-50 hover:text-red-700"
+            disabled={deleteMutation.isPending}
+            onClick={() => {
+              if (confirm("¿Eliminar esta atención permanentemente?")) {
+                deleteMutation.mutate({ id: row.id });
+              }
+            }}
+            size="icon-xs"
+            variant="ghost"
+          >
+            <Trash2 size={12} />
+          </Button>
+        </div>
       ),
+      className: "w-24",
     },
   ];
+
+  function handleCancelForm() {
+    setShowForm(false);
+    setEditingEncounter(null);
+  }
 
   return (
     <div className="space-y-4">
       <PageHeader
         actions={
-          <Button onClick={() => setShowForm(!showForm)} size="sm">
-            {showForm ? <X size={14} /> : <Plus size={14} />}
+          <Button
+            className="gap-1.5 shadow-md"
+            onClick={() => {
+              if (showForm) {
+                handleCancelForm();
+              } else {
+                setShowForm(true);
+              }
+            }}
+            size="sm"
+          >
+            {showForm ? <X size={15} /> : <Plus size={15} />}
             {showForm ? "Cancelar" : "Nueva atención"}
           </Button>
         }
         description="Gestión de atenciones clínicas y registro de consultas"
+        icon={ClipboardList}
+        iconBgClass="bg-teal-50 text-teal-600"
         title="Atenciones"
       />
 
-      {showForm && <CreateEncounterForm onCancel={() => setShowForm(false)} />}
+      {showForm && (
+        <EncounterForm
+          defaultPatientId={patientId}
+          editingId={editingEncounter?.id}
+          initialValues={editingEncounter ?? undefined}
+          key={editingEncounter?.id || "new"}
+          onCancel={handleCancelForm}
+        />
+      )}
 
       <div className="px-6">
-        <div className="mb-3 flex flex-wrap items-center gap-2">
-          {STATUS_OPTIONS.map((opt) => (
+        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-md border bg-card px-3 py-2.5 shadow-md">
+          <div className="inline-flex items-center rounded-sm border bg-background p-0.5">
+            {STATUS_OPTIONS.map((opt) => (
+              <button
+                className={`px-2.5 py-1 font-medium text-xs transition-colors ${
+                  status === opt.value
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                key={opt.value}
+                onClick={() => {
+                  setStatus(opt.value);
+                  setOffset(0);
+                }}
+                type="button"
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+          <Select
+            onValueChange={(v) => {
+              setSiteId(v as string);
+              setOffset(0);
+            }}
+            value={siteId}
+          >
+            <SelectTrigger className="h-8 w-44 bg-background text-xs">
+              <SelectValue placeholder="Todas las sedes" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">Todas las sedes</SelectItem>
+              {sitesData?.sites.map((s: { id: string; name: string }) => (
+                <SelectItem key={s.id} value={s.id}>
+                  {s.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {(status || siteId || search) && (
             <Button
-              key={opt.value}
+              className="h-7 gap-1 text-xs"
               onClick={() => {
-                setStatus(opt.value);
+                setStatus("");
+                setSiteId("");
+                setSearch("");
                 setOffset(0);
               }}
               size="xs"
-              variant={status === opt.value ? "default" : "outline"}
+              variant="ghost"
             >
-              {opt.label}
+              <FilterX size={12} />
+              Limpiar filtros
             </Button>
-          ))}
+          )}
           <div className="ml-auto flex items-center gap-2">
-            <Search className="text-muted-foreground" size={14} />
-            <Input
-              className="h-7 w-48 text-xs"
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setOffset(0);
-              }}
-              placeholder="Buscar por motivo..."
-              value={search}
-            />
+            <div className="flex items-center gap-2 rounded-sm border bg-background px-2.5 py-1.5">
+              <Search className="text-muted-foreground" size={14} />
+              <Input
+                className="h-6 w-48 border-0 bg-transparent p-0 text-xs focus-visible:ring-0"
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setOffset(0);
+                }}
+                placeholder="Buscar por motivo..."
+                value={search}
+              />
+              {search && (
+                <Button
+                  aria-label="Limpiar búsqueda"
+                  className="size-5"
+                  onClick={() => {
+                    setSearch("");
+                    setOffset(0);
+                  }}
+                  size="icon-xs"
+                  variant="ghost"
+                >
+                  <X size={10} />
+                </Button>
+              )}
+            </div>
           </div>
         </div>
 
         <DataTable
           columns={columns}
           data={data?.encounters ?? []}
-          emptyDescription="Cree una nueva atención para comenzar."
-          emptyTitle="No hay atenciones"
+          emptyDescription={
+            querySearch || status || siteId
+              ? "Ninguna atención coincide con los filtros aplicados."
+              : "Cree una nueva atención para comenzar."
+          }
+          emptyTitle={
+            querySearch || status || siteId
+              ? "Sin resultados"
+              : "No hay atenciones"
+          }
           isLoading={isLoading}
           keyExtractor={(row) => row.id}
+          onRowClick={(row) => {
+            navigate({
+              to: "/encounters/$encounterId",
+              params: { encounterId: row.id },
+              search: { tab: undefined },
+            });
+          }}
           pagination={
             data
               ? {

@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { Button } from "@wellfit-emr/ui/components/button";
 import {
   Card,
   CardContent,
@@ -7,10 +8,12 @@ import {
   CardTitle,
 } from "@wellfit-emr/ui/components/card";
 import { Skeleton } from "@wellfit-emr/ui/components/skeleton";
+import { RefreshCw } from "lucide-react";
+import { useEffect } from "react";
 
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
-import { orpc } from "@/utils/orpc";
+import { orpc, queryClient } from "@/utils/orpc";
 
 export const Route = createFileRoute(
   "/_authenticated/appointments/$appointmentId"
@@ -21,7 +24,11 @@ export const Route = createFileRoute(
 function AppointmentDetailPage() {
   const { appointmentId } = Route.useParams();
 
-  const { data: appointment, isLoading } = useQuery(
+  const {
+    data: appointment,
+    isLoading,
+    isError,
+  } = useQuery(
     orpc.appointments.get.queryOptions({ input: { id: appointmentId } })
   );
 
@@ -31,6 +38,36 @@ function AppointmentDetailPage() {
     }),
     enabled: !!appointment?.patientId,
   });
+
+  const { data: practitionerData } = useQuery({
+    ...orpc.facilities.getPractitioner.queryOptions({
+      input: { id: appointment?.practitionerId ?? "" },
+    }),
+    enabled: !!appointment?.practitionerId,
+  });
+
+  const { data: siteData } = useQuery({
+    ...orpc.facilities.getSite.queryOptions({
+      input: { id: appointment?.siteId ?? "" },
+    }),
+    enabled: !!appointment?.siteId,
+  });
+
+  const { data: serviceUnitData } = useQuery({
+    ...orpc.facilities.getServiceUnit.queryOptions({
+      input: { id: appointment?.serviceUnitId ?? "" },
+    }),
+    enabled: !!appointment?.serviceUnitId,
+  });
+
+  useEffect(() => {
+    if (appointment) {
+      document.title = `${appointment.reason} | WellFit EMR`;
+    }
+    return () => {
+      document.title = "WellFit EMR";
+    };
+  }, [appointment]);
 
   const statusConfig: Record<string, { label: string; color: string }> = {
     scheduled: { label: "Programada", color: "text-blue-600" },
@@ -52,7 +89,23 @@ function AppointmentDetailPage() {
         title={title}
       />
 
-      {isLoading ? (
+      {isError ? (
+        <div className="mx-6 flex flex-col items-center justify-center gap-2 py-12">
+          <p className="text-destructive text-sm">Error al cargar cita</p>
+          <Button
+            onClick={() =>
+              queryClient.invalidateQueries({
+                queryKey: orpc.appointments.get.key({ type: "query" }),
+              })
+            }
+            size="sm"
+            variant="outline"
+          >
+            <RefreshCw size={12} />
+            Reintentar
+          </Button>
+        </div>
+      ) : isLoading ? (
         <div className="mx-6 space-y-4">
           <Skeleton className="h-40 w-full" />
         </div>
@@ -107,6 +160,41 @@ function AppointmentDetailPage() {
                       {
                         label: "Cancelada",
                         value: `${new Date(appointment.cancelledAt).toLocaleString("es-CO")}${appointment.cancelledReason ? ` — ${appointment.cancelledReason}` : ""}`,
+                      },
+                    ]
+                  : []),
+                {
+                  label: "Profesional",
+                  value:
+                    practitionerData?.fullName ??
+                    (appointment.practitionerId ? "Cargando..." : "—"),
+                },
+                {
+                  label: "Sede",
+                  value:
+                    siteData?.name ??
+                    (appointment.siteId ? "Cargando..." : "—"),
+                },
+                {
+                  label: "Unidad de servicio",
+                  value:
+                    serviceUnitData?.name ??
+                    (appointment.serviceUnitId ? "Cargando..." : "—"),
+                },
+                ...(appointment.encounterId
+                  ? [
+                      {
+                        label: "Atención vinculada",
+                        value: (
+                          <Link
+                            className="text-primary hover:underline"
+                            params={{ encounterId: appointment.encounterId }}
+                            search={{ tab: undefined }}
+                            to="/encounters/$encounterId"
+                          >
+                            {appointment.encounterId.slice(0, 8)}…
+                          </Link>
+                        ),
                       },
                     ]
                   : []),

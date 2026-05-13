@@ -274,76 +274,155 @@ const listProceduresProcedure = protectedProcedure
       )
   );
 
-const deleteByIdSchema = z.object({
+const updateDiagnosisSchema = z.object({
   id: nonEmptyStringSchema,
+  certainty: optionalNullableStringSchema,
+  code: nonEmptyStringSchema,
+  codeSystem: nonEmptyStringSchema,
+  description: nonEmptyStringSchema,
+  diagnosisType: nonEmptyStringSchema,
+  onsetAt: z.coerce.date().nullable().optional(),
+  rank: z.number().int().nullable().optional(),
 });
 
-const deleteDiagnosisProcedure = protectedProcedure
-  .input(deleteByIdSchema)
-  .output(z.boolean())
+const updateDiagnosisProcedure = protectedProcedure
+  .input(updateDiagnosisSchema)
+  .output(diagnosisSchema)
   .handler(async ({ context, input }) => {
+    const { id, ...updates } = input;
     const [existing] = await context.db
       .select()
       .from(diagnosis)
-      .where(eq(diagnosis.id, input.id))
+      .where(eq(diagnosis.id, id))
       .limit(1);
     if (!existing) {
       throw new ORPCError("NOT_FOUND", { message: "Diagnosis not found." });
     }
-    await context.db.delete(diagnosis).where(eq(diagnosis.id, input.id));
-    return true;
+
+    let ripsReferenceName: string | null = existing.ripsReferenceName;
+    if (
+      updates.codeSystem.toUpperCase() === "CIE10" &&
+      updates.code !== existing.code
+    ) {
+      const cieEntry = await validateRipsCode(
+        context.db,
+        RIPS_TABLE_NAMES.cie10,
+        updates.code,
+        { requireEnabled: true }
+      );
+      ripsReferenceName = cieEntry.name;
+    }
+
+    const [updated] = await context.db
+      .update(diagnosis)
+      .set({ ...updates, ripsReferenceName })
+      .where(eq(diagnosis.id, id))
+      .returning();
+    return updated ?? throwCreateError("diagnosis");
   });
 
-const deleteAllergyProcedure = protectedProcedure
-  .input(deleteByIdSchema)
-  .output(z.boolean())
+const updateAllergySchema = z.object({
+  id: nonEmptyStringSchema,
+  codeSystem: nonEmptyStringSchema,
+  criticality: optionalNullableStringSchema,
+  reactionText: optionalNullableStringSchema,
+  status: nonEmptyStringSchema,
+  substanceCode: nonEmptyStringSchema,
+});
+
+const updateAllergyProcedure = protectedProcedure
+  .input(updateAllergySchema)
+  .output(allergySchema)
   .handler(async ({ context, input }) => {
+    const { id, ...updates } = input;
     const [existing] = await context.db
       .select()
       .from(allergyIntolerance)
-      .where(eq(allergyIntolerance.id, input.id))
+      .where(eq(allergyIntolerance.id, id))
       .limit(1);
     if (!existing) {
       throw new ORPCError("NOT_FOUND", { message: "Allergy not found." });
     }
-    await context.db
-      .delete(allergyIntolerance)
-      .where(eq(allergyIntolerance.id, input.id));
-    return true;
+    const [updated] = await context.db
+      .update(allergyIntolerance)
+      .set(updates)
+      .where(eq(allergyIntolerance.id, id))
+      .returning();
+    return updated ?? throwCreateError("allergy");
   });
 
-const deleteObservationProcedure = protectedProcedure
-  .input(deleteByIdSchema)
-  .output(z.boolean())
+const updateObservationSchema = z.object({
+  id: nonEmptyStringSchema,
+  code: optionalNullableStringSchema,
+  codeSystem: optionalNullableStringSchema,
+  observationType: nonEmptyStringSchema,
+  status: nonEmptyStringSchema,
+  valueNum: z.number().nullable().optional(),
+  valueText: optionalNullableStringSchema,
+  valueUnit: optionalNullableStringSchema,
+});
+
+const updateObservationProcedure = protectedProcedure
+  .input(updateObservationSchema)
+  .output(observationSchema)
   .handler(async ({ context, input }) => {
+    const { id, ...updates } = input;
     const [existing] = await context.db
       .select()
       .from(observation)
-      .where(eq(observation.id, input.id))
+      .where(eq(observation.id, id))
       .limit(1);
     if (!existing) {
       throw new ORPCError("NOT_FOUND", { message: "Observation not found." });
     }
-    await context.db.delete(observation).where(eq(observation.id, input.id));
-    return true;
+    const [updated] = await context.db
+      .update(observation)
+      .set(updates)
+      .where(eq(observation.id, id))
+      .returning();
+    return updated ?? throwCreateError("observation");
   });
 
-const deleteProcedureProcedure = protectedProcedure
-  .input(deleteByIdSchema)
-  .output(z.boolean())
+const updateProcedureSchema = z.object({
+  id: nonEmptyStringSchema,
+  cupsCode: nonEmptyStringSchema,
+  description: nonEmptyStringSchema,
+  performedAt: z.coerce.date().nullable().optional(),
+  performerId: optionalNullableStringSchema,
+  status: nonEmptyStringSchema,
+});
+
+const updateProcedureProcedure = protectedProcedure
+  .input(updateProcedureSchema)
+  .output(procedureSchema)
   .handler(async ({ context, input }) => {
+    const { id, ...updates } = input;
     const [existing] = await context.db
       .select()
       .from(procedureRecord)
-      .where(eq(procedureRecord.id, input.id))
+      .where(eq(procedureRecord.id, id))
       .limit(1);
     if (!existing) {
       throw new ORPCError("NOT_FOUND", { message: "Procedure not found." });
     }
-    await context.db
-      .delete(procedureRecord)
-      .where(eq(procedureRecord.id, input.id));
-    return true;
+
+    let ripsReferenceName: string | null = existing.ripsReferenceName;
+    if (updates.cupsCode !== existing.cupsCode) {
+      const cupsEntry = await validateRipsCode(
+        context.db,
+        RIPS_TABLE_NAMES.cups,
+        updates.cupsCode,
+        { requireEnabled: true }
+      );
+      ripsReferenceName = cupsEntry.name;
+    }
+
+    const [updated] = await context.db
+      .update(procedureRecord)
+      .set({ ...updates, ripsReferenceName })
+      .where(eq(procedureRecord.id, id))
+      .returning();
+    return updated ?? throwCreateError("procedure");
   });
 
 export interface ClinicalRecordsRouter extends Record<string, AnyRouter> {
@@ -351,14 +430,14 @@ export interface ClinicalRecordsRouter extends Record<string, AnyRouter> {
   createDiagnosis: typeof createDiagnosisProcedure;
   createObservation: typeof createObservationProcedure;
   createProcedure: typeof createProcedureProcedure;
-  deleteAllergy: typeof deleteAllergyProcedure;
-  deleteDiagnosis: typeof deleteDiagnosisProcedure;
-  deleteObservation: typeof deleteObservationProcedure;
-  deleteProcedure: typeof deleteProcedureProcedure;
   listAllergies: typeof listAllergiesProcedure;
   listDiagnoses: typeof listDiagnosesProcedure;
   listObservations: typeof listObservationsProcedure;
   listProcedures: typeof listProceduresProcedure;
+  updateAllergy: typeof updateAllergyProcedure;
+  updateDiagnosis: typeof updateDiagnosisProcedure;
+  updateObservation: typeof updateObservationProcedure;
+  updateProcedure: typeof updateProcedureProcedure;
 }
 
 export const clinicalRecordsRouter: ClinicalRecordsRouter = {
@@ -366,12 +445,12 @@ export const clinicalRecordsRouter: ClinicalRecordsRouter = {
   createDiagnosis: createDiagnosisProcedure,
   createObservation: createObservationProcedure,
   createProcedure: createProcedureProcedure,
-  deleteAllergy: deleteAllergyProcedure,
-  deleteDiagnosis: deleteDiagnosisProcedure,
-  deleteObservation: deleteObservationProcedure,
-  deleteProcedure: deleteProcedureProcedure,
   listAllergies: listAllergiesProcedure,
   listDiagnoses: listDiagnosesProcedure,
   listObservations: listObservationsProcedure,
   listProcedures: listProceduresProcedure,
+  updateAllergy: updateAllergyProcedure,
+  updateDiagnosis: updateDiagnosisProcedure,
+  updateObservation: updateObservationProcedure,
+  updateProcedure: updateProcedureProcedure,
 };

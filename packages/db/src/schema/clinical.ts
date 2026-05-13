@@ -971,6 +971,30 @@ export const retentionRecord = sqliteTable(
   ]
 );
 
+export const patientCopyRequest = sqliteTable(
+  "patient_copy_request",
+  {
+    id: text("id").primaryKey(),
+    patientId: text("patient_id").notNull(),
+    patientName: text("patient_name").notNull(),
+    scope: text("scope").notNull(),
+    deliveryChannel: text("delivery_channel").notNull(),
+    requester: text("requester").notNull(),
+    legalBasis: text("legal_basis").notNull(),
+    notes: text("notes"),
+    status: text("status").notNull().default("Recibida"),
+    createdAt: requiredTimestamp("created_at").default(
+      sql`(cast(unixepoch('subsecond') * 1000 as integer))`
+    ),
+    deadline: requiredTimestamp("deadline"),
+  },
+  (table) => [
+    index("pcr_patient_idx").on(table.patientId),
+    index("pcr_status_idx").on(table.status),
+    index("pcr_deadline_idx").on(table.deadline),
+  ]
+);
+
 export const patientRelations = relations(patient, ({ many }) => ({
   identifiers: many(patientIdentifier),
   contacts: many(patientContact),

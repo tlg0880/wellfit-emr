@@ -1,5 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { Button } from "@wellfit-emr/ui/components/button";
 import {
   Card,
   CardContent,
@@ -7,10 +8,13 @@ import {
   CardTitle,
 } from "@wellfit-emr/ui/components/card";
 import { Skeleton } from "@wellfit-emr/ui/components/skeleton";
+import { AlertTriangle, MessageCircle, RefreshCw, Trash2 } from "lucide-react";
+import { useEffect } from "react";
+import { toast } from "sonner";
 
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
-import { orpc } from "@/utils/orpc";
+import { orpc, queryClient } from "@/utils/orpc";
 
 export const Route = createFileRoute(
   "/_authenticated/interconsultations/$interconsultationId"
@@ -20,26 +24,111 @@ export const Route = createFileRoute(
 
 function InterconsultationDetailPage() {
   const { interconsultationId } = Route.useParams();
+  const navigate = useNavigate();
 
-  const { data: listData, isLoading } = useQuery(
-    orpc.interconsultations.list.queryOptions({
-      input: { limit: 1000, offset: 0 },
+  const deleteMutation = useMutation({
+    ...orpc.interconsultations.delete.mutationOptions(),
+    onSuccess: () => {
+      toast.success("Interconsulta eliminada");
+      queryClient.invalidateQueries({
+        queryKey: orpc.interconsultations.list.key({ type: "query" }),
+      });
+      navigate({ to: "/interconsultations" });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Error al eliminar interconsulta");
+    },
+  });
+
+  const {
+    data: interconsultation,
+    isLoading,
+    isError,
+    error,
+  } = useQuery(
+    orpc.interconsultations.get.queryOptions({
+      input: { id: interconsultationId },
     })
   );
 
-  const interconsultation = listData?.items.find(
-    (i) => i.id === interconsultationId
-  );
+  const { data: requesterData } = useQuery({
+    ...orpc.facilities.getPractitioner.queryOptions({
+      input: { id: interconsultation?.requestedBy ?? "" },
+    }),
+    enabled: !!interconsultation?.requestedBy,
+  });
+
+  const { data: encounterData } = useQuery({
+    ...orpc.encounters.get.queryOptions({
+      input: { id: interconsultation?.encounterId ?? "" },
+    }),
+    enabled: !!interconsultation?.encounterId,
+  });
 
   const title = isLoading
     ? "Cargando..."
     : (interconsultation?.requestedSpecialty ?? "Detalle de interconsulta");
 
+  useEffect(() => {
+    if (interconsultation) {
+      document.title = `${interconsultation.requestedSpecialty} | WellFit EMR`;
+    }
+    return () => {
+      document.title = "WellFit EMR";
+    };
+  }, [interconsultation]);
+
+  if (isError) {
+    return (
+      <div className="space-y-4 p-6">
+        <PageHeader backTo="/interconsultations" title="Error al cargar" />
+        <div className="flex flex-col items-center justify-center gap-2 py-8">
+          <AlertTriangle className="text-destructive" size={20} />
+          <p className="text-muted-foreground text-sm">
+            {error?.message || "Ocurrió un error inesperado."}
+          </p>
+          <Button
+            onClick={() =>
+              queryClient.invalidateQueries({
+                queryKey: orpc.interconsultations.get.key({ type: "query" }),
+              })
+            }
+            size="sm"
+            variant="outline"
+          >
+            <RefreshCw size={12} /> Reintentar
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4 pb-6">
       <PageHeader
+        actions={
+          interconsultation ? (
+            <Button
+              disabled={deleteMutation.isPending}
+              onClick={() => {
+                if (confirm("¿Eliminar esta interconsulta permanentemente?")) {
+                  deleteMutation.mutate({ id: interconsultationId });
+                }
+              }}
+              size="sm"
+              variant="outline"
+            >
+              <Trash2 size={14} />
+              <span className="ml-1.5">
+                {deleteMutation.isPending ? "Eliminando..." : "Eliminar"}
+              </span>
+            </Button>
+          ) : undefined
+        }
         backTo="/interconsultations"
         description="Información de la interconsulta"
+        icon={MessageCircle}
+        iconBgClass="bg-violet-100 text-violet-600"
         title={title}
       />
 
@@ -55,6 +144,21 @@ function InterconsultationDetailPage() {
             </CardHeader>
             <CardContent className="grid grid-cols-2 gap-3 text-xs">
               {[
+                {
+                  label: "Atención",
+                  value: (
+                    <Link
+                      className="text-primary hover:underline"
+                      params={{ encounterId: interconsultation.encounterId }}
+                      search={{ tab: undefined }}
+                      to="/encounters/$encounterId"
+                    >
+                      {encounterData
+                        ? encounterData.reasonForVisit || "Sin motivo"
+                        : `${interconsultation.encounterId.slice(0, 8)}…`}
+                    </Link>
+                  ),
+                },
                 {
                   label: "Especialidad solicitada",
                   value: interconsultation.requestedSpecialty,
@@ -87,7 +191,9 @@ function InterconsultationDetailPage() {
                 },
                 {
                   label: "Solicitado por",
-                  value: interconsultation.requestedBy,
+                  value:
+                    requesterData?.fullName ??
+                    `${interconsultation.requestedBy.slice(0, 8)}…`,
                 },
                 {
                   label: "ID de respuesta",

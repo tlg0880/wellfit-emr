@@ -7,6 +7,11 @@ import { env } from "@wellfit-emr/env/web";
 import { toast } from "sonner";
 
 export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+    },
+  },
   queryCache: new QueryCache({
     onError: (error, query) => {
       toast.error(`Error: ${error.message}`, {

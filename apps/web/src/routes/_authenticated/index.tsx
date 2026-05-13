@@ -16,17 +16,21 @@ import {
   ClipboardPlus,
   Clock,
   Copy,
+  Database,
   FileOutput,
   Gavel,
   HeartPulse,
+  Home,
   PenLine,
+  Server,
   Share2,
+  Shield,
   ShieldUser,
   Stethoscope,
   UserPlus,
   Users,
 } from "lucide-react";
-
+import { useEffect } from "react";
 import { authClient } from "@/lib/auth-client";
 import { orpc } from "@/utils/orpc";
 
@@ -164,46 +168,66 @@ function ComplianceSummaryBlock() {
       </CardHeader>
       <CardContent className="space-y-2">
         {draftDocsTotal > 0 && (
-          <div className="flex items-center justify-between rounded-none border p-3">
+          <div className="flex items-center justify-between rounded-sm border border-amber-200 bg-amber-50/50 p-3 shadow-sm transition-colors hover:bg-amber-50">
             <div className="flex items-center gap-2">
-              <PenLine className="text-amber-600" size={14} />
-              <span className="text-sm">Firmas pendientes</span>
+              <div className="flex size-7 items-center justify-center rounded-sm bg-amber-100 text-amber-600 shadow-md">
+                <PenLine size={14} />
+              </div>
+              <span className="font-medium text-foreground/90 text-sm">
+                Firmas pendientes
+              </span>
             </div>
             <span className="font-bold text-amber-700">{draftDocsTotal}</span>
           </div>
         )}
         {ripsTotal > 0 && (
-          <div className="flex items-center justify-between rounded-none border p-3">
+          <div className="flex items-center justify-between rounded-sm border border-sky-200 bg-sky-50/50 p-3 shadow-sm transition-colors hover:bg-sky-50">
             <div className="flex items-center gap-2">
-              <FileOutput className="text-blue-600" size={14} />
-              <span className="text-sm">RIPS pendientes</span>
+              <div className="flex size-7 items-center justify-center rounded-sm bg-sky-100 text-sky-600 shadow-md">
+                <FileOutput size={14} />
+              </div>
+              <span className="font-medium text-foreground/90 text-sm">
+                RIPS pendientes
+              </span>
             </div>
-            <span className="font-bold text-blue-700">{ripsTotal}</span>
+            <span className="font-bold text-sky-700">{ripsTotal}</span>
           </div>
         )}
         {ihceTotal > 0 && (
-          <div className="flex items-center justify-between rounded-none border p-3">
+          <div className="flex items-center justify-between rounded-sm border border-indigo-200 bg-indigo-50/50 p-3 shadow-sm transition-colors hover:bg-indigo-50">
             <div className="flex items-center gap-2">
-              <Share2 className="text-indigo-600" size={14} />
-              <span className="text-sm">IHCE/RDA pendientes</span>
+              <div className="flex size-7 items-center justify-center rounded-sm bg-indigo-100 text-indigo-600 shadow-md">
+                <Share2 size={14} />
+              </div>
+              <span className="font-medium text-foreground/90 text-sm">
+                IHCE/RDA pendientes
+              </span>
             </div>
             <span className="font-bold text-indigo-700">{ihceTotal}</span>
           </div>
         )}
         {interTotal > 0 && (
-          <div className="flex items-center justify-between rounded-none border p-3">
+          <div className="flex items-center justify-between rounded-sm border border-emerald-200 bg-emerald-50/50 p-3 shadow-sm transition-colors hover:bg-emerald-50">
             <div className="flex items-center gap-2">
-              <Users className="text-emerald-600" size={14} />
-              <span className="text-sm">Interconsultas abiertas</span>
+              <div className="flex size-7 items-center justify-center rounded-sm bg-emerald-100 text-emerald-600 shadow-md">
+                <Users size={14} />
+              </div>
+              <span className="font-medium text-foreground/90 text-sm">
+                Interconsultas abiertas
+              </span>
             </div>
             <span className="font-bold text-emerald-700">{interTotal}</span>
           </div>
         )}
         {orderTotal > 0 && (
-          <div className="flex items-center justify-between rounded-none border p-3">
+          <div className="flex items-center justify-between rounded-sm border border-rose-200 bg-rose-50/50 p-3 shadow-sm transition-colors hover:bg-rose-50">
             <div className="flex items-center gap-2">
-              <Activity className="text-rose-600" size={14} />
-              <span className="text-sm">Órdenes activas</span>
+              <div className="flex size-7 items-center justify-center rounded-sm bg-rose-100 text-rose-600 shadow-md">
+                <Activity size={14} />
+              </div>
+              <span className="font-medium text-foreground/90 text-sm">
+                Órdenes activas
+              </span>
             </div>
             <span className="font-bold text-rose-700">{orderTotal}</span>
           </div>
@@ -214,6 +238,13 @@ function ComplianceSummaryBlock() {
 }
 
 function DashboardPage() {
+  useEffect(() => {
+    document.title = "Panel principal | WellFit EMR";
+    return () => {
+      document.title = "WellFit EMR";
+    };
+  }, []);
+
   const { session } = Route.useRouteContext();
   const { data: patientsData, isLoading: patientsLoading } = useQuery(
     orpc.patients.list.queryOptions({ input: { limit: 5, offset: 0 } })
@@ -230,15 +261,18 @@ function DashboardPage() {
       label: "Pacientes registrados",
       value: patientsData?.total ?? 0,
       icon: Users,
-      color: "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300",
+      color: "bg-teal-50 text-teal-700 dark:bg-teal-950 dark:text-teal-300",
+      iconBg: "bg-teal-100 dark:bg-teal-900",
+      borderLeft: "border-l-teal-400",
       loading: patientsLoading,
     },
     {
       label: "Atenciones del mes",
       value: encountersData?.total ?? 0,
       icon: CalendarDays,
-      color:
-        "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
+      color: "bg-sky-50 text-sky-700 dark:bg-sky-950 dark:text-sky-300",
+      iconBg: "bg-sky-100 dark:bg-sky-900",
+      borderLeft: "border-l-sky-400",
       loading: encountersLoading,
     },
     {
@@ -248,14 +282,17 @@ function DashboardPage() {
           .length ?? 0,
       icon: Activity,
       color: "bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
+      iconBg: "bg-amber-100 dark:bg-amber-900",
+      borderLeft: "border-l-amber-400",
       loading: encountersLoading,
     },
     {
       label: "Profesionales activos",
       value: "—",
       icon: Stethoscope,
-      color:
-        "bg-slate-100 text-slate-700 dark:bg-slate-900 dark:text-slate-300",
+      color: "bg-slate-50 text-slate-700 dark:bg-slate-900 dark:text-slate-300",
+      iconBg: "bg-slate-100 dark:bg-slate-800",
+      borderLeft: "border-l-slate-400",
       loading: false,
     },
   ];
@@ -273,19 +310,21 @@ function DashboardPage() {
   } else if (encountersData && encountersData.encounters.length > 0) {
     encountersContent = encountersData.encounters.map((enc) => (
       <Link
-        className="group flex items-center justify-between rounded-none border p-3 transition-colors hover:bg-muted/60"
+        className="group flex items-center justify-between rounded-sm border p-3.5 shadow-sm transition-all duration-150 hover:border-primary/20 hover:bg-primary/5 hover:shadow-md"
         key={enc.id}
         params={{ encounterId: enc.id }}
         search={{ tab: undefined }}
         to="/encounters/$encounterId"
       >
         <div className="flex items-center gap-3">
-          <div className="flex size-9 items-center justify-center bg-muted">
-            <HeartPulse size={15} />
+          <div className="flex size-10 items-center justify-center rounded-sm bg-teal-50 text-teal-600 shadow-md dark:bg-teal-950 dark:text-teal-400">
+            <HeartPulse size={16} />
           </div>
           <div>
-            <p className="font-medium text-sm">{enc.reasonForVisit}</p>
-            <p className="text-muted-foreground text-xs">
+            <p className="font-medium text-foreground/90 text-sm leading-snug">
+              {enc.reasonForVisit}
+            </p>
+            <p className="mt-0.5 text-muted-foreground text-xs">
               <Clock className="mr-1 inline" size={10} />
               {new Date(enc.startedAt).toLocaleDateString("es-CO", {
                 day: "2-digit",
@@ -298,7 +337,7 @@ function DashboardPage() {
           </div>
         </div>
         <ChevronRight
-          className="text-muted-foreground transition-colors group-hover:text-foreground"
+          className="text-muted-foreground/40 transition-colors group-hover:text-primary"
           size={14}
         />
       </Link>
@@ -324,27 +363,27 @@ function DashboardPage() {
   } else if (patientsData && patientsData.patients.length > 0) {
     patientsContent = patientsData.patients.map((pat) => (
       <Link
-        className="group flex items-center justify-between rounded-none border p-3 transition-colors hover:bg-muted/60"
+        className="group flex items-center justify-between rounded-sm border p-3.5 shadow-sm transition-all duration-150 hover:border-primary/20 hover:bg-primary/5 hover:shadow-md"
         key={pat.id}
         params={{ patientId: pat.id }}
         to="/patients/$patientId"
       >
         <div className="flex items-center gap-3">
-          <div className="flex size-9 items-center justify-center bg-muted">
-            <Users size={15} />
+          <div className="flex size-10 items-center justify-center rounded-sm bg-sky-50 text-sky-600 shadow-md dark:bg-sky-950 dark:text-sky-400">
+            <Users size={16} />
           </div>
           <div>
-            <p className="font-medium text-sm">
+            <p className="font-medium text-foreground/90 text-sm leading-snug">
               {pat.firstName} {pat.lastName1}
             </p>
-            <p className="text-muted-foreground text-xs">
+            <p className="mt-0.5 text-muted-foreground text-xs">
               {pat.primaryDocumentType} {pat.primaryDocumentNumber} ·{" "}
               {new Date(pat.birthDate).toLocaleDateString("es-CO")}
             </p>
           </div>
         </div>
         <ChevronRight
-          className="text-muted-foreground transition-colors group-hover:text-foreground"
+          className="text-muted-foreground/40 transition-colors group-hover:text-primary"
           size={14}
         />
       </Link>
@@ -409,35 +448,44 @@ function DashboardPage() {
   return (
     <div className="space-y-8 p-6">
       {/* Header */}
-      <div className="space-y-1">
-        <h1 className="font-semibold text-2xl tracking-tight">
-          Panel principal
-        </h1>
-        <p className="text-muted-foreground text-sm">
-          Bienvenido, {session.data?.user.name}. Este es el resumen operativo de
-          la institución.
-        </p>
+      <div className="flex items-center gap-3">
+        <div className="flex size-9 items-center justify-center rounded-sm bg-teal-100 text-teal-600 shadow-md">
+          <Home size={18} />
+        </div>
+        <div className="space-y-1">
+          <h1 className="font-semibold text-2xl tracking-tight">
+            Panel principal
+          </h1>
+          <p className="text-muted-foreground text-sm">
+            Bienvenido, {session.data?.user.name}. Este es el resumen operativo
+            de la institución.
+          </p>
+        </div>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
-          <Card key={stat.label} size="sm">
-            <CardHeader className="flex flex-row items-center justify-between pb-3">
-              <CardTitle className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
+          <Card
+            className={`overflow-hidden border-l-4 transition-all duration-200 hover:-translate-y-px hover:shadow-md ${stat.borderLeft}`}
+            key={stat.label}
+            size="sm"
+          >
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="font-semibold text-[11px] text-muted-foreground uppercase tracking-wider">
                 {stat.label}
               </CardTitle>
               <div
-                className={`flex size-8 items-center justify-center ${stat.color}`}
+                className={`flex size-9 items-center justify-center rounded-sm shadow-md ${stat.iconBg} ${stat.color}`}
               >
-                <stat.icon size={16} />
+                <stat.icon size={18} />
               </div>
             </CardHeader>
             <CardContent>
               {stat.loading ? (
-                <Skeleton className="h-7 w-20" />
+                <Skeleton className="h-8 w-24" />
               ) : (
-                <div className="font-bold text-3xl tabular-nums tracking-tight">
+                <div className="font-bold text-3xl text-foreground tabular-nums tracking-tight">
                   {stat.value}
                 </div>
               )}
@@ -499,21 +547,23 @@ function DashboardPage() {
           <CardContent className="space-y-2">
             {quickAccess.map((item) => (
               <Link
-                className="group flex items-center gap-3 rounded-none border p-3 transition-colors hover:bg-muted/60"
+                className="group flex items-center gap-3.5 rounded-sm border p-3.5 shadow-sm transition-all duration-200 hover:-translate-y-px hover:border-primary/20 hover:bg-primary/5 hover:shadow-md"
                 key={item.to}
                 to={item.to}
               >
-                <div className="flex size-9 shrink-0 items-center justify-center bg-slate-900 text-white">
-                  <item.icon size={15} />
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-sm bg-primary/10 text-primary shadow-md">
+                  <item.icon size={16} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium text-sm">{item.label}</p>
-                  <p className="text-muted-foreground text-xs">
+                  <p className="font-medium text-foreground/90 text-sm">
+                    {item.label}
+                  </p>
+                  <p className="mt-0.5 text-muted-foreground text-xs">
                     {item.description}
                   </p>
                 </div>
                 <ChevronRight
-                  className="shrink-0 text-muted-foreground transition-colors group-hover:text-foreground"
+                  className="shrink-0 text-muted-foreground/40 transition-colors group-hover:text-primary"
                   size={14}
                 />
               </Link>
@@ -534,9 +584,30 @@ function DashboardPage() {
           <CardContent>
             <div className="grid grid-cols-2 gap-3">
               {[
-                { label: "API", status: "Operativa", ok: true },
-                { label: "Base de datos", status: "Conectada", ok: true },
-                { label: "Autenticación", status: "Activa", ok: true },
+                {
+                  label: "API",
+                  status: "Operativa",
+                  ok: true,
+                  icon: Server,
+                  iconColor: "text-emerald-600",
+                  iconBg: "bg-emerald-50",
+                },
+                {
+                  label: "Base de datos",
+                  status: "Conectada",
+                  ok: true,
+                  icon: Database,
+                  iconColor: "text-sky-600",
+                  iconBg: "bg-sky-50",
+                },
+                {
+                  label: "Autenticación",
+                  status: "Activa",
+                  ok: true,
+                  icon: Shield,
+                  iconColor: "text-amber-600",
+                  iconBg: "bg-amber-50",
+                },
                 {
                   label: "RIPS",
                   status: ripsStatusLoading
@@ -544,17 +615,30 @@ function DashboardPage() {
                     : (ripsStatus?.message ?? "Desconocido"),
                   ok: ripsStatus?.status === "ok",
                   pending: ripsStatusLoading,
+                  icon: FileOutput,
+                  iconColor: "text-violet-600",
+                  iconBg: "bg-violet-50",
                 },
               ].map((item) => (
-                <div className="border p-4" key={item.label}>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                    {item.label}
-                  </p>
-                  <div className="mt-2 flex items-center gap-2">
+                <div
+                  className="rounded-sm border bg-card/80 p-4 shadow-sm transition-all duration-150 hover:bg-card hover:shadow-md"
+                  key={item.label}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="flex size-6 items-center justify-center rounded-sm shadow-md">
+                      <item.icon size={12} />
+                    </div>
+                    <p className="font-semibold text-[10px] text-muted-foreground uppercase tracking-wider">
+                      {item.label}
+                    </p>
+                  </div>
+                  <div className="mt-2.5 flex items-center gap-2">
                     <span
-                      className={`size-2.5 ${getStatusDotClass(item.pending, item.ok)}`}
+                      className={`size-2.5 rounded-full ${getStatusDotClass(item.pending, item.ok)}`}
                     />
-                    <span className="font-medium text-sm">{item.status}</span>
+                    <span className="font-medium text-foreground/90 text-sm">
+                      {item.status}
+                    </span>
                   </div>
                 </div>
               ))}

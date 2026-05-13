@@ -11,9 +11,30 @@ import {
 import { Input } from "@wellfit-emr/ui/components/input";
 import { Label } from "@wellfit-emr/ui/components/label";
 import { SearchSelect } from "@wellfit-emr/ui/components/search-select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@wellfit-emr/ui/components/select";
 import { Skeleton } from "@wellfit-emr/ui/components/skeleton";
-import { ClipboardPlus, Pencil } from "lucide-react";
-import { useState } from "react";
+import {
+  Calendar,
+  ClipboardPlus,
+  FileCheck,
+  FileText,
+  FlaskConical,
+  Pencil,
+  Pill,
+  Plus,
+  RefreshCw,
+  ShieldCheck,
+  Trash2,
+  User,
+  X,
+} from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import z from "zod";
 
@@ -22,6 +43,7 @@ import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { PatientTimeline } from "@/components/patient-timeline";
 import { authClient } from "@/lib/auth-client";
+import { formatAge } from "@/utils/age";
 import { orpc, queryClient } from "@/utils/orpc";
 
 export const Route = createFileRoute("/_authenticated/patients/$patientId")({
@@ -52,6 +74,7 @@ const updatePatientSchema = z.object({
   countryCode: z.string(),
   municipalityCode: z.string(),
   zoneCode: z.string(),
+  deceasedAt: z.string(),
 });
 
 interface Patient {
@@ -137,6 +160,9 @@ function EditPatientForm({
       countryCode: patient.countryCode ?? "",
       municipalityCode: patient.municipalityCode ?? "",
       zoneCode: patient.zoneCode ?? "",
+      deceasedAt: patient.deceasedAt
+        ? new Date(patient.deceasedAt).toISOString().slice(0, 16)
+        : "",
     },
     onSubmit: async ({ value }) => {
       await updateMutation.mutateAsync({
@@ -153,6 +179,7 @@ function EditPatientForm({
         countryCode: value.countryCode || null,
         municipalityCode: value.municipalityCode || null,
         zoneCode: value.zoneCode || null,
+        deceasedAt: value.deceasedAt ? new Date(value.deceasedAt) : null,
       });
     },
     validators: {
@@ -179,25 +206,29 @@ function EditPatientForm({
             <form.Field name="primaryDocumentType">
               {(field) => (
                 <div className={fieldGrid}>
-                  <Label htmlFor={field.name}>Tipo de documento</Label>
-                  <select
-                    className="h-8 w-full rounded-none border border-input bg-transparent px-2.5 text-xs outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50"
-                    id={field.name}
-                    name={field.name}
-                    onBlur={field.handleBlur}
-                    onChange={(e) => field.handleChange(e.target.value)}
+                  <Label htmlFor={field.name}>Tipo de documento *</Label>
+                  <Select
+                    onValueChange={(v) => field.handleChange(v as string)}
                     value={field.state.value}
                   >
-                    <option value="">Seleccione...</option>
-                    <option value="CC">Cédula de ciudadanía</option>
-                    <option value="CE">Cédula de extranjería</option>
-                    <option value="PA">Pasaporte</option>
-                    <option value="RC">Registro civil</option>
-                    <option value="TI">Tarjeta de identidad</option>
-                    <option value="PEP">Permiso especial de permanencia</option>
-                    <option value="PPT">Permiso por protección temporal</option>
-                    <option value="NIT">NIT</option>
-                  </select>
+                    <SelectTrigger id={field.name}>
+                      <SelectValue placeholder="Seleccione..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="CC">Cédula de ciudadanía</SelectItem>
+                      <SelectItem value="CE">Cédula de extranjería</SelectItem>
+                      <SelectItem value="PA">Pasaporte</SelectItem>
+                      <SelectItem value="RC">Registro civil</SelectItem>
+                      <SelectItem value="TI">Tarjeta de identidad</SelectItem>
+                      <SelectItem value="PEP">
+                        Permiso especial de permanencia
+                      </SelectItem>
+                      <SelectItem value="PPT">
+                        Permiso por protección temporal
+                      </SelectItem>
+                      <SelectItem value="NIT">NIT</SelectItem>
+                    </SelectContent>
+                  </Select>
                   {field.state.meta.errors.map((error) => (
                     <p
                       className="text-destructive text-xs"
@@ -213,8 +244,9 @@ function EditPatientForm({
             <form.Field name="primaryDocumentNumber">
               {(field) => (
                 <div className={fieldGrid}>
-                  <Label htmlFor={field.name}>Número de documento</Label>
+                  <Label htmlFor={field.name}>Número de documento *</Label>
                   <Input
+                    autoFocus
                     className="text-xs"
                     id={field.name}
                     name={field.name}
@@ -237,7 +269,7 @@ function EditPatientForm({
             <form.Field name="firstName">
               {(field) => (
                 <div className={fieldGrid}>
-                  <Label htmlFor={field.name}>Primer nombre</Label>
+                  <Label htmlFor={field.name}>Primer nombre *</Label>
                   <Input
                     className="text-xs"
                     id={field.name}
@@ -277,7 +309,7 @@ function EditPatientForm({
             <form.Field name="lastName1">
               {(field) => (
                 <div className={fieldGrid}>
-                  <Label htmlFor={field.name}>Primer apellido</Label>
+                  <Label htmlFor={field.name}>Primer apellido *</Label>
                   <Input
                     className="text-xs"
                     id={field.name}
@@ -317,7 +349,7 @@ function EditPatientForm({
             <form.Field name="birthDate">
               {(field) => (
                 <div className={fieldGrid}>
-                  <Label htmlFor={field.name}>Fecha de nacimiento</Label>
+                  <Label htmlFor={field.name}>Fecha de nacimiento *</Label>
                   <Input
                     className="text-xs"
                     id={field.name}
@@ -342,20 +374,20 @@ function EditPatientForm({
             <form.Field name="sexAtBirth">
               {(field) => (
                 <div className={fieldGrid}>
-                  <Label htmlFor={field.name}>Sexo al nacer</Label>
-                  <select
-                    className="h-8 w-full rounded-none border border-input bg-transparent px-2.5 text-xs outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50"
-                    id={field.name}
-                    name={field.name}
-                    onBlur={field.handleBlur}
-                    onChange={(e) => field.handleChange(e.target.value)}
+                  <Label htmlFor={field.name}>Sexo al nacer *</Label>
+                  <Select
+                    onValueChange={(v) => field.handleChange(v as string)}
                     value={field.state.value}
                   >
-                    <option value="">Seleccione...</option>
-                    <option value="H">Hombre</option>
-                    <option value="M">Mujer</option>
-                    <option value="I">Indeterminado</option>
-                  </select>
+                    <SelectTrigger id={field.name}>
+                      <SelectValue placeholder="Seleccione..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="H">Hombre</SelectItem>
+                      <SelectItem value="M">Mujer</SelectItem>
+                      <SelectItem value="I">Indeterminado</SelectItem>
+                    </SelectContent>
+                  </Select>
                   {field.state.meta.errors.map((error) => (
                     <p
                       className="text-destructive text-xs"
@@ -372,22 +404,24 @@ function EditPatientForm({
               {(field) => (
                 <div className={fieldGrid}>
                   <Label htmlFor={field.name}>Identidad de género</Label>
-                  <select
-                    className="h-8 w-full rounded-none border border-input bg-transparent px-2.5 text-xs outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50"
-                    id={field.name}
-                    name={field.name}
-                    onBlur={field.handleBlur}
-                    onChange={(e) => field.handleChange(e.target.value)}
+                  <Select
+                    onValueChange={(v) => field.handleChange(v as string)}
                     value={field.state.value}
                   >
-                    <option value="">Seleccione...</option>
-                    <option value="masculino">Masculino</option>
-                    <option value="femenino">Femenino</option>
-                    <option value="transgenero">Transgénero</option>
-                    <option value="no_binario">No binario</option>
-                    <option value="otro">Otro</option>
-                    <option value="prefiero_no_decir">Prefiero no decir</option>
-                  </select>
+                    <SelectTrigger id={field.name}>
+                      <SelectValue placeholder="Seleccione..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="masculino">Masculino</SelectItem>
+                      <SelectItem value="femenino">Femenino</SelectItem>
+                      <SelectItem value="transgenero">Transgénero</SelectItem>
+                      <SelectItem value="no_binario">No binario</SelectItem>
+                      <SelectItem value="otro">Otro</SelectItem>
+                      <SelectItem value="prefiero_no_decir">
+                        Prefiero no decir
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               )}
             </form.Field>
@@ -452,18 +486,35 @@ function EditPatientForm({
               {(field) => (
                 <div className={fieldGrid}>
                   <Label htmlFor={field.name}>Zona</Label>
-                  <select
-                    className="h-8 w-full rounded-none border border-input bg-transparent px-2.5 text-xs outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50"
+                  <Select
+                    onValueChange={(v) => field.handleChange(v as string)}
+                    value={field.state.value}
+                  >
+                    <SelectTrigger id={field.name}>
+                      <SelectValue placeholder="Seleccione..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="01">Rural</SelectItem>
+                      <SelectItem value="02">Urbano</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </form.Field>
+
+            <form.Field name="deceasedAt">
+              {(field) => (
+                <div className={fieldGrid}>
+                  <Label htmlFor={field.name}>Fecha de fallecimiento</Label>
+                  <Input
+                    className="text-xs"
                     id={field.name}
                     name={field.name}
                     onBlur={field.handleBlur}
                     onChange={(e) => field.handleChange(e.target.value)}
+                    type="datetime-local"
                     value={field.state.value}
-                  >
-                    <option value="">Seleccione...</option>
-                    <option value="01">Rural</option>
-                    <option value="02">Urbano</option>
-                  </select>
+                  />
                 </div>
               )}
             </form.Field>
@@ -527,11 +578,24 @@ function PatientInfoCard({
         year: "numeric",
       }),
     },
+    { label: "Edad", value: formatAge(patient.birthDate) },
     { label: "Sexo al nacer", value: patient.sexAtBirth },
     { label: "Identidad de género", value: patient.genderIdentity ?? "—" },
     { label: "País", value: patient.countryCode ?? "—" },
     { label: "Municipio", value: patient.municipalityCode ?? "—" },
     { label: "Zona", value: patient.zoneCode ?? "—" },
+    ...(patient.deceasedAt
+      ? [
+          {
+            label: "Fallecimiento",
+            value: (
+              <span className="text-destructive">
+                {new Date(patient.deceasedAt).toLocaleString("es-CO")}
+              </span>
+            ),
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -554,6 +618,958 @@ function PatientInfoCard({
             </div>
           ))}
         </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ContactsSection({ patientId }: { patientId: string }) {
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [contactType, setContactType] = useState("emergency");
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [relationshipCode, setRelationshipCode] = useState("");
+  const [isPrimary, setIsPrimary] = useState(false);
+
+  const { data, isLoading } = useQuery(
+    orpc.patientContacts.list.queryOptions({
+      input: {
+        limit: 25,
+        offset: 0,
+        patientId,
+        sortDirection: "asc",
+      },
+    })
+  );
+
+  const createMutation = useMutation({
+    ...orpc.patientContacts.create.mutationOptions(),
+    onSuccess: () => {
+      toast.success("Contacto agregado");
+      queryClient.invalidateQueries({
+        queryKey: orpc.patientContacts.list.key({ type: "query" }),
+      });
+      setShowForm(false);
+      resetForm();
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Error al agregar contacto");
+    },
+  });
+
+  const updateMutation = useMutation({
+    ...orpc.patientContacts.update.mutationOptions(),
+    onSuccess: () => {
+      toast.success("Contacto actualizado");
+      queryClient.invalidateQueries({
+        queryKey: orpc.patientContacts.list.key({ type: "query" }),
+      });
+      setShowForm(false);
+      setEditingId(null);
+      resetForm();
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Error al actualizar contacto");
+    },
+  });
+
+  const deleteMutation = useMutation({
+    ...orpc.patientContacts.delete.mutationOptions(),
+    onSuccess: () => {
+      toast.success("Contacto eliminado");
+      queryClient.invalidateQueries({
+        queryKey: orpc.patientContacts.list.key({ type: "query" }),
+      });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Error al eliminar contacto");
+    },
+  });
+
+  function resetForm() {
+    setContactType("emergency");
+    setFullName("");
+    setPhone("");
+    setEmail("");
+    setRelationshipCode("");
+    setIsPrimary(false);
+  }
+
+  function startEdit(row: {
+    id: string;
+    contactType: string;
+    fullName: string | null;
+    phone: string | null;
+    email: string | null;
+    relationshipCode: string | null;
+    isPrimary: boolean;
+  }) {
+    setEditingId(row.id);
+    setContactType(row.contactType);
+    setFullName(row.fullName ?? "");
+    setPhone(row.phone ?? "");
+    setEmail(row.email ?? "");
+    setRelationshipCode(row.relationshipCode ?? "");
+    setIsPrimary(row.isPrimary);
+    setShowForm(true);
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!contactType.trim()) {
+      toast.error("Tipo de contacto es obligatorio");
+      return;
+    }
+    if (editingId) {
+      updateMutation.mutate({
+        id: editingId,
+        contactType: contactType.trim(),
+        fullName: fullName.trim() || null,
+        phone: phone.trim() || null,
+        email: email.trim() || null,
+        relationshipCode: relationshipCode.trim() || null,
+        isPrimary,
+      });
+    } else {
+      createMutation.mutate({
+        patientId,
+        contactType: contactType.trim(),
+        fullName: fullName.trim() || null,
+        phone: phone.trim() || null,
+        email: email.trim() || null,
+        relationshipCode: relationshipCode.trim() || null,
+        isPrimary,
+      });
+    }
+  };
+
+  const columns = [
+    {
+      header: "Tipo",
+      accessor: (row: { contactType: string; isPrimary: boolean }) => (
+        <span className="inline-flex items-center gap-1.5">
+          <span className="font-medium capitalize">{row.contactType}</span>
+          {row.isPrimary && (
+            <span className="inline-flex border border-amber-200 bg-amber-50 px-1.5 py-0.5 font-medium text-[10px] text-amber-700">
+              Principal
+            </span>
+          )}
+        </span>
+      ),
+    },
+    {
+      header: "Nombre",
+      accessor: (row: { fullName: string | null }) => row.fullName ?? "—",
+    },
+    {
+      header: "Teléfono",
+      accessor: (row: { phone: string | null }) => row.phone ?? "—",
+    },
+    {
+      header: "Correo",
+      accessor: (row: { email: string | null }) => row.email ?? "—",
+    },
+    {
+      header: "Relación",
+      accessor: (row: { relationshipCode: string | null }) =>
+        row.relationshipCode ?? "—",
+    },
+    {
+      header: "",
+      accessor: (row: {
+        id: string;
+        contactType: string;
+        fullName: string | null;
+        phone: string | null;
+        email: string | null;
+        relationshipCode: string | null;
+        isPrimary: boolean;
+      }) => (
+        <div className="flex items-center gap-1">
+          <Button
+            aria-label="Editar contacto"
+            onClick={() => startEdit(row)}
+            size="icon-xs"
+            variant="ghost"
+          >
+            <Pencil size={12} />
+          </Button>
+          <Button
+            aria-label="Eliminar contacto"
+            disabled={deleteMutation.isPending}
+            onClick={() => {
+              if (confirm("¿Eliminar este contacto?")) {
+                deleteMutation.mutate({ id: row.id });
+              }
+            }}
+            size="icon-xs"
+            variant="ghost"
+          >
+            <Trash2 size={12} />
+          </Button>
+        </div>
+      ),
+      className: "w-16",
+    },
+  ];
+
+  return (
+    <Card className="mx-6" size="sm">
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle>Contactos</CardTitle>
+        <Button
+          onClick={() => {
+            if (showForm && editingId) {
+              setEditingId(null);
+              resetForm();
+            }
+            setShowForm((s) => !s);
+          }}
+          size="sm"
+          variant="outline"
+        >
+          {showForm ? <X size={14} /> : <Plus size={14} />}
+          {showForm ? "Cancelar" : "Agregar"}
+        </Button>
+      </CardHeader>
+      <CardContent>
+        {showForm && (
+          <form
+            className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3"
+            onSubmit={handleSubmit}
+          >
+            <div className="space-y-1">
+              <Label>Tipo *</Label>
+              <Select
+                onValueChange={(v) => setContactType(v as string)}
+                value={contactType}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="emergency">Emergencia</SelectItem>
+                  <SelectItem value="personal">Personal</SelectItem>
+                  <SelectItem value="work">Laboral</SelectItem>
+                  <SelectItem value="family">Familiar</SelectItem>
+                  <SelectItem value="other">Otro</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label>Nombre</Label>
+              <Input
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="Nombre completo"
+                value={fullName}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>Teléfono</Label>
+              <Input
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="Teléfono"
+                value={phone}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>Correo</Label>
+              <Input
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Correo electrónico"
+                value={email}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>Relación</Label>
+              <Input
+                onChange={(e) => setRelationshipCode(e.target.value)}
+                placeholder="Ej. padre, cónyuge"
+                value={relationshipCode}
+              />
+            </div>
+            <div className="flex items-center gap-2 pt-5">
+              <input
+                checked={isPrimary}
+                className="size-4 rounded-sm border border-input"
+                id="contact-primary"
+                onChange={(e) => setIsPrimary(e.target.checked)}
+                type="checkbox"
+              />
+              <Label htmlFor="contact-primary">Principal</Label>
+            </div>
+            <div className="flex items-end gap-2 sm:col-start-1">
+              <Button
+                disabled={createMutation.isPending || updateMutation.isPending}
+                size="sm"
+                type="submit"
+              >
+                {editingId ? "Actualizar" : "Guardar"}
+              </Button>
+              {editingId && (
+                <Button
+                  onClick={() => {
+                    setEditingId(null);
+                    resetForm();
+                    setShowForm(false);
+                  }}
+                  size="sm"
+                  type="button"
+                  variant="ghost"
+                >
+                  Cancelar
+                </Button>
+              )}
+            </div>
+          </form>
+        )}
+        <DataTable
+          columns={columns}
+          data={data?.items ?? []}
+          emptyDescription="Este paciente no tiene contactos registrados."
+          emptyTitle="Sin contactos"
+          isLoading={isLoading}
+          keyExtractor={(row) => row.id}
+        />
+      </CardContent>
+    </Card>
+  );
+}
+
+function PayerName({ payerId }: { payerId: string }) {
+  const { data } = useQuery(
+    orpc.payers.list.queryOptions({
+      input: { limit: 100, offset: 0 },
+    })
+  );
+  const payer = data?.items.find((p) => p.id === payerId);
+  return (
+    <span className="font-medium">
+      {payer?.name ?? `${payerId.slice(0, 8)}…`}
+    </span>
+  );
+}
+
+function CoverageSection({ patientId }: { patientId: string }) {
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [payerId, setPayerId] = useState("");
+  const [affiliateType, setAffiliateType] = useState("");
+  const [policyNumber, setPolicyNumber] = useState("");
+  const [coveragePlanCode, setCoveragePlanCode] = useState("");
+  const [effectiveFrom, setEffectiveFrom] = useState("");
+  const [effectiveTo, setEffectiveTo] = useState("");
+
+  const { data, isLoading } = useQuery(
+    orpc.coverage.list.queryOptions({
+      input: {
+        limit: 25,
+        offset: 0,
+        patientId,
+        sortDirection: "desc",
+      },
+    })
+  );
+
+  const { data: payersData } = useQuery(
+    orpc.payers.list.queryOptions({
+      input: { limit: 100, offset: 0 },
+    })
+  );
+
+  const createMutation = useMutation({
+    ...orpc.coverage.create.mutationOptions(),
+    onSuccess: () => {
+      toast.success("Cobertura agregada");
+      queryClient.invalidateQueries({
+        queryKey: orpc.coverage.list.key({ type: "query" }),
+      });
+      setShowForm(false);
+      resetForm();
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Error al agregar cobertura");
+    },
+  });
+
+  const updateMutation = useMutation({
+    ...orpc.coverage.update.mutationOptions(),
+    onSuccess: () => {
+      toast.success("Cobertura actualizada");
+      queryClient.invalidateQueries({
+        queryKey: orpc.coverage.list.key({ type: "query" }),
+      });
+      setShowForm(false);
+      setEditingId(null);
+      resetForm();
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Error al actualizar cobertura");
+    },
+  });
+
+  const deleteMutation = useMutation({
+    ...orpc.coverage.delete.mutationOptions(),
+    onSuccess: () => {
+      toast.success("Cobertura eliminada");
+      queryClient.invalidateQueries({
+        queryKey: orpc.coverage.list.key({ type: "query" }),
+      });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Error al eliminar cobertura");
+    },
+  });
+
+  function resetForm() {
+    setPayerId("");
+    setAffiliateType("");
+    setPolicyNumber("");
+    setCoveragePlanCode("");
+    setEffectiveFrom("");
+    setEffectiveTo("");
+  }
+
+  function startEdit(row: {
+    id: string;
+    payerId: string;
+    affiliateType: string;
+    policyNumber: string | null;
+    coveragePlanCode: string | null;
+    effectiveFrom: Date;
+    effectiveTo: Date | null;
+  }) {
+    setEditingId(row.id);
+    setPayerId(row.payerId);
+    setAffiliateType(row.affiliateType);
+    setPolicyNumber(row.policyNumber ?? "");
+    setCoveragePlanCode(row.coveragePlanCode ?? "");
+    setEffectiveFrom(new Date(row.effectiveFrom).toISOString().slice(0, 10));
+    setEffectiveTo(
+      row.effectiveTo
+        ? new Date(row.effectiveTo).toISOString().slice(0, 10)
+        : ""
+    );
+    setShowForm(true);
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!(payerId && affiliateType && effectiveFrom)) {
+      toast.error(
+        "Pagador, tipo de afiliación y fecha de inicio son obligatorios"
+      );
+      return;
+    }
+    if (editingId) {
+      updateMutation.mutate({
+        id: editingId,
+        payerId,
+        affiliateType: affiliateType.trim(),
+        policyNumber: policyNumber.trim() || null,
+        coveragePlanCode: coveragePlanCode.trim() || null,
+        effectiveFrom: new Date(effectiveFrom),
+        effectiveTo: effectiveTo ? new Date(effectiveTo) : null,
+      });
+    } else {
+      createMutation.mutate({
+        patientId,
+        payerId,
+        affiliateType: affiliateType.trim(),
+        policyNumber: policyNumber.trim() || null,
+        coveragePlanCode: coveragePlanCode.trim() || null,
+        effectiveFrom: new Date(effectiveFrom),
+        effectiveTo: effectiveTo ? new Date(effectiveTo) : null,
+      });
+    }
+  };
+
+  const columns = [
+    {
+      header: "Pagador",
+      accessor: (row: { payerId: string }) => (
+        <PayerName payerId={row.payerId} />
+      ),
+    },
+    {
+      header: "Tipo afiliación",
+      accessor: (row: { affiliateType: string }) => row.affiliateType,
+    },
+    {
+      header: "Número póliza",
+      accessor: (row: { policyNumber: string | null }) =>
+        row.policyNumber ?? "—",
+    },
+    {
+      header: "Plan",
+      accessor: (row: { coveragePlanCode: string | null }) =>
+        row.coveragePlanCode ?? "—",
+    },
+    {
+      header: "Vigencia",
+      accessor: (row: { effectiveFrom: Date; effectiveTo: Date | null }) => (
+        <span>
+          {new Date(row.effectiveFrom).toLocaleDateString("es-CO")}
+          {row.effectiveTo
+            ? ` → ${new Date(row.effectiveTo).toLocaleDateString("es-CO")}`
+            : " → —"}
+        </span>
+      ),
+    },
+    {
+      header: "",
+      accessor: (row: {
+        id: string;
+        payerId: string;
+        affiliateType: string;
+        policyNumber: string | null;
+        coveragePlanCode: string | null;
+        effectiveFrom: Date;
+        effectiveTo: Date | null;
+      }) => (
+        <div className="flex items-center gap-1">
+          <Button
+            aria-label="Editar cobertura"
+            onClick={() => startEdit(row)}
+            size="icon-xs"
+            variant="ghost"
+          >
+            <Pencil size={12} />
+          </Button>
+          <Button
+            aria-label="Eliminar cobertura"
+            disabled={deleteMutation.isPending}
+            onClick={() => {
+              if (confirm("¿Eliminar esta cobertura?")) {
+                deleteMutation.mutate({ id: row.id });
+              }
+            }}
+            size="icon-xs"
+            variant="ghost"
+          >
+            <Trash2 size={12} />
+          </Button>
+        </div>
+      ),
+      className: "w-16",
+    },
+  ];
+
+  return (
+    <Card className="mx-6" size="sm">
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle>Cobertura / Afiliación</CardTitle>
+        <Button
+          onClick={() => {
+            if (showForm && editingId) {
+              setEditingId(null);
+              resetForm();
+            }
+            setShowForm((s) => !s);
+          }}
+          size="sm"
+          variant="outline"
+        >
+          {showForm ? <X size={14} /> : <Plus size={14} />}
+          {showForm ? "Cancelar" : "Agregar"}
+        </Button>
+      </CardHeader>
+      <CardContent>
+        {showForm && (
+          <form
+            className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3"
+            onSubmit={handleSubmit}
+          >
+            <div className="space-y-1">
+              <Label>Pagador *</Label>
+              <Select
+                onValueChange={(v) => setPayerId(v as string)}
+                value={payerId}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {payersData?.items.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label>Tipo afiliación *</Label>
+              <Select
+                onValueChange={(v) => setAffiliateType(v as string)}
+                value={affiliateType}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="contributivo">Contributivo</SelectItem>
+                  <SelectItem value="subsidado">Subsidado</SelectItem>
+                  <SelectItem value="vinculado">Vinculado</SelectItem>
+                  <SelectItem value="particular">Particular</SelectItem>
+                  <SelectItem value="otro">Otro</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label>Número póliza</Label>
+              <Input
+                onChange={(e) => setPolicyNumber(e.target.value)}
+                placeholder="Número de póliza"
+                value={policyNumber}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>Plan</Label>
+              <Input
+                onChange={(e) => setCoveragePlanCode(e.target.value)}
+                placeholder="Código del plan"
+                value={coveragePlanCode}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>Vigente desde *</Label>
+              <Input
+                onChange={(e) => setEffectiveFrom(e.target.value)}
+                type="date"
+                value={effectiveFrom}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>Vigente hasta</Label>
+              <Input
+                onChange={(e) => setEffectiveTo(e.target.value)}
+                type="date"
+                value={effectiveTo}
+              />
+            </div>
+            <div className="flex items-end gap-2 sm:col-start-1">
+              <Button
+                disabled={createMutation.isPending || updateMutation.isPending}
+                size="sm"
+                type="submit"
+              >
+                {editingId ? "Actualizar" : "Guardar"}
+              </Button>
+              {editingId && (
+                <Button
+                  onClick={() => {
+                    setEditingId(null);
+                    resetForm();
+                    setShowForm(false);
+                  }}
+                  size="sm"
+                  type="button"
+                  variant="ghost"
+                >
+                  Cancelar
+                </Button>
+              )}
+            </div>
+          </form>
+        )}
+        <DataTable
+          columns={columns}
+          data={data?.items ?? []}
+          emptyDescription="Este paciente no tiene coberturas registradas."
+          emptyTitle="Sin coberturas"
+          isLoading={isLoading}
+          keyExtractor={(row) => row.id}
+        />
+      </CardContent>
+    </Card>
+  );
+}
+
+function IdentifiersSection({ patientId }: { patientId: string }) {
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [identifierSystem, setIdentifierSystem] = useState("");
+  const [identifierType, setIdentifierType] = useState("");
+  const [identifierValue, setIdentifierValue] = useState("");
+  const [isCurrent, setIsCurrent] = useState(true);
+
+  const { data, isLoading } = useQuery(
+    orpc.patientIdentifiers.list.queryOptions({
+      input: {
+        limit: 25,
+        offset: 0,
+        patientId,
+        sortDirection: "desc",
+      },
+    })
+  );
+
+  const createMutation = useMutation({
+    ...orpc.patientIdentifiers.create.mutationOptions(),
+    onSuccess: () => {
+      toast.success("Identificador agregado");
+      queryClient.invalidateQueries({
+        queryKey: orpc.patientIdentifiers.list.key({ type: "query" }),
+      });
+      setShowForm(false);
+      resetForm();
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Error al agregar identificador");
+    },
+  });
+
+  const updateMutation = useMutation({
+    ...orpc.patientIdentifiers.update.mutationOptions(),
+    onSuccess: () => {
+      toast.success("Identificador actualizado");
+      queryClient.invalidateQueries({
+        queryKey: orpc.patientIdentifiers.list.key({ type: "query" }),
+      });
+      setShowForm(false);
+      setEditingId(null);
+      resetForm();
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Error al actualizar identificador");
+    },
+  });
+
+  const deleteMutation = useMutation({
+    ...orpc.patientIdentifiers.delete.mutationOptions(),
+    onSuccess: () => {
+      toast.success("Identificador eliminado");
+      queryClient.invalidateQueries({
+        queryKey: orpc.patientIdentifiers.list.key({ type: "query" }),
+      });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Error al eliminar identificador");
+    },
+  });
+
+  function resetForm() {
+    setIdentifierSystem("");
+    setIdentifierType("");
+    setIdentifierValue("");
+    setIsCurrent(true);
+  }
+
+  function startEdit(row: {
+    id: string;
+    identifierSystem: string;
+    identifierType: string;
+    identifierValue: string;
+    isCurrent: boolean;
+  }) {
+    setEditingId(row.id);
+    setIdentifierSystem(row.identifierSystem);
+    setIdentifierType(row.identifierType);
+    setIdentifierValue(row.identifierValue);
+    setIsCurrent(row.isCurrent);
+    setShowForm(true);
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (
+      !(
+        identifierSystem.trim() &&
+        identifierType.trim() &&
+        identifierValue.trim()
+      )
+    ) {
+      toast.error("Todos los campos obligatorios deben estar completos");
+      return;
+    }
+    if (editingId) {
+      updateMutation.mutate({
+        id: editingId,
+        identifierSystem: identifierSystem.trim(),
+        identifierType: identifierType.trim(),
+        identifierValue: identifierValue.trim(),
+        isCurrent,
+      });
+    } else {
+      createMutation.mutate({
+        patientId,
+        identifierSystem: identifierSystem.trim(),
+        identifierType: identifierType.trim(),
+        identifierValue: identifierValue.trim(),
+        isCurrent,
+      });
+    }
+  };
+
+  const columns = [
+    {
+      header: "Sistema",
+      accessor: (row: { identifierSystem: string; isCurrent: boolean }) => (
+        <span className="inline-flex items-center gap-1.5">
+          <span className="font-medium">{row.identifierSystem}</span>
+          {row.isCurrent && (
+            <span className="inline-flex border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 font-medium text-[10px] text-emerald-700">
+              Vigente
+            </span>
+          )}
+        </span>
+      ),
+    },
+    {
+      header: "Tipo",
+      accessor: (row: { identifierType: string }) => row.identifierType,
+    },
+    {
+      header: "Valor",
+      accessor: (row: { identifierValue: string }) => (
+        <span className="font-mono text-xs">{row.identifierValue}</span>
+      ),
+    },
+    {
+      header: "",
+      accessor: (row: {
+        id: string;
+        identifierSystem: string;
+        identifierType: string;
+        identifierValue: string;
+        isCurrent: boolean;
+      }) => (
+        <div className="flex items-center gap-1">
+          <Button
+            aria-label="Editar identificador"
+            onClick={() => startEdit(row)}
+            size="icon-xs"
+            variant="ghost"
+          >
+            <Pencil size={12} />
+          </Button>
+          <Button
+            aria-label="Eliminar identificador"
+            disabled={deleteMutation.isPending}
+            onClick={() => {
+              if (confirm("¿Eliminar este identificador?")) {
+                deleteMutation.mutate({ id: row.id });
+              }
+            }}
+            size="icon-xs"
+            variant="ghost"
+          >
+            <Trash2 size={12} />
+          </Button>
+        </div>
+      ),
+      className: "w-16",
+    },
+  ];
+
+  return (
+    <Card className="mx-6" size="sm">
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle>Identificadores</CardTitle>
+        <Button
+          onClick={() => {
+            if (showForm && editingId) {
+              setEditingId(null);
+              resetForm();
+            }
+            setShowForm((s) => !s);
+          }}
+          size="sm"
+          variant="outline"
+        >
+          {showForm ? <X size={14} /> : <Plus size={14} />}
+          {showForm ? "Cancelar" : "Agregar"}
+        </Button>
+      </CardHeader>
+      <CardContent>
+        {showForm && (
+          <form
+            className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3"
+            onSubmit={handleSubmit}
+          >
+            <div className="space-y-1">
+              <Label>Sistema *</Label>
+              <Select
+                onValueChange={(v) => setIdentifierSystem(v as string)}
+                value={identifierSystem}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="RENI">RENI</SelectItem>
+                  <SelectItem value="SAF">SAF</SelectItem>
+                  <SelectItem value="CC">Cédula de ciudadanía</SelectItem>
+                  <SelectItem value="TI">Tarjeta de identidad</SelectItem>
+                  <SelectItem value="PAS">Pasaporte</SelectItem>
+                  <SelectItem value="CE">Cédula de extranjería</SelectItem>
+                  <SelectItem value="NIT">NIT</SelectItem>
+                  <SelectItem value="OTHER">Otro</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label>Tipo *</Label>
+              <Input
+                onChange={(e) => setIdentifierType(e.target.value)}
+                placeholder="Ej. número, código"
+                value={identifierType}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>Valor *</Label>
+              <Input
+                onChange={(e) => setIdentifierValue(e.target.value)}
+                placeholder="Valor del identificador"
+                value={identifierValue}
+              />
+            </div>
+            <div className="flex items-center gap-2 pt-5">
+              <input
+                checked={isCurrent}
+                className="size-4 rounded-sm border border-input"
+                id="id-current"
+                onChange={(e) => setIsCurrent(e.target.checked)}
+                type="checkbox"
+              />
+              <Label htmlFor="id-current">Vigente</Label>
+            </div>
+            <div className="flex items-end gap-2">
+              <Button
+                disabled={createMutation.isPending || updateMutation.isPending}
+                size="sm"
+                type="submit"
+              >
+                {editingId ? "Actualizar" : "Guardar"}
+              </Button>
+              {editingId && (
+                <Button
+                  onClick={() => {
+                    setEditingId(null);
+                    resetForm();
+                    setShowForm(false);
+                  }}
+                  size="sm"
+                  type="button"
+                  variant="ghost"
+                >
+                  Cancelar
+                </Button>
+              )}
+            </div>
+          </form>
+        )}
+        <DataTable
+          columns={columns}
+          data={data?.items ?? []}
+          emptyDescription="Este paciente no tiene identificadores adicionales registrados."
+          emptyTitle="Sin identificadores"
+          isLoading={isLoading}
+          keyExtractor={(row) => row.id}
+        />
       </CardContent>
     </Card>
   );
@@ -652,13 +1668,24 @@ function PatientDetailPage() {
   const { patientId } = Route.useParams();
   const [editing, setEditing] = useState(false);
 
-  const { data: patient, isLoading: patientLoading } = useQuery(
-    orpc.patients.get.queryOptions({ input: { id: patientId } })
-  );
+  const {
+    data: patient,
+    isLoading: patientLoading,
+    isError: patientError,
+  } = useQuery(orpc.patients.get.queryOptions({ input: { id: patientId } }));
 
   const fullName = patient
     ? `${patient.firstName} ${patient.lastName1}`
     : "Paciente";
+
+  useEffect(() => {
+    if (patient) {
+      document.title = `${fullName} | WellFit EMR`;
+    }
+    return () => {
+      document.title = "WellFit EMR";
+    };
+  }, [patient, fullName]);
 
   return (
     <div className="space-y-4 pb-6">
@@ -666,10 +1693,49 @@ function PatientDetailPage() {
         actions={
           !editing && patient ? (
             <div className="flex items-center gap-2">
-              <Link to="/encounters">
+              <Link search={{ patientId: patient.id }} to="/encounters">
                 <Button size="sm" variant="outline">
                   <ClipboardPlus size={14} />
                   Nueva atención
+                </Button>
+              </Link>
+              <Link search={{ patientId: patient.id }} to="/medication-orders">
+                <Button size="sm" variant="outline">
+                  <Pill size={14} />
+                  Nueva prescripción
+                </Button>
+              </Link>
+              <Link search={{ patientId: patient.id }} to="/service-requests">
+                <Button size="sm" variant="outline">
+                  <FlaskConical size={14} />
+                  Nueva orden
+                </Button>
+              </Link>
+              <Link search={{ patientId: patient.id }} to="/appointments">
+                <Button size="sm" variant="outline">
+                  <Calendar size={14} />
+                  Nueva cita
+                </Button>
+              </Link>
+              <Link
+                search={{ patientId: patient.id }}
+                to="/incapacity-certificates"
+              >
+                <Button size="sm" variant="outline">
+                  <FileCheck size={14} />
+                  Nueva incapacidad
+                </Button>
+              </Link>
+              <Link search={{ patientId: patient.id }} to="/clinical-documents">
+                <Button size="sm" variant="outline">
+                  <FileText size={14} />
+                  Nuevo documento
+                </Button>
+              </Link>
+              <Link search={{ patientId: patient.id }} to="/consents">
+                <Button size="sm" variant="outline">
+                  <ShieldCheck size={14} />
+                  Nuevo consentimiento
                 </Button>
               </Link>
               <Button
@@ -685,10 +1751,28 @@ function PatientDetailPage() {
         }
         backTo="/patients"
         description="Información clínica y atenciones del paciente"
+        icon={User}
+        iconBgClass="bg-teal-100 text-teal-600"
         title={fullName}
       />
 
-      {patientLoading ? (
+      {patientError ? (
+        <div className="mx-6 flex flex-col items-center justify-center gap-2 py-12">
+          <p className="text-destructive text-sm">Error al cargar paciente</p>
+          <Button
+            onClick={() =>
+              queryClient.invalidateQueries({
+                queryKey: orpc.patients.get.key({ type: "query" }),
+              })
+            }
+            size="sm"
+            variant="outline"
+          >
+            <RefreshCw size={12} />
+            Reintentar
+          </Button>
+        </div>
+      ) : patientLoading ? (
         <div className="mx-6 space-y-4">
           <Skeleton className="h-40 w-full" />
           <Skeleton className="h-40 w-full" />
@@ -706,6 +1790,9 @@ function PatientDetailPage() {
               patient={patient}
             />
           )}
+          <ContactsSection patientId={patientId} />
+          <CoverageSection patientId={patientId} />
+          <IdentifiersSection patientId={patientId} />
           <PatientTimeline patientId={patientId} />
           <EncountersSection patientId={patientId} />
         </>

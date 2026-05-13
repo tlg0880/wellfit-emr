@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Button } from "@wellfit-emr/ui/components/button";
 import {
   Card,
@@ -10,8 +10,8 @@ import {
 import { Input } from "@wellfit-emr/ui/components/input";
 import { Label } from "@wellfit-emr/ui/components/label";
 import { Skeleton } from "@wellfit-emr/ui/components/skeleton";
-import { Plus, X } from "lucide-react";
-import { useState } from "react";
+import { ClipboardList, Plus, RefreshCw, Trash2, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { EmptyState } from "@/components/empty-state";
@@ -26,22 +26,60 @@ export const Route = createFileRoute(
 
 function ServiceRequestDetailPage() {
   const { requestId } = Route.useParams();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [showReportForm, setShowReportForm] = useState(false);
 
-  const { data: request, isLoading } = useQuery(
-    orpc.serviceRequests.list.queryOptions({
-      input: { limit: 1, offset: 0 },
+  const deleteMutation = useMutation({
+    ...orpc.serviceRequests.delete.mutationOptions(),
+    onSuccess: () => {
+      toast.success("Orden eliminada");
+      queryClient.invalidateQueries({
+        queryKey: orpc.serviceRequests.list.key({ type: "query" }),
+      });
+      navigate({ to: "/service-requests" });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Error al eliminar orden");
+    },
+  });
+
+  const {
+    data: serviceRequest,
+    isLoading,
+    isError,
+  } = useQuery(
+    orpc.serviceRequests.get.queryOptions({
+      input: { id: requestId },
     })
   );
-
-  const serviceRequest = request?.items.find((r) => r.id === requestId);
 
   const { data: report, isLoading: reportLoading } = useQuery({
     ...orpc.serviceRequests.getReport.queryOptions({
       input: { requestId },
     }),
     enabled: !!requestId,
+  });
+
+  const { data: requesterData } = useQuery({
+    ...orpc.facilities.getPractitioner.queryOptions({
+      input: { id: serviceRequest?.requestedBy ?? "" },
+    }),
+    enabled: !!serviceRequest?.requestedBy,
+  });
+
+  const { data: patientData } = useQuery({
+    ...orpc.patients.get.queryOptions({
+      input: { id: serviceRequest?.patientId ?? "" },
+    }),
+    enabled: !!serviceRequest?.patientId,
+  });
+
+  const { data: encounterData } = useQuery({
+    ...orpc.encounters.get.queryOptions({
+      input: { id: serviceRequest?.encounterId ?? "" },
+    }),
+    enabled: !!serviceRequest?.encounterId,
   });
 
   const createReport = useMutation({
@@ -84,15 +122,61 @@ function ServiceRequestDetailPage() {
     ? "Cargando..."
     : (serviceRequest?.requestCode ?? "Detalle de orden");
 
+  useEffect(() => {
+    if (serviceRequest) {
+      document.title = `${serviceRequest.requestCode} | WellFit EMR`;
+    }
+    return () => {
+      document.title = "WellFit EMR";
+    };
+  }, [serviceRequest]);
+
   return (
     <div className="space-y-4 pb-6">
       <PageHeader
+        actions={
+          serviceRequest ? (
+            <Button
+              disabled={deleteMutation.isPending}
+              onClick={() => {
+                if (confirm("¿Eliminar esta orden permanentemente?")) {
+                  deleteMutation.mutate({ id: requestId });
+                }
+              }}
+              size="sm"
+              variant="outline"
+            >
+              <Trash2 size={14} />
+              <span className="ml-1.5">
+                {deleteMutation.isPending ? "Eliminando..." : "Eliminar"}
+              </span>
+            </Button>
+          ) : undefined
+        }
         backTo="/service-requests"
         description="Detalle de la orden de servicio y reporte asociado"
+        icon={ClipboardList}
+        iconBgClass="bg-sky-100 text-sky-600"
         title={title}
       />
 
-      {isLoading ? (
+      {isError ? (
+        <div className="mx-6 flex flex-col items-center justify-center gap-2 py-12">
+          <p className="text-destructive text-sm">Error al cargar orden</p>
+          <Button
+            onClick={() =>
+              queryClient.invalidateQueries({
+                queryKey: orpc.serviceRequests.get.key({ type: "query" }),
+              })
+            }
+            size="sm"
+            variant="outline"
+          >
+            <RefreshCw size={12} />
+            Reintentar
+          </Button>
+        </div>
+      ) : isLoading ? (
         <div className="mx-6 space-y-4">
           <Skeleton className="h-40 w-full" />
           <Skeleton className="h-40 w-full" />
@@ -105,6 +189,35 @@ function ServiceRequestDetailPage() {
             </CardHeader>
             <CardContent className="grid grid-cols-2 gap-3 text-xs">
               {[
+                {
+                  label: "Paciente",
+                  value: (
+                    <Link
+                      className="text-primary hover:underline"
+                      params={{ patientId: serviceRequest.patientId }}
+                      to="/patients/$patientId"
+                    >
+                      {patientData
+                        ? `${patientData.firstName} ${patientData.lastName1}`
+                        : `${serviceRequest.patientId.slice(0, 8)}…`}
+                    </Link>
+                  ),
+                },
+                {
+                  label: "Atención",
+                  value: (
+                    <Link
+                      className="text-primary hover:underline"
+                      params={{ encounterId: serviceRequest.encounterId }}
+                      search={{ tab: undefined }}
+                      to="/encounters/$encounterId"
+                    >
+                      {encounterData
+                        ? encounterData.reasonForVisit || "Sin motivo"
+                        : `${serviceRequest.encounterId.slice(0, 8)}…`}
+                    </Link>
+                  ),
+                },
                 { label: "Tipo", value: serviceRequest.requestType },
                 { label: "Código", value: serviceRequest.requestCode },
                 {
@@ -129,6 +242,12 @@ function ServiceRequestDetailPage() {
                   value: new Date(serviceRequest.requestedAt).toLocaleString(
                     "es-CO"
                   ),
+                },
+                {
+                  label: "Solicitado por",
+                  value:
+                    requesterData?.fullName ??
+                    `${serviceRequest.requestedBy.slice(0, 8)}…`,
                 },
               ].map((item) => (
                 <div key={item.label}>

@@ -70,8 +70,23 @@ const getDiagnosticReportSchema = z.object({
   requestId: nonEmptyStringSchema,
 });
 
+const listReportsSchema = z.object({
+  encounterId: z.string().min(1).optional(),
+  limit: z.number().int().min(1).max(100).default(25),
+  offset: z.number().int().min(0).default(0),
+  requestId: z.string().min(1).optional(),
+  sortDirection: z.enum(["asc", "desc"]).default("desc"),
+});
+
 const listResponseSchema = z.object({
   items: z.array(serviceRequestSchema),
+  limit: z.number(),
+  offset: z.number(),
+  total: z.number(),
+});
+
+const listReportsResponseSchema = z.object({
+  items: z.array(diagnosticReportSchema),
   limit: z.number(),
   offset: z.number(),
   total: z.number(),
@@ -234,6 +249,44 @@ const deleteDiagnosticReportProcedure = protectedProcedure
     return true;
   });
 
+const listReportsProcedure = protectedProcedure
+  .input(listReportsSchema)
+  .output(listReportsResponseSchema)
+  .handler(async ({ context, input }) => {
+    const filters = [
+      input.encounterId
+        ? eq(diagnosticReport.encounterId, input.encounterId)
+        : undefined,
+      input.requestId
+        ? eq(diagnosticReport.requestId, input.requestId)
+        : undefined,
+    ].filter((filter) => filter !== undefined);
+
+    const where = filters.length > 0 ? and(...filters) : undefined;
+    const orderBy =
+      input.sortDirection === "asc"
+        ? asc(diagnosticReport.issuedAt)
+        : desc(diagnosticReport.issuedAt);
+
+    const [items, totalRows] = await Promise.all([
+      context.db
+        .select()
+        .from(diagnosticReport)
+        .where(where)
+        .orderBy(orderBy)
+        .limit(input.limit)
+        .offset(input.offset),
+      context.db.select({ value: count() }).from(diagnosticReport).where(where),
+    ]);
+
+    return {
+      items,
+      limit: input.limit,
+      offset: input.offset,
+      total: totalRows.at(0)?.value ?? 0,
+    };
+  });
+
 export interface ServiceRequestsRouter extends Record<string, AnyRouter> {
   create: typeof createServiceRequestProcedure;
   createReport: typeof createDiagnosticReportProcedure;
@@ -242,6 +295,7 @@ export interface ServiceRequestsRouter extends Record<string, AnyRouter> {
   get: typeof getServiceRequestProcedure;
   getReport: typeof getDiagnosticReportProcedure;
   list: typeof listServiceRequestsProcedure;
+  listReports: typeof listReportsProcedure;
 }
 
 export const serviceRequestsRouter: ServiceRequestsRouter = {
@@ -252,4 +306,5 @@ export const serviceRequestsRouter: ServiceRequestsRouter = {
   get: getServiceRequestProcedure,
   getReport: getDiagnosticReportProcedure,
   list: listServiceRequestsProcedure,
+  listReports: listReportsProcedure,
 };

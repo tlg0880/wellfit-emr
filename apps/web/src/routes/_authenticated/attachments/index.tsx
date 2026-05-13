@@ -1,5 +1,10 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Link,
+  useNavigate,
+  useSearch,
+} from "@tanstack/react-router";
 import { Button } from "@wellfit-emr/ui/components/button";
 import {
   Card,
@@ -10,9 +15,17 @@ import {
 import { Input } from "@wellfit-emr/ui/components/input";
 import { Label } from "@wellfit-emr/ui/components/label";
 import { SearchSelect } from "@wellfit-emr/ui/components/search-select";
-import { Paperclip, Plus, Search } from "lucide-react";
-import { useState } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@wellfit-emr/ui/components/select";
+import { Eye, Paperclip, Plus, Search, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { z } from "zod";
 
 import { DataTable } from "@/components/data-table";
 import { PageHeader } from "@/components/page-header";
@@ -146,8 +159,14 @@ function getEntityLoading(
   return false;
 }
 
+const searchSchema = z.object({
+  linkedEntityType: z.string().optional(),
+  linkedEntityId: z.string().optional(),
+});
+
 export const Route = createFileRoute("/_authenticated/attachments/")({
   component: AttachmentsListPage,
+  validateSearch: searchSchema,
   beforeLoad: async () => {
     const session = await authClient.getSession();
     if (!session.data) {
@@ -262,6 +281,18 @@ function CreateAttachmentLinkForm({ onCancel }: { onCancel: () => void }) {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!form.binaryId.trim()) {
+      toast.error("Binary Object ID es obligatorio");
+      return;
+    }
+    if (!form.linkedEntityId.trim()) {
+      toast.error("Entidad vinculada es obligatoria");
+      return;
+    }
+    if (!form.title.trim()) {
+      toast.error("Título es obligatorio");
+      return;
+    }
     create.mutate({
       binaryId: form.binaryId,
       linkedEntityType: form.linkedEntityType,
@@ -283,7 +314,7 @@ function CreateAttachmentLinkForm({ onCancel }: { onCancel: () => void }) {
           onSubmit={handleSubmit}
         >
           <div className="space-y-1">
-            <Label>Binary Object ID</Label>
+            <Label>Binary Object ID *</Label>
             <Input
               onChange={(e) => setForm({ ...form, binaryId: e.target.value })}
               required
@@ -291,28 +322,33 @@ function CreateAttachmentLinkForm({ onCancel }: { onCancel: () => void }) {
             />
           </div>
           <div className="space-y-1">
-            <Label>Tipo de entidad vinculada</Label>
-            <select
-              className="h-8 w-full rounded-none border border-input bg-transparent px-2.5 text-xs outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50"
-              onChange={(e) =>
+            <Label>Tipo de entidad vinculada *</Label>
+            <Select
+              onValueChange={(v) =>
                 setForm({
                   ...form,
-                  linkedEntityType: e.target.value,
+                  linkedEntityType: v as string,
                   linkedEntityId: "",
                 })
               }
-              required
               value={form.linkedEntityType}
             >
-              <option value="encounter">Atención</option>
-              <option value="patient">Paciente</option>
-              <option value="practitioner">Profesional</option>
-              <option value="organization">Organización</option>
-              <option value="clinicalDocument">Documento clínico</option>
-            </select>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="encounter">Atención</SelectItem>
+                <SelectItem value="patient">Paciente</SelectItem>
+                <SelectItem value="practitioner">Profesional</SelectItem>
+                <SelectItem value="organization">Organización</SelectItem>
+                <SelectItem value="clinicalDocument">
+                  Documento clínico
+                </SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-1">
-            <Label>Entidad vinculada</Label>
+            <Label>Entidad vinculada *</Label>
             <SearchSelect
               emptyMessage="Escribe para buscar"
               loading={entityLoading}
@@ -326,7 +362,7 @@ function CreateAttachmentLinkForm({ onCancel }: { onCancel: () => void }) {
             />
           </div>
           <div className="space-y-1 md:col-span-2">
-            <Label>Título</Label>
+            <Label>Título *</Label>
             <Input
               onChange={(e) => setForm({ ...form, title: e.target.value })}
               required
@@ -334,7 +370,7 @@ function CreateAttachmentLinkForm({ onCancel }: { onCancel: () => void }) {
             />
           </div>
           <div className="space-y-1">
-            <Label>Clasificación</Label>
+            <Label>Clasificación *</Label>
             <Input
               onChange={(e) =>
                 setForm({ ...form, classification: e.target.value })
@@ -344,7 +380,7 @@ function CreateAttachmentLinkForm({ onCancel }: { onCancel: () => void }) {
             />
           </div>
           <div className="space-y-1">
-            <Label>Fecha captura</Label>
+            <Label>Fecha captura *</Label>
             <Input
               onChange={(e) => setForm({ ...form, capturedAt: e.target.value })}
               required
@@ -373,20 +409,40 @@ function CreateAttachmentLinkForm({ onCancel }: { onCancel: () => void }) {
 
 function AttachmentsListPage() {
   const navigate = useNavigate();
+  const search = useSearch({ from: "/_authenticated/attachments/" });
 
-  const [linkedEntityId, setLinkedEntityId] = useState("");
-  const [linkedEntityType, setLinkedEntityType] = useState("encounter");
+  const [linkedEntityId, setLinkedEntityId] = useState(
+    search.linkedEntityId || ""
+  );
+  const [linkedEntityType, setLinkedEntityType] = useState(
+    search.linkedEntityType || "encounter"
+  );
   const [entitySearch, setEntitySearch] = useState("");
   const [offset, setOffset] = useState(0);
   const [limit] = useState(25);
   const [showForm, setShowForm] = useState(false);
+  const [queryEntitySearch, setQueryEntitySearch] = useState("");
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setQueryEntitySearch(entitySearch);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [entitySearch]);
+
+  useEffect(() => {
+    document.title = "Anexos | WellFit EMR";
+    return () => {
+      document.title = "WellFit EMR";
+    };
+  }, []);
 
   const { data: patientsData, isLoading: patientsLoading } = useQuery(
     orpc.patients.list.queryOptions({
       input: {
         limit: 20,
         offset: 0,
-        search: entitySearch || undefined,
+        search: queryEntitySearch || undefined,
       },
       enabled: linkedEntityType === "patient",
     })
@@ -397,7 +453,7 @@ function AttachmentsListPage() {
       input: {
         limit: 20,
         offset: 0,
-        search: entitySearch || undefined,
+        search: queryEntitySearch || undefined,
       },
       enabled: linkedEntityType === "encounter",
     })
@@ -408,7 +464,7 @@ function AttachmentsListPage() {
       input: {
         limit: 20,
         offset: 0,
-        search: entitySearch || undefined,
+        search: queryEntitySearch || undefined,
       },
       enabled: linkedEntityType === "practitioner",
     })
@@ -419,7 +475,7 @@ function AttachmentsListPage() {
       input: {
         limit: 20,
         offset: 0,
-        search: entitySearch || undefined,
+        search: queryEntitySearch || undefined,
       },
       enabled: linkedEntityType === "organization",
     })
@@ -466,6 +522,19 @@ function AttachmentsListPage() {
     })
   );
 
+  const deleteMutation = useMutation({
+    ...orpc.attachments.deleteLink.mutationOptions(),
+    onSuccess: () => {
+      toast.success("Anexo eliminado");
+      queryClient.invalidateQueries({
+        queryKey: orpc.attachments.listLinks.key({ type: "query" }),
+      });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Error al eliminar anexo");
+    },
+  });
+
   const columns = [
     {
       header: "Título",
@@ -484,12 +553,41 @@ function AttachmentsListPage() {
     {
       header: "Entidad",
       accessor: (row: NonNullable<typeof data>["items"][0]) =>
-        `${row.linkedEntityType} / ${row.linkedEntityId}`,
+        `${row.linkedEntityType} / ${row.linkedEntityId.slice(0, 8)}…`,
     },
     {
       header: "Fecha captura",
       accessor: (row: NonNullable<typeof data>["items"][0]) =>
         new Date(row.capturedAt).toLocaleString("es-CO"),
+    },
+    {
+      header: "Acciones",
+      accessor: (row: NonNullable<typeof data>["items"][0]) => (
+        <div className="flex items-center gap-1">
+          <Link
+            aria-label="Ver anexo"
+            className="inline-flex text-muted-foreground hover:text-foreground"
+            params={{ attachmentId: row.id }}
+            to="/attachments/$attachmentId"
+          >
+            <Eye size={14} />
+          </Link>
+          <Button
+            aria-label="Eliminar anexo"
+            disabled={deleteMutation.isPending}
+            onClick={() => {
+              if (confirm("¿Eliminar este anexo permanentemente?")) {
+                deleteMutation.mutate({ id: row.id });
+              }
+            }}
+            size="icon-xs"
+            variant="ghost"
+          >
+            <Trash2 size={12} />
+          </Button>
+        </div>
+      ),
+      className: "w-20",
     },
   ];
 
@@ -503,6 +601,8 @@ function AttachmentsListPage() {
           </Button>
         }
         description="Anexos y documentos vinculados"
+        icon={Paperclip}
+        iconBgClass="bg-slate-100 text-slate-600"
         title="Anexos"
       />
 
@@ -513,21 +613,27 @@ function AttachmentsListPage() {
       <div className="px-6">
         <div className="mb-3 flex items-center gap-2">
           <Search className="text-muted-foreground" size={14} />
-          <select
-            className="h-7 rounded-none border border-input bg-transparent px-2.5 text-xs outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50"
-            onChange={(e) => {
-              setLinkedEntityType(e.target.value);
+          <Select
+            onValueChange={(v) => {
+              setLinkedEntityType(v as string);
               setLinkedEntityId("");
               setOffset(0);
             }}
             value={linkedEntityType}
           >
-            <option value="encounter">Atención</option>
-            <option value="patient">Paciente</option>
-            <option value="practitioner">Profesional</option>
-            <option value="organization">Organización</option>
-            <option value="clinicalDocument">Documento clínico</option>
-          </select>
+            <SelectTrigger className="h-7 w-auto">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="encounter">Atención</SelectItem>
+              <SelectItem value="patient">Paciente</SelectItem>
+              <SelectItem value="practitioner">Profesional</SelectItem>
+              <SelectItem value="organization">Organización</SelectItem>
+              <SelectItem value="clinicalDocument">
+                Documento clínico
+              </SelectItem>
+            </SelectContent>
+          </Select>
           <SearchSelect
             className="max-w-xs"
             clearable

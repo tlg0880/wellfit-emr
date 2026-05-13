@@ -4,7 +4,7 @@ import {
   consentRecord,
   dataDisclosureAuthorization,
 } from "@wellfit-emr/db/schema/clinical";
-import { asc, count, desc, eq } from "drizzle-orm";
+import { and, asc, count, desc, eq } from "drizzle-orm";
 import { z } from "zod";
 
 import { protectedProcedure } from "../index";
@@ -42,6 +42,7 @@ const createConsentSchema = z.object({
 });
 
 const listConsentsSchema = z.object({
+  encounterId: z.string().min(1).optional(),
   limit: z.number().int().min(1).max(100).default(25),
   offset: z.number().int().min(0).default(0),
   patientId: nonEmptyStringSchema,
@@ -126,7 +127,14 @@ const listConsentsProcedure = protectedProcedure
   .input(listConsentsSchema)
   .output(listConsentsResponseSchema)
   .handler(async ({ context, input }) => {
-    const where = eq(consentRecord.patientId, input.patientId);
+    const filters = [
+      eq(consentRecord.patientId, input.patientId),
+      input.encounterId
+        ? eq(consentRecord.encounterId, input.encounterId)
+        : undefined,
+    ].filter((f) => f !== undefined);
+
+    const where = filters.length > 0 ? and(...filters) : undefined;
     const orderBy =
       input.sortDirection === "asc"
         ? asc(consentRecord.signedAt)
@@ -240,6 +248,40 @@ const deleteByIdSchema = z.object({
   id: nonEmptyStringSchema,
 });
 
+const getConsentProcedure = protectedProcedure
+  .input(deleteByIdSchema)
+  .output(consentSchema)
+  .handler(async ({ context, input }) => {
+    const [found] = await context.db
+      .select()
+      .from(consentRecord)
+      .where(eq(consentRecord.id, input.id))
+      .limit(1);
+    if (!found) {
+      throw new ORPCError("NOT_FOUND", {
+        message: "Consent record not found.",
+      });
+    }
+    return found;
+  });
+
+const getDataDisclosureProcedure = protectedProcedure
+  .input(deleteByIdSchema)
+  .output(dataDisclosureSchema)
+  .handler(async ({ context, input }) => {
+    const [found] = await context.db
+      .select()
+      .from(dataDisclosureAuthorization)
+      .where(eq(dataDisclosureAuthorization.id, input.id))
+      .limit(1);
+    if (!found) {
+      throw new ORPCError("NOT_FOUND", {
+        message: "Data disclosure authorization not found.",
+      });
+    }
+    return found;
+  });
+
 const deleteConsentProcedure = protectedProcedure
   .input(deleteByIdSchema)
   .output(z.boolean())
@@ -285,6 +327,8 @@ export interface ConsentsRouter extends Record<string, AnyRouter> {
   createDataDisclosure: typeof createDataDisclosureProcedure;
   deleteConsent: typeof deleteConsentProcedure;
   deleteDataDisclosure: typeof deleteDataDisclosureProcedure;
+  getConsent: typeof getConsentProcedure;
+  getDataDisclosure: typeof getDataDisclosureProcedure;
   listConsents: typeof listConsentsProcedure;
   listDataDisclosures: typeof listDataDisclosuresProcedure;
   revokeConsent: typeof revokeConsentProcedure;
@@ -296,6 +340,8 @@ export const consentsRouter: ConsentsRouter = {
   createDataDisclosure: createDataDisclosureProcedure,
   deleteConsent: deleteConsentProcedure,
   deleteDataDisclosure: deleteDataDisclosureProcedure,
+  getConsent: getConsentProcedure,
+  getDataDisclosure: getDataDisclosureProcedure,
   listConsents: listConsentsProcedure,
   listDataDisclosures: listDataDisclosuresProcedure,
   revokeConsent: revokeConsentProcedure,

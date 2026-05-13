@@ -15,12 +15,14 @@ import {
   FileOutput,
   FileText,
   FlaskConical,
+  Gavel,
   Mail,
   PenLine,
   Plus,
   RefreshCw,
   Share2,
 } from "lucide-react";
+import { useEffect } from "react";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { authClient } from "@/lib/auth-client";
@@ -264,6 +266,13 @@ function ComplianceAlertStrip({
 /* ─── page ─── */
 
 function RegulatoryTasksPage() {
+  useEffect(() => {
+    document.title = "Tareas regulatorias | WellFit EMR";
+    return () => {
+      document.title = "WellFit EMR";
+    };
+  }, []);
+
   const docsQuery = useQuery(
     orpc.clinicalDocuments.list.queryOptions({
       input: { limit: 10, offset: 0, status: "draft", sortDirection: "desc" },
@@ -362,6 +371,8 @@ function RegulatoryTasksPage() {
     <div className="space-y-6 p-6">
       <PageHeader
         description="Panel operativo de pendientes de cumplimiento"
+        icon={Gavel}
+        iconBgClass="bg-amber-50 text-amber-600"
         title="Tareas regulatorias"
       />
 
@@ -446,7 +457,7 @@ function RegulatoryTasksPage() {
             <div className="space-y-2">
               {draftDocs.map((doc) => (
                 <Link
-                  className="group flex items-center justify-between rounded-none border p-2.5 transition-colors hover:bg-muted/60"
+                  className="group flex items-center justify-between rounded-sm border p-2.5 transition-colors hover:bg-muted/60"
                   key={doc.id}
                   params={{ documentId: doc.id }}
                   to="/clinical-documents/$documentId"
@@ -513,7 +524,7 @@ function RegulatoryTasksPage() {
             <div className="space-y-2">
               {ripsItems.slice(0, 10).map((item) => (
                 <Link
-                  className="group flex items-center justify-between rounded-none border p-2.5 transition-colors hover:bg-muted/60"
+                  className="group flex items-center justify-between rounded-sm border p-2.5 transition-colors hover:bg-muted/60"
                   key={item.id}
                   params={{ exportId: item.id }}
                   to="/rips-exports/$exportId"
@@ -595,7 +606,7 @@ function RegulatoryTasksPage() {
             <div className="space-y-2">
               {ihceItems.slice(0, 10).map((item) => (
                 <Link
-                  className="group flex items-center justify-between rounded-none border p-2.5 transition-colors hover:bg-muted/60"
+                  className="group flex items-center justify-between rounded-sm border p-2.5 transition-colors hover:bg-muted/60"
                   key={item.id}
                   params={{ bundleId: item.id }}
                   to="/ihce-bundles/$bundleId"
@@ -671,7 +682,7 @@ function RegulatoryTasksPage() {
             <div className="space-y-2">
               {interItems.map((item) => (
                 <Link
-                  className="group flex items-center justify-between rounded-none border p-2.5 transition-colors hover:bg-muted/60"
+                  className="group flex items-center justify-between rounded-sm border p-2.5 transition-colors hover:bg-muted/60"
                   key={item.id}
                   params={{ interconsultationId: item.id }}
                   to="/interconsultations/$interconsultationId"
@@ -729,7 +740,7 @@ function RegulatoryTasksPage() {
             <div className="space-y-2">
               {orderItems.map((item) => (
                 <Link
-                  className="group flex items-center justify-between rounded-none border p-2.5 transition-colors hover:bg-muted/60"
+                  className="group flex items-center justify-between rounded-sm border p-2.5 transition-colors hover:bg-muted/60"
                   key={item.id}
                   params={{ requestId: item.id }}
                   to="/service-requests/$requestId"

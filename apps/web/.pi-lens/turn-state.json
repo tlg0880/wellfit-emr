@@ -1,0 +1,1460 @@
+{
+  "files": {
+    "src/components/topbar.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 50,
+          "end": 50
+        },
+        {
+          "start": 52,
+          "end": 53
+        },
+        {
+          "start": 55,
+          "end": 58
+        },
+        {
+          "start": 62,
+          "end": 62
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-13T00:02:07.718Z"
+    },
+    "src/routes/_authenticated/index.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 19,
+          "end": 19
+        },
+        {
+          "start": 23,
+          "end": 24
+        },
+        {
+          "start": 26,
+          "end": 26
+        },
+        {
+          "start": 167,
+          "end": 167
+        },
+        {
+          "start": 169,
+          "end": 172
+        },
+        {
+          "start": 176,
+          "end": 176
+        },
+        {
+          "start": 178,
+          "end": 183
+        },
+        {
+          "start": 185,
+          "end": 185
+        },
+        {
+          "start": 187,
+          "end": 189
+        },
+        {
+          "start": 191,
+          "end": 194
+        },
+        {
+          "start": 196,
+          "end": 198
+        },
+        {
+          "start": 200,
+          "end": 200
+        },
+        {
+          "start": 202,
+          "end": 206
+        },
+        {
+          "start": 209,
+          "end": 209
+        },
+        {
+          "start": 211,
+          "end": 211
+        },
+        {
+          "start": 213,
+          "end": 216
+        },
+        {
+          "start": 222,
+          "end": 222
+        },
+        {
+          "start": 224,
+          "end": 224
+        },
+        {
+          "start": 240,
+          "end": 241
+        },
+        {
+          "start": 248,
+          "end": 250
+        },
+        {
+          "start": 260,
+          "end": 260
+        },
+        {
+          "start": 262,
+          "end": 262
+        },
+        {
+          "start": 265,
+          "end": 265
+        },
+        {
+          "start": 268,
+          "end": 269
+        },
+        {
+          "start": 271,
+          "end": 271
+        },
+        {
+          "start": 282,
+          "end": 283
+        },
+        {
+          "start": 287,
+          "end": 287
+        },
+        {
+          "start": 290,
+          "end": 291
+        },
+        {
+          "start": 294,
+          "end": 294
+        },
+        {
+          "start": 298,
+          "end": 298
+        },
+        {
+          "start": 305,
+          "end": 305
+        },
+        {
+          "start": 308,
+          "end": 308
+        },
+        {
+          "start": 312,
+          "end": 313
+        },
+        {
+          "start": 316,
+          "end": 316
+        },
+        {
+          "start": 319,
+          "end": 319
+        },
+        {
+          "start": 334,
+          "end": 334
+        },
+        {
+          "start": 338,
+          "end": 338
+        },
+        {
+          "start": 340,
+          "end": 340
+        },
+        {
+          "start": 344,
+          "end": 344
+        },
+        {
+          "start": 348,
+          "end": 348
+        },
+        {
+          "start": 354,
+          "end": 354
+        },
+        {
+          "start": 358,
+          "end": 358
+        },
+        {
+          "start": 364,
+          "end": 365
+        },
+        {
+          "start": 368,
+          "end": 368
+        },
+        {
+          "start": 371,
+          "end": 371
+        },
+        {
+          "start": 432,
+          "end": 434
+        },
+        {
+          "start": 436,
+          "end": 438
+        },
+        {
+          "start": 442,
+          "end": 442
+        },
+        {
+          "start": 445,
+          "end": 445
+        },
+        {
+          "start": 447,
+          "end": 447
+        },
+        {
+          "start": 449,
+          "end": 449
+        },
+        {
+          "start": 451,
+          "end": 463
+        },
+        {
+          "start": 473,
+          "end": 473
+        },
+        {
+          "start": 479,
+          "end": 479
+        },
+        {
+          "start": 481,
+          "end": 481
+        },
+        {
+          "start": 509,
+          "end": 509
+        },
+        {
+          "start": 513,
+          "end": 513
+        },
+        {
+          "start": 517,
+          "end": 517
+        },
+        {
+          "start": 521,
+          "end": 521
+        },
+        {
+          "start": 523,
+          "end": 523
+        },
+        {
+          "start": 527,
+          "end": 527
+        },
+        {
+          "start": 537,
+          "end": 537
+        },
+        {
+          "start": 541,
+          "end": 542
+        },
+        {
+          "start": 544,
+          "end": 544
+        },
+        {
+          "start": 548,
+          "end": 548
+        },
+        {
+          "start": 556,
+          "end": 557
+        },
+        {
+          "start": 560,
+          "end": 561
+        },
+        {
+          "start": 564,
+          "end": 564
+        },
+        {
+          "start": 568,
+          "end": 568
+        },
+        {
+          "start": 578,
+          "end": 580
+        },
+        {
+          "start": 582,
+          "end": 605
+        },
+        {
+          "start": 612,
+          "end": 614
+        },
+        {
+          "start": 618,
+          "end": 618
+        },
+        {
+          "start": 621,
+          "end": 630
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-12T23:44:08.665Z"
+    },
+    "src/components/data-table.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 67,
+          "end": 67
+        },
+        {
+          "start": 69,
+          "end": 69
+        },
+        {
+          "start": 74,
+          "end": 74
+        },
+        {
+          "start": 84,
+          "end": 84
+        },
+        {
+          "start": 87,
+          "end": 87
+        },
+        {
+          "start": 90,
+          "end": 90
+        },
+        {
+          "start": 93,
+          "end": 93
+        },
+        {
+          "start": 98,
+          "end": 98
+        },
+        {
+          "start": 101,
+          "end": 105
+        },
+        {
+          "start": 123,
+          "end": 124
+        },
+        {
+          "start": 127,
+          "end": 127
+        },
+        {
+          "start": 142,
+          "end": 142
+        },
+        {
+          "start": 151,
+          "end": 151
+        },
+        {
+          "start": 161,
+          "end": 161
+        },
+        {
+          "start": 169,
+          "end": 169
+        },
+        {
+          "start": 171,
+          "end": 171
+        },
+        {
+          "start": 176,
+          "end": 176
+        },
+        {
+          "start": 188,
+          "end": 188
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-13T00:05:21.097Z"
+    },
+    "src/components/empty-state.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 23,
+          "end": 23
+        },
+        {
+          "start": 27,
+          "end": 28
+        },
+        {
+          "start": 30,
+          "end": 31
+        },
+        {
+          "start": 35,
+          "end": 35
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-13T00:04:10.492Z"
+    },
+    "src/components/page-header.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 16,
+          "end": 17
+        },
+        {
+          "start": 28,
+          "end": 30
+        },
+        {
+          "start": 33,
+          "end": 34
+        },
+        {
+          "start": 36,
+          "end": 36
+        },
+        {
+          "start": 41,
+          "end": 42
+        },
+        {
+          "start": 44,
+          "end": 45
+        },
+        {
+          "start": 48,
+          "end": 52
+        },
+        {
+          "start": 58,
+          "end": 58
+        },
+        {
+          "start": 64,
+          "end": 64
+        },
+        {
+          "start": 66,
+          "end": 66
+        },
+        {
+          "start": 72,
+          "end": 74
+        },
+        {
+          "start": 82,
+          "end": 82
+        },
+        {
+          "start": 94,
+          "end": 94
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-13T00:01:48.516Z"
+    },
+    "src/routes/login.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 18,
+          "end": 18
+        },
+        {
+          "start": 21,
+          "end": 21
+        },
+        {
+          "start": 39,
+          "end": 39
+        },
+        {
+          "start": 45,
+          "end": 45
+        },
+        {
+          "start": 66,
+          "end": 66
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-12T23:33:02.577Z"
+    },
+    "src/routes/_authenticated/encounters/index.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 26,
+          "end": 27
+        },
+        {
+          "start": 29,
+          "end": 29
+        },
+        {
+          "start": 829,
+          "end": 829
+        },
+        {
+          "start": 831,
+          "end": 831
+        },
+        {
+          "start": 833,
+          "end": 834
+        },
+        {
+          "start": 838,
+          "end": 838
+        },
+        {
+          "start": 840,
+          "end": 840
+        },
+        {
+          "start": 842,
+          "end": 843
+        },
+        {
+          "start": 846,
+          "end": 852
+        },
+        {
+          "start": 866,
+          "end": 878
+        },
+        {
+          "start": 880,
+          "end": 881
+        },
+        {
+          "start": 884,
+          "end": 884
+        },
+        {
+          "start": 896,
+          "end": 896
+        },
+        {
+          "start": 923,
+          "end": 923
+        },
+        {
+          "start": 925,
+          "end": 925
+        },
+        {
+          "start": 930,
+          "end": 933
+        },
+        {
+          "start": 944,
+          "end": 945
+        },
+        {
+          "start": 951,
+          "end": 972
+        },
+        {
+          "start": 979,
+          "end": 979
+        },
+        {
+          "start": 993,
+          "end": 993
+        },
+        {
+          "start": 1000,
+          "end": 1025
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-12T23:47:39.854Z"
+    },
+    "src/routes/_authenticated/patients/index.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 21,
+          "end": 21
+        },
+        {
+          "start": 685,
+          "end": 685
+        },
+        {
+          "start": 688,
+          "end": 688
+        },
+        {
+          "start": 702,
+          "end": 702
+        },
+        {
+          "start": 714,
+          "end": 714
+        },
+        {
+          "start": 742,
+          "end": 742
+        },
+        {
+          "start": 751,
+          "end": 752
+        },
+        {
+          "start": 757,
+          "end": 758
+        },
+        {
+          "start": 769,
+          "end": 796
+        },
+        {
+          "start": 800,
+          "end": 800
+        },
+        {
+          "start": 804,
+          "end": 804
+        },
+        {
+          "start": 807,
+          "end": 817
+        },
+        {
+          "start": 820,
+          "end": 821
+        },
+        {
+          "start": 826,
+          "end": 826
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-12T23:47:35.867Z"
+    },
+    "src/components/layout/sidebar.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 151,
+          "end": 151
+        },
+        {
+          "start": 158,
+          "end": 159
+        },
+        {
+          "start": 172,
+          "end": 173
+        },
+        {
+          "start": 178,
+          "end": 178
+        },
+        {
+          "start": 192,
+          "end": 195
+        },
+        {
+          "start": 204,
+          "end": 204
+        },
+        {
+          "start": 206,
+          "end": 206
+        },
+        {
+          "start": 209,
+          "end": 210
+        },
+        {
+          "start": 212,
+          "end": 215
+        },
+        {
+          "start": 224,
+          "end": 225
+        },
+        {
+          "start": 227,
+          "end": 227
+        },
+        {
+          "start": 229,
+          "end": 229
+        },
+        {
+          "start": 252,
+          "end": 252
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-13T00:03:03.479Z"
+    },
+    "src/routes/_authenticated/clinical-documents/index.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 76,
+          "end": 76
+        },
+        {
+          "start": 610,
+          "end": 611
+        },
+        {
+          "start": 622,
+          "end": 622
+        },
+        {
+          "start": 624,
+          "end": 624
+        },
+        {
+          "start": 630,
+          "end": 630
+        },
+        {
+          "start": 646,
+          "end": 646
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-12T23:47:46.630Z"
+    },
+    "src/routes/_authenticated/clinical-documents/$documentId.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 91,
+          "end": 91
+        },
+        {
+          "start": 94,
+          "end": 94
+        },
+        {
+          "start": 96,
+          "end": 96
+        },
+        {
+          "start": 602,
+          "end": 603
+        },
+        {
+          "start": 653,
+          "end": 653
+        },
+        {
+          "start": 726,
+          "end": 726
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-12T23:37:15.264Z"
+    },
+    "src/routes/_authenticated/consents/index.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 1120,
+          "end": 1121
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-12T20:59:10.103Z"
+    },
+    "src/routes/_authenticated/medication-orders/index.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 1250,
+          "end": 1251
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-12T20:59:15.419Z"
+    },
+    "src/routes/_authenticated/service-requests/index.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 872,
+          "end": 873
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-12T20:59:19.332Z"
+    },
+    "src/routes/_authenticated/interconsultations/index.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 26,
+          "end": 26
+        },
+        {
+          "start": 491,
+          "end": 492
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-12T20:59:30.924Z"
+    },
+    "src/routes/_authenticated/regulatory-tasks/index.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 18,
+          "end": 18
+        },
+        {
+          "start": 374,
+          "end": 375
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-12T20:59:41.742Z"
+    },
+    "src/routes/_authenticated/patient-requests/index.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 25,
+          "end": 25
+        },
+        {
+          "start": 727,
+          "end": 728
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-12T21:00:01.405Z"
+    },
+    "src/routes/__root.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 10,
+          "end": 11
+        },
+        {
+          "start": 61,
+          "end": 66
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-12T21:04:47.285Z"
+    },
+    "src/components/sign-in-form.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 138,
+          "end": 138
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-12T23:33:19.301Z"
+    },
+    "src/components/sign-up-form.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 164,
+          "end": 164
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-12T23:33:24.289Z"
+    },
+    "src/components/command-palette.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 306,
+          "end": 306
+        },
+        {
+          "start": 382,
+          "end": 382
+        },
+        {
+          "start": 388,
+          "end": 388
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-12T23:16:26.529Z"
+    },
+    "src/routes/_authenticated/chat/-components/message-parts.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 337,
+          "end": 337
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-12T23:18:07.439Z"
+    },
+    "src/routes/_authenticated/attachments/index.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 604,
+          "end": 605
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-12T23:19:08.691Z"
+    },
+    "src/routes/_authenticated/audit-events/index.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 180,
+          "end": 181
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-12T23:19:17.171Z"
+    },
+    "src/routes/_authenticated/incapacity-certificates/index.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 621,
+          "end": 622
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-12T23:19:41.265Z"
+    },
+    "src/routes/_authenticated/rips-exports/index.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 271,
+          "end": 272
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-12T23:19:50.647Z"
+    },
+    "src/routes/_authenticated/ihce-bundles/index.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 330,
+          "end": 331
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-12T23:19:58.021Z"
+    },
+    "src/routes/_authenticated/catalogs/index.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 79,
+          "end": 80
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-12T23:20:07.654Z"
+    },
+    "src/components/mode-toggle.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 17,
+          "end": 17
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-12T23:21:51.807Z"
+    },
+    "src/routes/_authenticated/data-disclosures/index.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 21,
+          "end": 21
+        },
+        {
+          "start": 300,
+          "end": 301
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-12T23:22:26.280Z"
+    },
+    "src/routes/_authenticated/admin/users.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 269,
+          "end": 272
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-12T23:22:48.445Z"
+    },
+    "src/routes/_authenticated/retention-records/index.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 19,
+          "end": 19
+        },
+        {
+          "start": 318,
+          "end": 319
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-12T23:23:26.435Z"
+    },
+    "src/routes/_authenticated/appointments/index.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 23,
+          "end": 24
+        },
+        {
+          "start": 40,
+          "end": 40
+        },
+        {
+          "start": 609,
+          "end": 610
+        },
+        {
+          "start": 621,
+          "end": 621
+        },
+        {
+          "start": 860,
+          "end": 884
+        },
+        {
+          "start": 888,
+          "end": 893
+        },
+        {
+          "start": 901,
+          "end": 901
+        },
+        {
+          "start": 953,
+          "end": 955
+        },
+        {
+          "start": 961,
+          "end": 961
+        },
+        {
+          "start": 968,
+          "end": 968
+        },
+        {
+          "start": 970,
+          "end": 970
+        },
+        {
+          "start": 973,
+          "end": 973
+        },
+        {
+          "start": 980,
+          "end": 980
+        },
+        {
+          "start": 986,
+          "end": 987
+        },
+        {
+          "start": 991,
+          "end": 991
+        },
+        {
+          "start": 997,
+          "end": 997
+        },
+        {
+          "start": 1000,
+          "end": 1000
+        },
+        {
+          "start": 1009,
+          "end": 1009
+        },
+        {
+          "start": 1011,
+          "end": 1012
+        },
+        {
+          "start": 1020,
+          "end": 1020
+        },
+        {
+          "start": 1023,
+          "end": 1023
+        },
+        {
+          "start": 1027,
+          "end": 1027
+        },
+        {
+          "start": 1033,
+          "end": 1033
+        },
+        {
+          "start": 1035,
+          "end": 1035
+        },
+        {
+          "start": 1037,
+          "end": 1037
+        },
+        {
+          "start": 1040,
+          "end": 1040
+        },
+        {
+          "start": 1042,
+          "end": 1042
+        },
+        {
+          "start": 1047,
+          "end": 1047
+        },
+        {
+          "start": 1051,
+          "end": 1051
+        },
+        {
+          "start": 1057,
+          "end": 1057
+        },
+        {
+          "start": 1060,
+          "end": 1066
+        },
+        {
+          "start": 1071,
+          "end": 1071
+        },
+        {
+          "start": 1073,
+          "end": 1073
+        },
+        {
+          "start": 1086,
+          "end": 1086
+        },
+        {
+          "start": 1088,
+          "end": 1088
+        },
+        {
+          "start": 1098,
+          "end": 1098
+        },
+        {
+          "start": 1100,
+          "end": 1101
+        },
+        {
+          "start": 1106,
+          "end": 1113
+        },
+        {
+          "start": 1125,
+          "end": 1125
+        },
+        {
+          "start": 1162,
+          "end": 1162
+        },
+        {
+          "start": 1170,
+          "end": 1170
+        },
+        {
+          "start": 1175,
+          "end": 1180
+        },
+        {
+          "start": 1183,
+          "end": 1185
+        },
+        {
+          "start": 1189,
+          "end": 1189
+        },
+        {
+          "start": 1193,
+          "end": 1193
+        },
+        {
+          "start": 1197,
+          "end": 1197
+        },
+        {
+          "start": 1199,
+          "end": 1201
+        },
+        {
+          "start": 1207,
+          "end": 1207
+        },
+        {
+          "start": 1209,
+          "end": 1209
+        },
+        {
+          "start": 1211,
+          "end": 1213
+        },
+        {
+          "start": 1217,
+          "end": 1230
+        },
+        {
+          "start": 1233,
+          "end": 1233
+        },
+        {
+          "start": 1237,
+          "end": 1238
+        },
+        {
+          "start": 1242,
+          "end": 1243
+        },
+        {
+          "start": 1247,
+          "end": 1248
+        },
+        {
+          "start": 1254,
+          "end": 1255
+        },
+        {
+          "start": 1264,
+          "end": 1265
+        },
+        {
+          "start": 1274,
+          "end": 1274
+        },
+        {
+          "start": 1290,
+          "end": 1290
+        },
+        {
+          "start": 1300,
+          "end": 1300
+        },
+        {
+          "start": 1309,
+          "end": 1309
+        },
+        {
+          "start": 1338,
+          "end": 1338
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-13T00:20:10.375Z"
+    },
+    "src/routes/_authenticated/patients/$patientId.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 34,
+          "end": 34
+        },
+        {
+          "start": 1753,
+          "end": 1754
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-12T23:35:51.893Z"
+    },
+    "src/routes/_authenticated/encounters/$encounterId.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 35,
+          "end": 35
+        },
+        {
+          "start": 235,
+          "end": 236
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-12T23:36:39.654Z"
+    },
+    "src/routes/_authenticated/consents/$consentId.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 11,
+          "end": 17
+        },
+        {
+          "start": 202,
+          "end": 203
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-12T23:38:43.196Z"
+    },
+    "src/routes/_authenticated/medication-orders/$orderId.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 11,
+          "end": 11
+        },
+        {
+          "start": 190,
+          "end": 191
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-12T23:39:55.013Z"
+    },
+    "src/routes/_authenticated/service-requests/$requestId.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 13,
+          "end": 13
+        },
+        {
+          "start": 158,
+          "end": 159
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-12T23:55:29.841Z"
+    },
+    "src/routes/_authenticated/interconsultations/$interconsultationId.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 11,
+          "end": 11
+        },
+        {
+          "start": 130,
+          "end": 131
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-12T23:55:52.165Z"
+    },
+    "src/routes/_authenticated/incapacity-certificates/$certificateId.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 11,
+          "end": 11
+        },
+        {
+          "start": 139,
+          "end": 140
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-12T23:56:16.398Z"
+    },
+    "src/routes/_authenticated/attachments/$attachmentId.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 11,
+          "end": 11
+        },
+        {
+          "start": 185,
+          "end": 186
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-12T23:56:40.714Z"
+    },
+    "src/routes/_authenticated/ihce-bundles/$bundleId.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 11,
+          "end": 11
+        },
+        {
+          "start": 86,
+          "end": 87
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-12T23:57:07.893Z"
+    },
+    "src/routes/_authenticated/rips-exports/$exportId.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 11,
+          "end": 11
+        },
+        {
+          "start": 93,
+          "end": 94
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-12T23:57:32.007Z"
+    },
+    "src/routes/_authenticated/facilities/sites/$siteId.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 11,
+          "end": 11
+        },
+        {
+          "start": 78,
+          "end": 79
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-12T23:57:54.763Z"
+    },
+    "src/routes/_authenticated/facilities/service-units/$unitId.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 11,
+          "end": 11
+        },
+        {
+          "start": 78,
+          "end": 79
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-12T23:58:16.296Z"
+    },
+    "src/routes/_authenticated/facilities/practitioners/$practitionerId.tsx": {
+      "modifiedRanges": [
+        {
+          "start": 233,
+          "end": 234
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-12T23:58:38.014Z"
+    }
+  },
+  "turnCycles": 0,
+  "maxCycles": 3,
+  "lastUpdated": "2026-05-13T00:20:10.375Z",
+  "sessionId": "lens-mp32rgkz-3e9ca4af"
+}

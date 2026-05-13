@@ -4,7 +4,7 @@ import {
   medicationAdministration,
   medicationOrder,
 } from "@wellfit-emr/db/schema/clinical";
-import { and, asc, count, desc, eq } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, type SQL } from "drizzle-orm";
 import { z } from "zod";
 
 import { protectedProcedure } from "../index";
@@ -89,8 +89,9 @@ const getMedicationOrderSchema = z.object({
 });
 
 const listAdministrationsSchema = z.object({
+  encounterId: z.string().min(1).optional(),
   limit: z.number().int().min(1).max(100).default(25),
-  medicationOrderId: nonEmptyStringSchema,
+  medicationOrderId: z.string().min(1).optional(),
   offset: z.number().int().min(0).default(0),
   sortDirection: z.enum(["asc", "desc"]).default("asc"),
 });
@@ -206,10 +207,33 @@ const listAdministrationsProcedure = protectedProcedure
   .input(listAdministrationsSchema)
   .output(listAdministrationsResponseSchema)
   .handler(async ({ context, input }) => {
-    const where = eq(
-      medicationAdministration.medicationOrderId,
-      input.medicationOrderId
-    );
+    let where: SQL<unknown>;
+    if (input.medicationOrderId) {
+      where = eq(
+        medicationAdministration.medicationOrderId,
+        input.medicationOrderId
+      );
+    } else if (input.encounterId) {
+      const orderIds = await context.db
+        .select({ id: medicationOrder.id })
+        .from(medicationOrder)
+        .where(eq(medicationOrder.encounterId, input.encounterId));
+      const ids = orderIds.map((o) => o.id);
+      if (ids.length === 0) {
+        return {
+          items: [],
+          limit: input.limit,
+          offset: input.offset,
+          total: 0,
+        };
+      }
+      where = inArray(medicationAdministration.medicationOrderId, ids);
+    } else {
+      throw new ORPCError("BAD_REQUEST", {
+        message: "Provide either medicationOrderId or encounterId.",
+      });
+    }
+
     const orderBy =
       input.sortDirection === "asc"
         ? asc(medicationAdministration.administeredAt)

@@ -1,9 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import { Button } from "@wellfit-emr/ui/components/button";
 import { Input } from "@wellfit-emr/ui/components/input";
 import { SearchSelect } from "@wellfit-emr/ui/components/search-select";
-import { Eye, Search } from "lucide-react";
-import { useState } from "react";
+import { Eye, Search, X } from "lucide-react";
+import { useEffect, useState } from "react";
 
 import { DataTable } from "@/components/data-table";
 import { PageHeader } from "@/components/page-header";
@@ -28,18 +29,60 @@ export const Route = createFileRoute("/_authenticated/audit-events/")({
 function AuditEventsListPage() {
   const [patientId, setPatientId] = useState("");
   const [patientSearch, setPatientSearch] = useState("");
+  const [queryPatientSearch, setQueryPatientSearch] = useState("");
   const [userId, setUserId] = useState("");
   const [userSearch, setUserSearch] = useState("");
+  const [queryUserSearch, setQueryUserSearch] = useState("");
   const [actionCode, setActionCode] = useState("");
+  const [queryActionCode, setQueryActionCode] = useState("");
+  const [encounterId, setEncounterId] = useState("");
+  const [queryEncounterId, setQueryEncounterId] = useState("");
   const [offset, setOffset] = useState(0);
   const [limit] = useState(25);
+
+  useEffect(() => {
+    document.title = "Auditoría | WellFit EMR";
+    return () => {
+      document.title = "WellFit EMR";
+    };
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setQueryActionCode(actionCode);
+      setOffset(0);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [actionCode]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setQueryEncounterId(encounterId);
+      setOffset(0);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [encounterId]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setQueryPatientSearch(patientSearch);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [patientSearch]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setQueryUserSearch(userSearch);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [userSearch]);
 
   const { data: patientsData, isLoading: patientsLoading } = useQuery(
     orpc.patients.list.queryOptions({
       input: {
         limit: 20,
         offset: 0,
-        search: patientSearch || undefined,
+        search: queryPatientSearch || undefined,
       },
     })
   );
@@ -49,7 +92,16 @@ function AuditEventsListPage() {
       input: {
         limit: 20,
         offset: 0,
-        searchValue: userSearch || undefined,
+        searchValue: queryUserSearch || undefined,
+      },
+    })
+  );
+
+  const { data: allUsersData } = useQuery(
+    orpc.admin.listUsers.queryOptions({
+      input: {
+        limit: 500,
+        offset: 0,
       },
     })
   );
@@ -61,7 +113,8 @@ function AuditEventsListPage() {
         offset,
         patientId: patientId || undefined,
         userId: userId || undefined,
-        actionCode: actionCode || undefined,
+        actionCode: queryActionCode || undefined,
+        encounterId: queryEncounterId || undefined,
         sortDirection: "desc",
       },
     })
@@ -80,11 +133,20 @@ function AuditEventsListPage() {
     {
       header: "Entidad",
       accessor: (row: NonNullable<typeof data>["items"][0]) =>
-        `${row.entityType}${row.entityId ? ` / ${row.entityId}` : ""}`,
+        `${row.entityType}${row.entityId ? ` / ${row.entityId.slice(0, 8)}…` : ""}`,
     },
     {
       header: "Usuario",
-      accessor: (row: NonNullable<typeof data>["items"][0]) => row.userId,
+      accessor: (row: NonNullable<typeof data>["items"][0]) => {
+        const user = (
+          allUsersData?.users as Array<{
+            id: string;
+            name: string | null;
+            email: string;
+          }>
+        )?.find((u) => u.id === row.userId);
+        return user ? user.name || user.email : `${row.userId.slice(0, 8)}…`;
+      },
     },
     {
       header: "Resultado",
@@ -115,6 +177,8 @@ function AuditEventsListPage() {
     <div className="space-y-4">
       <PageHeader
         description="Bitácora de auditoría de acceso y modificaciones"
+        icon={Eye}
+        iconBgClass="bg-slate-100 text-slate-600"
         title="Auditoría"
       />
 
@@ -178,13 +242,46 @@ function AuditEventsListPage() {
             placeholder="Acción..."
             value={actionCode}
           />
+          <Input
+            className="h-7 max-w-[160px] text-xs"
+            onChange={(e) => {
+              setEncounterId(e.target.value);
+              setOffset(0);
+            }}
+            placeholder="ID atención..."
+            value={encounterId}
+          />
+          {(patientId || userId || actionCode || encounterId) && (
+            <Button
+              onClick={() => {
+                setPatientId("");
+                setUserId("");
+                setActionCode("");
+                setEncounterId("");
+                setOffset(0);
+              }}
+              size="xs"
+              variant="ghost"
+            >
+              <X size={12} />
+              Limpiar filtros
+            </Button>
+          )}
         </div>
 
         <DataTable
           columns={columns}
           data={data?.items ?? []}
-          emptyDescription="No se encontraron eventos de auditoría."
-          emptyTitle="Sin eventos"
+          emptyDescription={
+            patientId || userId || actionCode || encounterId
+              ? "Ningún evento coincide con los filtros aplicados."
+              : "No se encontraron eventos de auditoría."
+          }
+          emptyTitle={
+            patientId || userId || actionCode || encounterId
+              ? "Sin resultados"
+              : "Sin eventos"
+          }
           isLoading={isLoading}
           keyExtractor={(row) => String(row.id)}
           pagination={

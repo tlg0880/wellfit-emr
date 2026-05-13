@@ -4,7 +4,14 @@ import { Button } from "@wellfit-emr/ui/components/button";
 import { Input } from "@wellfit-emr/ui/components/input";
 import { Label } from "@wellfit-emr/ui/components/label";
 import { SearchSelect } from "@wellfit-emr/ui/components/search-select";
-import { Plus, X } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@wellfit-emr/ui/components/select";
+import { Pencil, Plus, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -24,6 +31,7 @@ const diagnosisSchema = z.object({
 export function DiagnosesTab({ encounterId }: { encounterId: string }) {
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [diagnosisSearch, setDiagnosisSearch] = useState("");
   const [diagnosisTypeSearch, setDiagnosisTypeSearch] = useState("");
 
@@ -59,6 +67,23 @@ export function DiagnosesTab({ encounterId }: { encounterId: string }) {
     onSuccess: () => {
       toast.success("Diagnóstico agregado");
       setShowForm(false);
+      setEditingId(null);
+      form.reset();
+      queryClient.invalidateQueries({
+        queryKey: orpc.clinicalRecords.listDiagnoses.key({ type: "query" }),
+      });
+    },
+    onError: (error: Error) => {
+      toast.error(`Error: ${error.message}`);
+    },
+  });
+
+  const update = useMutation({
+    ...orpc.clinicalRecords.updateDiagnosis.mutationOptions(),
+    onSuccess: () => {
+      toast.success("Diagnóstico actualizado");
+      setShowForm(false);
+      setEditingId(null);
       form.reset();
       queryClient.invalidateQueries({
         queryKey: orpc.clinicalRecords.listDiagnoses.key({ type: "query" }),
@@ -79,22 +104,46 @@ export function DiagnosesTab({ encounterId }: { encounterId: string }) {
       certainty: "",
     },
     onSubmit: async ({ value }) => {
-      await create.mutateAsync({
-        encounterId,
-        codeSystem: value.codeSystem,
-        code: value.code,
-        description: value.description,
-        diagnosisType: value.diagnosisType,
-        rank: value.rank ? Number(value.rank) : null,
-        certainty: value.certainty || null,
-        documentVersionId: null,
-        onsetAt: null,
-      });
+      if (editingId) {
+        await update.mutateAsync({
+          id: editingId,
+          codeSystem: value.codeSystem,
+          code: value.code,
+          description: value.description,
+          diagnosisType: value.diagnosisType,
+          rank: value.rank ? Number(value.rank) : null,
+          certainty: value.certainty || null,
+          onsetAt: null,
+        });
+      } else {
+        await create.mutateAsync({
+          encounterId,
+          codeSystem: value.codeSystem,
+          code: value.code,
+          description: value.description,
+          diagnosisType: value.diagnosisType,
+          rank: value.rank ? Number(value.rank) : null,
+          certainty: value.certainty || null,
+          documentVersionId: null,
+          onsetAt: null,
+        });
+      }
     },
     validators: {
       onSubmit: diagnosisSchema,
     },
   });
+
+  function startEdit(row: NonNullable<typeof data>[0]) {
+    setEditingId(row.id);
+    form.setFieldValue("codeSystem", row.codeSystem);
+    form.setFieldValue("code", row.code);
+    form.setFieldValue("description", row.description);
+    form.setFieldValue("diagnosisType", row.diagnosisType);
+    form.setFieldValue("rank", row.rank?.toString() ?? "");
+    form.setFieldValue("certainty", row.certainty ?? "");
+    setShowForm(true);
+  }
 
   const columns = [
     {
@@ -121,12 +170,35 @@ export function DiagnosesTab({ encounterId }: { encounterId: string }) {
       header: "Certeza",
       accessor: (row: NonNullable<typeof data>[0]) => row.certainty ?? "—",
     },
+    {
+      header: "",
+      accessor: (row: NonNullable<typeof data>[0]) => (
+        <Button
+          aria-label="Editar diagnóstico"
+          onClick={() => startEdit(row)}
+          size="icon-xs"
+          variant="ghost"
+        >
+          <Pencil size={12} />
+        </Button>
+      ),
+      className: "w-16",
+    },
   ];
 
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <Button onClick={() => setShowForm(!showForm)} size="sm">
+        <Button
+          onClick={() => {
+            if (showForm) {
+              setEditingId(null);
+              form.reset();
+            }
+            setShowForm(!showForm);
+          }}
+          size="sm"
+        >
           {showForm ? <X size={14} /> : <Plus size={14} />}
           {showForm ? "Cancelar" : "Agregar diagnóstico"}
         </Button>
@@ -144,17 +216,18 @@ export function DiagnosesTab({ encounterId }: { encounterId: string }) {
           <form.Field name="codeSystem">
             {(field) => (
               <div className="space-y-1">
-                <Label htmlFor={field.name}>Sistema de codificación</Label>
-                <select
-                  className="h-8 w-full rounded-none border border-input bg-transparent px-2.5 text-xs outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50"
-                  id={field.name}
-                  name={field.name}
-                  onBlur={field.handleBlur}
-                  onChange={(e) => field.handleChange(e.target.value)}
+                <Label htmlFor={field.name}>Sistema de codificación *</Label>
+                <Select
+                  onValueChange={(v) => field.handleChange(v as string)}
                   value={field.state.value}
                 >
-                  <option value="CIE10">CIE10</option>
-                </select>
+                  <SelectTrigger id={field.name}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="CIE10">CIE10</SelectItem>
+                  </SelectContent>
+                </Select>
                 {field.state.meta.errors.map((error) => (
                   <p className="text-destructive text-xs" key={error?.message}>
                     {error?.message}
@@ -167,7 +240,7 @@ export function DiagnosesTab({ encounterId }: { encounterId: string }) {
           <form.Field name="code">
             {(field) => (
               <div className="space-y-1">
-                <Label htmlFor={field.name}>Diagnóstico CIE10</Label>
+                <Label htmlFor={field.name}>Diagnóstico CIE10 *</Label>
                 <SearchSelect
                   emptyMessage="Escribe para buscar en CIE10"
                   id={field.name}
@@ -207,7 +280,7 @@ export function DiagnosesTab({ encounterId }: { encounterId: string }) {
           <form.Field name="diagnosisType">
             {(field) => (
               <div className="space-y-1">
-                <Label htmlFor={field.name}>Tipo de diagnóstico</Label>
+                <Label htmlFor={field.name}>Tipo de diagnóstico *</Label>
                 <SearchSelect
                   emptyMessage="Escribe para buscar tipo"
                   id={field.name}
@@ -239,7 +312,7 @@ export function DiagnosesTab({ encounterId }: { encounterId: string }) {
           <form.Field name="description">
             {(field) => (
               <div className="space-y-1 md:col-span-2">
-                <Label htmlFor={field.name}>Descripción</Label>
+                <Label htmlFor={field.name}>Descripción *</Label>
                 <Input
                   className="text-xs"
                   id={field.name}
@@ -291,7 +364,7 @@ export function DiagnosesTab({ encounterId }: { encounterId: string }) {
             )}
           </form.Field>
 
-          <div className="flex items-end md:col-span-3">
+          <div className="flex items-end gap-2 md:col-span-3">
             <form.Subscribe
               selector={(state) => ({
                 canSubmit: state.canSubmit,
@@ -300,14 +373,32 @@ export function DiagnosesTab({ encounterId }: { encounterId: string }) {
             >
               {({ canSubmit, isSubmitting }) => (
                 <Button
-                  disabled={!canSubmit || isSubmitting}
+                  disabled={!canSubmit || isSubmitting || update.isPending}
                   size="sm"
                   type="submit"
                 >
-                  {isSubmitting ? "Guardando..." : "Guardar diagnóstico"}
+                  {isSubmitting || update.isPending
+                    ? "Guardando..."
+                    : editingId
+                      ? "Actualizar diagnóstico"
+                      : "Guardar diagnóstico"}
                 </Button>
               )}
             </form.Subscribe>
+            {editingId && (
+              <Button
+                onClick={() => {
+                  setEditingId(null);
+                  form.reset();
+                  setShowForm(false);
+                }}
+                size="sm"
+                type="button"
+                variant="ghost"
+              >
+                Cancelar
+              </Button>
+            )}
           </div>
         </form>
       )}

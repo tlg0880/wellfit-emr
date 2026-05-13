@@ -11,14 +11,21 @@ import {
 import { Input } from "@wellfit-emr/ui/components/input";
 import { Label } from "@wellfit-emr/ui/components/label";
 import { SearchSelect } from "@wellfit-emr/ui/components/search-select";
-import { Eye, Plus, Search } from "lucide-react";
-import { useState } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@wellfit-emr/ui/components/select";
+import { Eye, Pencil, Plus, Search, Trash2, Users, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import z from "zod";
-
 import { DataTable } from "@/components/data-table";
 import { PageHeader } from "@/components/page-header";
 import { authClient } from "@/lib/auth-client";
+import { calculateAge } from "@/utils/age";
 import { orpc, queryClient } from "@/utils/orpc";
 
 export const Route = createFileRoute("/_authenticated/patients/")({
@@ -49,9 +56,37 @@ const createPatientSchema = z.object({
   countryCode: z.string(),
   municipalityCode: z.string(),
   zoneCode: z.string(),
+  deceasedAt: z.string(),
 });
 
-function CreatePatientForm({ onCancel }: { onCancel: () => void }) {
+interface PatientRow {
+  birthDate: Date | string;
+  countryCode: string | null;
+  createdAt: Date | string;
+  deceasedAt: Date | string | null;
+  firstName: string;
+  genderIdentity: string | null;
+  id: string;
+  lastName1: string;
+  lastName2: string | null;
+  middleName: string | null;
+  municipalityCode: string | null;
+  primaryDocumentNumber: string;
+  primaryDocumentType: string;
+  sexAtBirth: string;
+  updatedAt: Date | string;
+  zoneCode: string | null;
+}
+
+function PatientForm({
+  onCancel,
+  editingId,
+  initialValues,
+}: {
+  onCancel: () => void;
+  editingId?: string;
+  initialValues?: PatientRow;
+}) {
   const [countrySearch, setCountrySearch] = useState("");
   const [municipalitySearch, setMunicipalitySearch] = useState("");
 
@@ -90,36 +125,75 @@ function CreatePatientForm({ onCancel }: { onCancel: () => void }) {
     },
   });
 
+  const updateMutation = useMutation({
+    ...orpc.patients.update.mutationOptions(),
+    onSuccess: () => {
+      toast.success("Paciente actualizado");
+      queryClient.invalidateQueries({
+        queryKey: orpc.patients.list.key({ type: "query" }),
+      });
+      onCancel();
+    },
+    onError: (error) => {
+      toast.error(error.message || "Error al actualizar paciente");
+    },
+  });
+
   const form = useForm({
     defaultValues: {
-      primaryDocumentType: "",
-      primaryDocumentNumber: "",
-      firstName: "",
-      middleName: "",
-      lastName1: "",
-      lastName2: "",
-      birthDate: "",
-      sexAtBirth: "",
-      genderIdentity: "",
-      countryCode: "",
-      municipalityCode: "",
-      zoneCode: "",
+      primaryDocumentType: initialValues?.primaryDocumentType ?? "",
+      primaryDocumentNumber: initialValues?.primaryDocumentNumber ?? "",
+      firstName: initialValues?.firstName ?? "",
+      middleName: initialValues?.middleName ?? "",
+      lastName1: initialValues?.lastName1 ?? "",
+      lastName2: initialValues?.lastName2 ?? "",
+      birthDate: initialValues?.birthDate
+        ? new Date(initialValues.birthDate).toISOString().slice(0, 10)
+        : "",
+      sexAtBirth: initialValues?.sexAtBirth ?? "",
+      genderIdentity: initialValues?.genderIdentity ?? "",
+      countryCode: initialValues?.countryCode ?? "",
+      municipalityCode: initialValues?.municipalityCode ?? "",
+      zoneCode: initialValues?.zoneCode ?? "",
+      deceasedAt: initialValues?.deceasedAt
+        ? new Date(initialValues.deceasedAt).toISOString().slice(0, 16)
+        : "",
     },
     onSubmit: async ({ value }) => {
-      await createMutation.mutateAsync({
-        primaryDocumentType: value.primaryDocumentType,
-        primaryDocumentNumber: value.primaryDocumentNumber,
-        firstName: value.firstName,
-        middleName: value.middleName || null,
-        lastName1: value.lastName1,
-        lastName2: value.lastName2 || null,
-        birthDate: new Date(value.birthDate),
-        sexAtBirth: value.sexAtBirth,
-        genderIdentity: value.genderIdentity || null,
-        countryCode: value.countryCode || null,
-        municipalityCode: value.municipalityCode || null,
-        zoneCode: value.zoneCode || null,
-      });
+      if (editingId) {
+        await updateMutation.mutateAsync({
+          id: editingId,
+          primaryDocumentType: value.primaryDocumentType,
+          primaryDocumentNumber: value.primaryDocumentNumber,
+          firstName: value.firstName,
+          middleName: value.middleName || null,
+          lastName1: value.lastName1,
+          lastName2: value.lastName2 || null,
+          birthDate: new Date(value.birthDate),
+          sexAtBirth: value.sexAtBirth,
+          genderIdentity: value.genderIdentity || null,
+          countryCode: value.countryCode || null,
+          municipalityCode: value.municipalityCode || null,
+          zoneCode: value.zoneCode || null,
+          deceasedAt: value.deceasedAt ? new Date(value.deceasedAt) : null,
+        });
+      } else {
+        await createMutation.mutateAsync({
+          primaryDocumentType: value.primaryDocumentType,
+          primaryDocumentNumber: value.primaryDocumentNumber,
+          firstName: value.firstName,
+          middleName: value.middleName || null,
+          lastName1: value.lastName1,
+          lastName2: value.lastName2 || null,
+          birthDate: new Date(value.birthDate),
+          sexAtBirth: value.sexAtBirth,
+          genderIdentity: value.genderIdentity || null,
+          countryCode: value.countryCode || null,
+          municipalityCode: value.municipalityCode || null,
+          zoneCode: value.zoneCode || null,
+          deceasedAt: value.deceasedAt ? new Date(value.deceasedAt) : null,
+        });
+      }
     },
     validators: {
       onSubmit: createPatientSchema,
@@ -131,7 +205,9 @@ function CreatePatientForm({ onCancel }: { onCancel: () => void }) {
   return (
     <Card className="mx-6">
       <CardHeader>
-        <CardTitle>Nuevo paciente</CardTitle>
+        <CardTitle>
+          {editingId ? "Editar paciente" : "Nuevo paciente"}
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <form
@@ -145,25 +221,29 @@ function CreatePatientForm({ onCancel }: { onCancel: () => void }) {
             <form.Field name="primaryDocumentType">
               {(field) => (
                 <div className={fieldGrid}>
-                  <Label htmlFor={field.name}>Tipo de documento</Label>
-                  <select
-                    className="h-8 w-full rounded-none border border-input bg-transparent px-2.5 text-xs outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50"
-                    id={field.name}
-                    name={field.name}
-                    onBlur={field.handleBlur}
-                    onChange={(e) => field.handleChange(e.target.value)}
+                  <Label htmlFor={field.name}>Tipo de documento *</Label>
+                  <Select
+                    onValueChange={(v) => field.handleChange(v as string)}
                     value={field.state.value}
                   >
-                    <option value="">Seleccione...</option>
-                    <option value="CC">Cédula de ciudadanía</option>
-                    <option value="CE">Cédula de extranjería</option>
-                    <option value="PA">Pasaporte</option>
-                    <option value="RC">Registro civil</option>
-                    <option value="TI">Tarjeta de identidad</option>
-                    <option value="PEP">Permiso especial de permanencia</option>
-                    <option value="PPT">Permiso por protección temporal</option>
-                    <option value="NIT">NIT</option>
-                  </select>
+                    <SelectTrigger id={field.name}>
+                      <SelectValue placeholder="Seleccione..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="CC">Cédula de ciudadanía</SelectItem>
+                      <SelectItem value="CE">Cédula de extranjería</SelectItem>
+                      <SelectItem value="PA">Pasaporte</SelectItem>
+                      <SelectItem value="RC">Registro civil</SelectItem>
+                      <SelectItem value="TI">Tarjeta de identidad</SelectItem>
+                      <SelectItem value="PEP">
+                        Permiso especial de permanencia
+                      </SelectItem>
+                      <SelectItem value="PPT">
+                        Permiso por protección temporal
+                      </SelectItem>
+                      <SelectItem value="NIT">NIT</SelectItem>
+                    </SelectContent>
+                  </Select>
                   {field.state.meta.errors.map((error) => (
                     <p
                       className="text-destructive text-xs"
@@ -179,8 +259,9 @@ function CreatePatientForm({ onCancel }: { onCancel: () => void }) {
             <form.Field name="primaryDocumentNumber">
               {(field) => (
                 <div className={fieldGrid}>
-                  <Label htmlFor={field.name}>Número de documento</Label>
+                  <Label htmlFor={field.name}>Número de documento *</Label>
                   <Input
+                    autoFocus
                     className="text-xs"
                     id={field.name}
                     name={field.name}
@@ -203,7 +284,7 @@ function CreatePatientForm({ onCancel }: { onCancel: () => void }) {
             <form.Field name="firstName">
               {(field) => (
                 <div className={fieldGrid}>
-                  <Label htmlFor={field.name}>Primer nombre</Label>
+                  <Label htmlFor={field.name}>Primer nombre *</Label>
                   <Input
                     className="text-xs"
                     id={field.name}
@@ -243,7 +324,7 @@ function CreatePatientForm({ onCancel }: { onCancel: () => void }) {
             <form.Field name="lastName1">
               {(field) => (
                 <div className={fieldGrid}>
-                  <Label htmlFor={field.name}>Primer apellido</Label>
+                  <Label htmlFor={field.name}>Primer apellido *</Label>
                   <Input
                     className="text-xs"
                     id={field.name}
@@ -283,7 +364,7 @@ function CreatePatientForm({ onCancel }: { onCancel: () => void }) {
             <form.Field name="birthDate">
               {(field) => (
                 <div className={fieldGrid}>
-                  <Label htmlFor={field.name}>Fecha de nacimiento</Label>
+                  <Label htmlFor={field.name}>Fecha de nacimiento *</Label>
                   <Input
                     className="text-xs"
                     id={field.name}
@@ -308,20 +389,20 @@ function CreatePatientForm({ onCancel }: { onCancel: () => void }) {
             <form.Field name="sexAtBirth">
               {(field) => (
                 <div className={fieldGrid}>
-                  <Label htmlFor={field.name}>Sexo al nacer</Label>
-                  <select
-                    className="h-8 w-full rounded-none border border-input bg-transparent px-2.5 text-xs outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50"
-                    id={field.name}
-                    name={field.name}
-                    onBlur={field.handleBlur}
-                    onChange={(e) => field.handleChange(e.target.value)}
+                  <Label htmlFor={field.name}>Sexo al nacer *</Label>
+                  <Select
+                    onValueChange={(v) => field.handleChange(v as string)}
                     value={field.state.value}
                   >
-                    <option value="">Seleccione...</option>
-                    <option value="H">Hombre</option>
-                    <option value="M">Mujer</option>
-                    <option value="I">Indeterminado</option>
-                  </select>
+                    <SelectTrigger id={field.name}>
+                      <SelectValue placeholder="Seleccione..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="H">Hombre</SelectItem>
+                      <SelectItem value="M">Mujer</SelectItem>
+                      <SelectItem value="I">Indeterminado</SelectItem>
+                    </SelectContent>
+                  </Select>
                   {field.state.meta.errors.map((error) => (
                     <p
                       className="text-destructive text-xs"
@@ -338,22 +419,24 @@ function CreatePatientForm({ onCancel }: { onCancel: () => void }) {
               {(field) => (
                 <div className={fieldGrid}>
                   <Label htmlFor={field.name}>Identidad de género</Label>
-                  <select
-                    className="h-8 w-full rounded-none border border-input bg-transparent px-2.5 text-xs outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50"
-                    id={field.name}
-                    name={field.name}
-                    onBlur={field.handleBlur}
-                    onChange={(e) => field.handleChange(e.target.value)}
+                  <Select
+                    onValueChange={(v) => field.handleChange(v as string)}
                     value={field.state.value}
                   >
-                    <option value="">Seleccione...</option>
-                    <option value="masculino">Masculino</option>
-                    <option value="femenino">Femenino</option>
-                    <option value="transgenero">Transgénero</option>
-                    <option value="no_binario">No binario</option>
-                    <option value="otro">Otro</option>
-                    <option value="prefiero_no_decir">Prefiero no decir</option>
-                  </select>
+                    <SelectTrigger id={field.name}>
+                      <SelectValue placeholder="Seleccione..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="masculino">Masculino</SelectItem>
+                      <SelectItem value="femenino">Femenino</SelectItem>
+                      <SelectItem value="transgenero">Transgénero</SelectItem>
+                      <SelectItem value="no_binario">No binario</SelectItem>
+                      <SelectItem value="otro">Otro</SelectItem>
+                      <SelectItem value="prefiero_no_decir">
+                        Prefiero no decir
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               )}
             </form.Field>
@@ -418,18 +501,35 @@ function CreatePatientForm({ onCancel }: { onCancel: () => void }) {
               {(field) => (
                 <div className={fieldGrid}>
                   <Label htmlFor={field.name}>Zona</Label>
-                  <select
-                    className="h-8 w-full rounded-none border border-input bg-transparent px-2.5 text-xs outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50"
+                  <Select
+                    onValueChange={(v) => field.handleChange(v as string)}
+                    value={field.state.value}
+                  >
+                    <SelectTrigger id={field.name}>
+                      <SelectValue placeholder="Seleccione..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="01">Rural</SelectItem>
+                      <SelectItem value="02">Urbano</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </form.Field>
+
+            <form.Field name="deceasedAt">
+              {(field) => (
+                <div className={fieldGrid}>
+                  <Label htmlFor={field.name}>Fecha de fallecimiento</Label>
+                  <Input
+                    className="text-xs"
                     id={field.name}
                     name={field.name}
                     onBlur={field.handleBlur}
                     onChange={(e) => field.handleChange(e.target.value)}
+                    type="datetime-local"
                     value={field.state.value}
-                  >
-                    <option value="">Seleccione...</option>
-                    <option value="01">Rural</option>
-                    <option value="02">Urbano</option>
-                  </select>
+                  />
                 </div>
               )}
             </form.Field>
@@ -452,11 +552,22 @@ function CreatePatientForm({ onCancel }: { onCancel: () => void }) {
             >
               {({ canSubmit, isSubmitting }) => (
                 <Button
-                  disabled={!canSubmit || isSubmitting}
+                  disabled={
+                    !canSubmit ||
+                    isSubmitting ||
+                    createMutation.isPending ||
+                    updateMutation.isPending
+                  }
                   size="sm"
                   type="submit"
                 >
-                  {isSubmitting ? "Guardando..." : "Guardar"}
+                  {isSubmitting ||
+                  createMutation.isPending ||
+                  updateMutation.isPending
+                    ? "Guardando..."
+                    : editingId
+                      ? "Actualizar"
+                      : "Guardar"}
                 </Button>
               )}
             </form.Subscribe>
@@ -470,21 +581,55 @@ function CreatePatientForm({ onCancel }: { onCancel: () => void }) {
 function PatientsListPage() {
   const navigate = useNavigate({ from: "/patients/" });
   const [search, setSearch] = useState("");
+  const [querySearch, setQuerySearch] = useState("");
   const [offset, setOffset] = useState(0);
   const [limit] = useState(25);
+  const [sortBy, setSortBy] = useState<
+    "createdAt" | "birthDate" | "firstName" | "lastName1"
+  >("createdAt");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [showForm, setShowForm] = useState(false);
+  const [editingPatient, setEditingPatient] = useState<PatientRow | null>(null);
+
+  useEffect(() => {
+    document.title = "Pacientes | WellFit EMR";
+    return () => {
+      document.title = "WellFit EMR";
+    };
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setQuerySearch(search);
+      setOffset(0);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   const { data, isLoading } = useQuery(
     orpc.patients.list.queryOptions({
       input: {
         limit,
         offset,
-        search: search || undefined,
-        sortBy: "createdAt",
-        sortDirection: "desc",
+        search: querySearch || undefined,
+        sortBy,
+        sortDirection,
       },
     })
   );
+
+  const deleteMutation = useMutation({
+    ...orpc.patients.delete.mutationOptions(),
+    onSuccess: () => {
+      toast.success("Paciente eliminado");
+      queryClient.invalidateQueries({
+        queryKey: orpc.patients.list.key({ type: "query" }),
+      });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Error al eliminar paciente");
+    },
+  });
 
   const columns = [
     {
@@ -494,11 +639,17 @@ function PatientsListPage() {
         middleName: string | null;
         lastName1: string;
         lastName2: string | null;
+        deceasedAt: Date | string | null;
       }) => (
-        <span>
+        <span className="inline-flex items-center gap-1.5">
           {row.firstName}
           {row.middleName ? ` ${row.middleName}` : ""} {row.lastName1}
           {row.lastName2 ? ` ${row.lastName2}` : ""}
+          {row.deceasedAt && (
+            <span className="inline-flex border border-red-200 bg-red-50 px-1.5 py-0.5 font-medium text-[10px] text-red-700">
+              Fallecido
+            </span>
+          )}
         </span>
       ),
     },
@@ -519,63 +670,186 @@ function PatientsListPage() {
         }),
     },
     {
+      header: "Edad",
+      accessor: (row: { birthDate: Date }) => (
+        <span className="tabular-nums">{calculateAge(row.birthDate)}</span>
+      ),
+    },
+    {
       header: "Sexo",
       accessor: (row: { sexAtBirth: string }) => row.sexAtBirth,
     },
     {
       header: "Acciones",
       accessor: (row: { id: string }) => (
-        <Button
-          onClick={() =>
-            navigate({
-              to: "/patients/$patientId",
-              params: { patientId: row.id },
-            })
-          }
-          size="sm"
-          variant="ghost"
-        >
-          <Eye size={14} />
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button
+            aria-label="Ver paciente"
+            className="hover:bg-teal-50 hover:text-teal-700"
+            onClick={() =>
+              navigate({
+                to: "/patients/$patientId",
+                params: { patientId: row.id },
+              })
+            }
+            size="icon-xs"
+            variant="ghost"
+          >
+            <Eye size={14} />
+          </Button>
+          <Button
+            aria-label="Editar paciente"
+            className="hover:bg-amber-50 hover:text-amber-700"
+            onClick={() => {
+              setEditingPatient(row as PatientRow);
+              setShowForm(true);
+            }}
+            size="icon-xs"
+            variant="ghost"
+          >
+            <Pencil size={12} />
+          </Button>
+          <Button
+            aria-label="Eliminar paciente"
+            className="hover:bg-red-50 hover:text-red-700"
+            disabled={deleteMutation.isPending}
+            onClick={() => {
+              if (confirm("¿Eliminar este paciente permanentemente?")) {
+                deleteMutation.mutate({ id: row.id });
+              }
+            }}
+            size="icon-xs"
+            variant="ghost"
+          >
+            <Trash2 size={12} />
+          </Button>
+        </div>
       ),
-      className: "w-16",
+      className: "w-24",
     },
   ];
+
+  function handleCancelForm() {
+    setShowForm(false);
+    setEditingPatient(null);
+  }
 
   return (
     <div className="space-y-4">
       <PageHeader
         actions={
-          <Button onClick={() => setShowForm((s) => !s)} size="sm">
-            <Plus size={14} />
+          <Button
+            className="gap-1.5 shadow-md"
+            onClick={() => {
+              if (showForm) {
+                handleCancelForm();
+              } else {
+                setShowForm(true);
+              }
+            }}
+            size="sm"
+          >
+            <Plus size={15} />
             {showForm ? "Cancelar" : "Nuevo paciente"}
           </Button>
         }
         description="Gestión de pacientes del sistema"
+        icon={Users}
+        iconBgClass="bg-teal-50 text-teal-600"
         title="Pacientes"
       />
 
-      {showForm && <CreatePatientForm onCancel={() => setShowForm(false)} />}
+      {showForm && (
+        <PatientForm
+          editingId={editingPatient?.id}
+          initialValues={editingPatient ?? undefined}
+          key={editingPatient?.id || "new"}
+          onCancel={handleCancelForm}
+        />
+      )}
 
       <div className="px-6">
-        <div className="mb-3 flex items-center gap-2">
-          <Search className="text-muted-foreground" size={14} />
-          <Input
-            className="h-7 max-w-xs text-xs"
-            onChange={(e) => {
-              setSearch(e.target.value);
+        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-md border bg-card px-3 py-2.5 shadow-md">
+          <div className="flex items-center gap-2 rounded-sm border bg-background px-2.5 py-1.5">
+            <Search className="text-muted-foreground" size={14} />
+            <Input
+              className="h-6 max-w-xs border-0 bg-transparent p-0 text-xs focus-visible:ring-0"
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setOffset(0);
+              }}
+              placeholder="Buscar por nombre o documento..."
+              value={search}
+            />
+            {search && (
+              <Button
+                aria-label="Limpiar búsqueda"
+                className="size-5"
+                onClick={() => {
+                  setSearch("");
+                  setOffset(0);
+                }}
+                size="icon-xs"
+                variant="ghost"
+              >
+                <X size={10} />
+              </Button>
+            )}
+          </div>
+          <Select
+            onValueChange={(v) => {
+              setSortBy(v as typeof sortBy);
               setOffset(0);
             }}
-            placeholder="Buscar por nombre o documento..."
-            value={search}
-          />
+            value={sortBy}
+          >
+            <SelectTrigger className="h-8 w-36 bg-background text-xs">
+              <SelectValue>
+                {sortBy === "createdAt"
+                  ? "Creación"
+                  : sortBy === "firstName"
+                    ? "Nombre"
+                    : sortBy === "lastName1"
+                      ? "Apellido"
+                      : sortBy === "birthDate"
+                        ? "Nacimiento"
+                        : sortBy}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="createdAt">Creación</SelectItem>
+              <SelectItem value="firstName">Nombre</SelectItem>
+              <SelectItem value="lastName1">Apellido</SelectItem>
+              <SelectItem value="birthDate">Nacimiento</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button
+            aria-label={
+              sortDirection === "asc"
+                ? "Ordenar descendente"
+                : "Ordenar ascendente"
+            }
+            className="h-8 w-8"
+            onClick={() => {
+              setSortDirection((d) => (d === "asc" ? "desc" : "asc"));
+              setOffset(0);
+            }}
+            size="icon-xs"
+            variant="outline"
+          >
+            {sortDirection === "asc" ? "↑" : "↓"}
+          </Button>
         </div>
 
         <DataTable
           columns={columns}
           data={data?.patients ?? []}
-          emptyDescription="No se encontraron pacientes registrados."
-          emptyTitle="No hay pacientes"
+          emptyDescription={
+            querySearch
+              ? "Ningún paciente coincide con la búsqueda."
+              : "No se encontraron pacientes registrados."
+          }
+          emptyTitle={querySearch ? "Sin resultados" : "No hay pacientes"}
           isLoading={isLoading}
           keyExtractor={(row) => row.id}
           onRowClick={(row) =>

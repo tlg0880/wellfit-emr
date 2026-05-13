@@ -2,8 +2,8 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@wellfit-emr/ui/components/button";
 import { Input } from "@wellfit-emr/ui/components/input";
-import { ArrowLeft, RefreshCw, Search } from "lucide-react";
-import { useState } from "react";
+import { ArrowLeft, RefreshCw } from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { DataTable } from "@/components/data-table";
 import { PageHeader } from "@/components/page-header";
@@ -33,6 +33,21 @@ function TableEntriesPage() {
   const [search, setSearch] = useState("");
   const [querySearch, setQuerySearch] = useState("");
 
+  useEffect(() => {
+    document.title = `${tableName} | WellFit EMR`;
+    return () => {
+      document.title = "WellFit EMR";
+    };
+  }, [tableName]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setQuerySearch(search);
+      setOffset(0);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
   const { data, isLoading, refetch } = useQuery(
     orpc.ripsReference.listEntries.queryOptions({
       input: {
@@ -61,11 +76,6 @@ function TableEntriesPage() {
     },
   });
 
-  const handleSearch = () => {
-    setOffset(0);
-    setQuerySearch(search);
-  };
-
   type Entry = NonNullable<typeof data>["entries"][0];
 
   return (
@@ -86,7 +96,7 @@ function TableEntriesPage() {
               <span className="ml-1.5">Sincronizar tabla</span>
             </Button>
             <Link
-              className="inline-flex h-7 items-center justify-center gap-1 rounded-none border border-input bg-background px-2.5 font-medium text-xs transition-colors hover:bg-muted"
+              className="inline-flex h-7 items-center justify-center gap-1 rounded-sm border border-input bg-background px-2.5 font-medium text-xs transition-colors hover:bg-muted"
               to="/catalogs"
             >
               <ArrowLeft size={14} />
@@ -104,13 +114,9 @@ function TableEntriesPage() {
           <Input
             className="max-w-xs"
             onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
             placeholder="Buscar por codigo o nombre..."
             value={search}
           />
-          <Button onClick={handleSearch} size="sm" variant="outline">
-            <Search size={14} />
-          </Button>
         </div>
 
         <DataTable

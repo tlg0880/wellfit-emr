@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Button } from "@wellfit-emr/ui/components/button";
 import {
   Card,
@@ -10,13 +10,20 @@ import {
 import { Input } from "@wellfit-emr/ui/components/input";
 import { Label } from "@wellfit-emr/ui/components/label";
 import { SearchSelect } from "@wellfit-emr/ui/components/search-select";
-import { Plus, Search } from "lucide-react";
-import { useState } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@wellfit-emr/ui/components/select";
+import { Eye, Pencil, Plus, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { DataTable } from "@/components/data-table";
 import { PageHeader } from "@/components/page-header";
 import { authClient } from "@/lib/auth-client";
-import { orpc } from "@/utils/orpc";
+import { orpc, queryClient } from "@/utils/orpc";
 
 export const Route = createFileRoute(
   "/_authenticated/facilities/service-units"
@@ -38,15 +45,32 @@ export const Route = createFileRoute(
 const LIMIT = 50;
 
 function ServiceUnitsPage() {
+  const navigate = useNavigate();
   const [offset, setOffset] = useState(0);
   const [search, setSearch] = useState("");
   const [querySearch, setQuerySearch] = useState("");
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [serviceCode, setServiceCode] = useState("");
   const [serviceSearch, setServiceSearch] = useState("");
   const [siteId, setSiteId] = useState("");
   const [careSetting, setCareSetting] = useState("");
+
+  useEffect(() => {
+    document.title = "Unidades de servicio | WellFit EMR";
+    return () => {
+      document.title = "WellFit EMR";
+    };
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setQuerySearch(search);
+      setOffset(0);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   const { data, isLoading, refetch } = useQuery(
     orpc.facilities.listServiceUnits.queryOptions({
@@ -94,22 +118,78 @@ function ServiceUnitsPage() {
     },
   });
 
-  const handleSearch = () => {
-    setOffset(0);
-    setQuerySearch(search);
-  };
+  const deleteMutation = useMutation({
+    ...orpc.facilities.deleteServiceUnit.mutationOptions(),
+    onSuccess: () => {
+      toast.success("Unidad de servicio eliminada");
+      queryClient.invalidateQueries({
+        queryKey: orpc.facilities.listServiceUnits.key({ type: "query" }),
+      });
+    },
+    onError: (error: Error) => {
+      toast.error(`Error al eliminar unidad de servicio: ${error.message}`);
+    },
+  });
+
+  const updateMutation = useMutation({
+    ...orpc.facilities.updateServiceUnit.mutationOptions(),
+    onSuccess: () => {
+      toast.success("Unidad de servicio actualizada");
+      setEditingId(null);
+      setName("");
+      setServiceCode("");
+      setServiceSearch("");
+      setSiteId("");
+      setCareSetting("");
+      setShowForm(false);
+      queryClient.invalidateQueries({
+        queryKey: orpc.facilities.listServiceUnits.key({ type: "query" }),
+      });
+    },
+    onError: (error: Error) => {
+      toast.error(`Error al actualizar unidad de servicio: ${error.message}`);
+    },
+  });
+
+  function resetForm() {
+    setEditingId(null);
+    setName("");
+    setServiceCode("");
+    setServiceSearch("");
+    setSiteId("");
+    setCareSetting("");
+  }
+
+  function startEdit(row: SU) {
+    setEditingId(row.id);
+    setName(row.name);
+    setServiceCode(row.serviceCode);
+    setSiteId(row.siteId);
+    setCareSetting(row.careSetting);
+    setShowForm(true);
+  }
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
     if (!(name.trim() && serviceCode.trim() && siteId && careSetting.trim())) {
       return;
     }
-    createMutation.mutate({
-      name: name.trim(),
-      serviceCode: serviceCode.trim(),
-      siteId,
-      careSetting: careSetting.trim(),
-    });
+    if (editingId) {
+      updateMutation.mutate({
+        id: editingId,
+        name: name.trim(),
+        serviceCode: serviceCode.trim(),
+        siteId,
+        careSetting: careSetting.trim(),
+      });
+    } else {
+      createMutation.mutate({
+        name: name.trim(),
+        serviceCode: serviceCode.trim(),
+        siteId,
+        careSetting: careSetting.trim(),
+      });
+    }
   };
 
   const siteMap = new Map(
@@ -121,9 +201,19 @@ function ServiceUnitsPage() {
     <div className="flex flex-col">
       <PageHeader
         actions={
-          <Button onClick={() => setShowForm((s) => !s)} size="sm">
+          <Button
+            onClick={() => {
+              if (showForm) {
+                resetForm();
+                setShowForm(false);
+              } else {
+                setShowForm(true);
+              }
+            }}
+            size="sm"
+          >
             <Plus size={14} />
-            <span className="ml-1.5">Nueva</span>
+            <span className="ml-1.5">{showForm ? "Cancelar" : "Nueva"}</span>
           </Button>
         }
         description="Administre las unidades de servicio de salud"
@@ -132,9 +222,13 @@ function ServiceUnitsPage() {
 
       <div className="p-6">
         {showForm && (
-          <Card className="mb-6">
+          <Card className="mb-6" key={editingId || "new"}>
             <CardHeader>
-              <CardTitle>Nueva unidad de servicio</CardTitle>
+              <CardTitle>
+                {editingId
+                  ? "Editar unidad de servicio"
+                  : "Nueva unidad de servicio"}
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <form
@@ -180,22 +274,23 @@ function ServiceUnitsPage() {
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="su-site">Sede *</Label>
-                  <select
-                    className="h-8 w-full rounded-none border border-input bg-transparent px-2.5 py-1 text-xs outline-none"
-                    id="su-site"
-                    onChange={(e) => setSiteId(e.target.value)}
-                    required
+                  <Select
+                    onValueChange={(v) => setSiteId(v as string)}
                     value={siteId}
                   >
-                    <option value="">Seleccionar...</option>
-                    {sitesData?.sites.map(
-                      (site: { id: string; name: string }) => (
-                        <option key={site.id} value={site.id}>
-                          {site.name}
-                        </option>
-                      )
-                    )}
-                  </select>
+                    <SelectTrigger id="su-site">
+                      <SelectValue placeholder="Seleccionar..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {sitesData?.sites.map(
+                        (site: { id: string; name: string }) => (
+                          <SelectItem key={site.id} value={site.id}>
+                            {site.name}
+                          </SelectItem>
+                        )
+                      )}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-1.5 sm:col-span-3">
                   <Label htmlFor="su-care">Ambito de atencion *</Label>
@@ -209,15 +304,25 @@ function ServiceUnitsPage() {
                 </div>
                 <div className="flex items-end gap-2 sm:col-span-3">
                   <Button
-                    disabled={createMutation.isPending}
+                    disabled={
+                      createMutation.isPending || updateMutation.isPending
+                    }
                     size="sm"
                     type="submit"
                   >
-                    Guardar
+                    {createMutation.isPending || updateMutation.isPending
+                      ? "Guardando..."
+                      : editingId
+                        ? "Actualizar"
+                        : "Guardar"}
                   </Button>
                   <Button
-                    onClick={() => setShowForm(false)}
+                    onClick={() => {
+                      resetForm();
+                      setShowForm(false);
+                    }}
                     size="sm"
+                    type="button"
                     variant="ghost"
                   >
                     Cancelar
@@ -232,13 +337,9 @@ function ServiceUnitsPage() {
           <Input
             className="max-w-xs"
             onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
             placeholder="Buscar por nombre o codigo..."
             value={search}
           />
-          <Button onClick={handleSearch} size="sm" variant="outline">
-            <Search size={14} />
-          </Button>
         </div>
 
         <DataTable
@@ -268,12 +369,59 @@ function ServiceUnitsPage() {
                   year: "numeric",
                 }),
             },
+            {
+              header: "Acciones",
+              accessor: (row: SU) => (
+                <div className="flex items-center gap-1">
+                  <Link
+                    aria-label="Ver unidad de servicio"
+                    className="inline-flex text-muted-foreground hover:text-foreground"
+                    params={{ unitId: row.id }}
+                    to="/facilities/service-units/$unitId"
+                  >
+                    <Eye size={14} />
+                  </Link>
+                  <Button
+                    aria-label="Editar unidad de servicio"
+                    onClick={() => startEdit(row)}
+                    size="icon-xs"
+                    variant="ghost"
+                  >
+                    <Pencil size={12} />
+                  </Button>
+                  <Button
+                    aria-label="Eliminar unidad de servicio"
+                    disabled={deleteMutation.isPending}
+                    onClick={() => {
+                      if (
+                        confirm(
+                          "¿Eliminar esta unidad de servicio permanentemente?"
+                        )
+                      ) {
+                        deleteMutation.mutate({ id: row.id });
+                      }
+                    }}
+                    size="icon-xs"
+                    variant="ghost"
+                  >
+                    <Trash2 size={12} />
+                  </Button>
+                </div>
+              ),
+              className: "w-24",
+            },
           ]}
           data={data?.serviceUnits ?? []}
           emptyDescription="No se encontraron unidades de servicio."
           emptyTitle="Sin unidades de servicio"
           isLoading={isLoading}
           keyExtractor={(row: SU) => row.id}
+          onRowClick={(row) =>
+            navigate({
+              to: "/facilities/service-units/$unitId",
+              params: { unitId: row.id },
+            })
+          }
           pagination={
             data
               ? {

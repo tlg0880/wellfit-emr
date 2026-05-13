@@ -16,16 +16,22 @@ import {
 import { Input } from "@wellfit-emr/ui/components/input";
 import { Label } from "@wellfit-emr/ui/components/label";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@wellfit-emr/ui/components/select";
+import {
   AlertTriangle,
   Ban,
   Lock,
   MoreHorizontal,
   Plus,
-  Search,
   Trash2,
   UserCheck,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { DataTable } from "@/components/data-table";
 import { PageHeader } from "@/components/page-header";
@@ -63,10 +69,26 @@ function UsersPage() {
   const [searchValue, setSearchValue] = useState("");
   const [querySearch, setQuerySearch] = useState("");
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<"user" | "admin">("user");
+
+  useEffect(() => {
+    document.title = "Usuarios | WellFit EMR";
+    return () => {
+      document.title = "WellFit EMR";
+    };
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setQuerySearch(searchValue);
+      setOffset(0);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchValue]);
 
   const { data, isLoading, error, refetch } = useQuery(
     orpc.admin.listUsers.queryOptions({
@@ -148,22 +170,75 @@ function UsersPage() {
     },
   });
 
-  const handleSearch = () => {
-    setOffset(0);
-    setQuerySearch(searchValue);
-  };
+  const setPasswordMutation = useMutation({
+    ...orpc.admin.setUserPassword.mutationOptions(),
+    onSuccess: () => {
+      toast.success("Contraseña actualizada");
+      refetch();
+    },
+    onError: (error: Error) => {
+      toast.error(`Error: ${error.message}`);
+    },
+  });
+
+  const updateMutation = useMutation({
+    ...orpc.admin.updateUser.mutationOptions(),
+    onSuccess: () => {
+      toast.success("Usuario actualizado");
+      setEditingId(null);
+      setName("");
+      setEmail("");
+      setPassword("");
+      setRole("user");
+      setShowForm(false);
+      refetch();
+    },
+    onError: (error: Error) => {
+      toast.error(`Error: ${error.message}`);
+    },
+  });
+
+  function resetForm() {
+    setEditingId(null);
+    setName("");
+    setEmail("");
+    setPassword("");
+    setRole("user");
+  }
+
+  function startEdit(row: UserItem) {
+    setEditingId(row.id);
+    setName(row.name);
+    setEmail(row.email);
+    setPassword("");
+    setRole(row.role as "user" | "admin");
+    setShowForm(true);
+  }
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!(name.trim() && email.trim() && password.trim())) {
-      return;
+    if (editingId) {
+      if (!(name.trim() && email.trim())) {
+        return;
+      }
+      updateMutation.mutate({
+        userId: editingId,
+        data: {
+          name: name.trim(),
+          email: email.trim(),
+        },
+      });
+    } else {
+      if (!(name.trim() && email.trim() && password.trim())) {
+        return;
+      }
+      createMutation.mutate({
+        name: name.trim(),
+        email: email.trim(),
+        password: password.trim(),
+        role,
+      });
     }
-    createMutation.mutate({
-      name: name.trim(),
-      email: email.trim(),
-      password: password.trim(),
-      role,
-    });
   };
 
   const users = (data?.users as UserItem[]) ?? [];
@@ -173,13 +248,27 @@ function UsersPage() {
       <PageHeader
         actions={
           !hasError && (
-            <Button onClick={() => setShowForm((s) => !s)} size="sm">
+            <Button
+              onClick={() => {
+                if (showForm) {
+                  resetForm();
+                  setShowForm(false);
+                } else {
+                  setShowForm(true);
+                }
+              }}
+              size="sm"
+            >
               <Plus size={14} />
-              <span className="ml-1.5">Nuevo usuario</span>
+              <span className="ml-1.5">
+                {showForm ? "Cancelar" : "Nuevo usuario"}
+              </span>
             </Button>
           )
         }
-        description="Gestione los usuarios del sistema"
+        description="Gestionar usuarios y permisos del sistema"
+        icon={UserCheck}
+        iconBgClass="bg-slate-100 text-slate-600"
         title="Administracion de usuarios"
       />
 
@@ -206,9 +295,11 @@ function UsersPage() {
         )}
 
         {!hasError && showForm && (
-          <Card className="mb-6">
+          <Card className="mb-6" key={editingId || "new"}>
             <CardHeader>
-              <CardTitle>Nuevo usuario</CardTitle>
+              <CardTitle>
+                {editingId ? "Editar usuario" : "Nuevo usuario"}
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <form
@@ -218,6 +309,7 @@ function UsersPage() {
                 <div className="space-y-1.5">
                   <Label htmlFor="user-name">Nombre *</Label>
                   <Input
+                    autoFocus
                     id="user-name"
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Nombre completo"
@@ -236,42 +328,55 @@ function UsersPage() {
                     value={email}
                   />
                 </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="user-password">Contrasena *</Label>
-                  <Input
-                    id="user-password"
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Contrasena"
-                    required
-                    type="password"
-                    value={password}
-                  />
-                </div>
+                {!editingId && (
+                  <div className="space-y-1.5">
+                    <Label htmlFor="user-password">Contrasena *</Label>
+                    <Input
+                      id="user-password"
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Contrasena"
+                      required
+                      type="password"
+                      value={password}
+                    />
+                  </div>
+                )}
                 <div className="space-y-1.5">
                   <Label htmlFor="user-role">Rol</Label>
-                  <select
-                    className="h-8 w-full rounded-none border border-input bg-transparent px-2.5 py-1 text-xs outline-none"
-                    id="user-role"
-                    onChange={(e) =>
-                      setRole(e.target.value as "user" | "admin")
-                    }
+                  <Select
+                    onValueChange={(v) => setRole(v as "user" | "admin")}
                     value={role}
                   >
-                    <option value="user">Usuario</option>
-                    <option value="admin">Administrador</option>
-                  </select>
+                    <SelectTrigger id="user-role">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="user">Usuario</SelectItem>
+                      <SelectItem value="admin">Administrador</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="flex items-end gap-2 sm:col-span-3">
                   <Button
-                    disabled={createMutation.isPending}
+                    disabled={
+                      createMutation.isPending || updateMutation.isPending
+                    }
                     size="sm"
                     type="submit"
                   >
-                    Guardar
+                    {createMutation.isPending || updateMutation.isPending
+                      ? "Guardando..."
+                      : editingId
+                        ? "Actualizar"
+                        : "Guardar"}
                   </Button>
                   <Button
-                    onClick={() => setShowForm(false)}
+                    onClick={() => {
+                      resetForm();
+                      setShowForm(false);
+                    }}
                     size="sm"
+                    type="button"
                     variant="ghost"
                   >
                     Cancelar
@@ -288,13 +393,9 @@ function UsersPage() {
               <Input
                 className="max-w-xs"
                 onChange={(e) => setSearchValue(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                 placeholder="Buscar por nombre o correo..."
                 value={searchValue}
               />
-              <Button onClick={handleSearch} size="sm" variant="outline">
-                <Search size={14} />
-              </Button>
             </div>
 
             <DataTable
@@ -343,12 +444,19 @@ function UsersPage() {
                     <DropdownMenu>
                       <DropdownMenuTrigger
                         render={
-                          <Button size="icon-xs" variant="ghost">
+                          <Button
+                            aria-label="Acciones de usuario"
+                            size="icon-xs"
+                            variant="ghost"
+                          >
                             <MoreHorizontal size={14} />
                           </Button>
                         }
                       />
                       <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => startEdit(row)}>
+                          Editar perfil
+                        </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() =>
                             setRoleMutation.mutate({
@@ -380,9 +488,36 @@ function UsersPage() {
                           </DropdownMenuItem>
                         )}
                         <DropdownMenuItem
-                          className="text-destructive focus:text-destructive"
                           onClick={() => {
-                            removeMutation.mutate({ userId: row.id });
+                            const newPassword = window.prompt(
+                              "Ingrese la nueva contraseña para " +
+                                row.name +
+                                ":"
+                            );
+                            if (newPassword && newPassword.trim().length >= 6) {
+                              setPasswordMutation.mutate({
+                                userId: row.id,
+                                newPassword: newPassword.trim(),
+                              });
+                            } else if (newPassword !== null) {
+                              toast.error(
+                                "La contraseña debe tener al menos 6 caracteres"
+                              );
+                            }
+                          }}
+                        >
+                          <Lock className="mr-2" size={14} />
+                          Restablecer contraseña
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="text-destructive focus:text-destructive"
+                          disabled={removeMutation.isPending}
+                          onClick={() => {
+                            if (
+                              confirm("¿Eliminar este usuario permanentemente?")
+                            ) {
+                              removeMutation.mutate({ userId: row.id });
+                            }
                           }}
                         >
                           <Trash2 className="mr-2" size={14} />

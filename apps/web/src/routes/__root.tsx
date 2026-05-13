@@ -1,13 +1,13 @@
 import { createORPCClient } from "@orpc/client";
 import { createTanstackQueryUtils } from "@orpc/tanstack-query";
 import type { QueryClient } from "@tanstack/react-query";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import {
   createRootRouteWithContext,
   HeadContent,
   Outlet,
 } from "@tanstack/react-router";
-import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
+// Devtools removed for production — add back temporarily when debugging routing
+// import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import type { AppRouterClient } from "@wellfit-emr/api/routers/index";
 import { Toaster } from "@wellfit-emr/ui/components/sonner";
 import { useState } from "react";
@@ -58,8 +58,7 @@ function RootComponent() {
         <Outlet />
         <Toaster richColors />
       </ThemeProvider>
-      <TanStackRouterDevtools position="bottom-left" />
-      <ReactQueryDevtools buttonPosition="bottom-right" position="bottom" />
+      {/* Devtools disabled for production visual quality */}
     </>
   );
 }

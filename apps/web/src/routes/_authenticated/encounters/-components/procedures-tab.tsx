@@ -4,7 +4,14 @@ import { Button } from "@wellfit-emr/ui/components/button";
 import { Input } from "@wellfit-emr/ui/components/input";
 import { Label } from "@wellfit-emr/ui/components/label";
 import { SearchSelect } from "@wellfit-emr/ui/components/search-select";
-import { Plus, X } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@wellfit-emr/ui/components/select";
+import { Pencil, Plus, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -29,6 +36,7 @@ export function ProceduresTab({
 }) {
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [cupsSearch, setCupsSearch] = useState("");
   const [performerSearch, setPerformerSearch] = useState("");
 
@@ -64,6 +72,23 @@ export function ProceduresTab({
     onSuccess: () => {
       toast.success("Procedimiento registrado");
       setShowForm(false);
+      setEditingId(null);
+      form.reset();
+      queryClient.invalidateQueries({
+        queryKey: orpc.clinicalRecords.listProcedures.key({ type: "query" }),
+      });
+    },
+    onError: (error: Error) => {
+      toast.error(`Error: ${error.message}`);
+    },
+  });
+
+  const update = useMutation({
+    ...orpc.clinicalRecords.updateProcedure.mutationOptions(),
+    onSuccess: () => {
+      toast.success("Procedimiento actualizado");
+      setShowForm(false);
+      setEditingId(null);
       form.reset();
       queryClient.invalidateQueries({
         queryKey: orpc.clinicalRecords.listProcedures.key({ type: "query" }),
@@ -83,20 +108,46 @@ export function ProceduresTab({
       status: "completed",
     },
     onSubmit: async ({ value }) => {
-      await create.mutateAsync({
-        encounterId,
-        patientId,
-        cupsCode: value.cupsCode,
-        description: value.description,
-        performedAt: value.performedAt ? new Date(value.performedAt) : null,
-        performerId: value.performerId || null,
-        status: value.status,
-      });
+      if (editingId) {
+        await update.mutateAsync({
+          id: editingId,
+          cupsCode: value.cupsCode,
+          description: value.description,
+          performedAt: value.performedAt ? new Date(value.performedAt) : null,
+          performerId: value.performerId || null,
+          status: value.status,
+        });
+      } else {
+        await create.mutateAsync({
+          encounterId,
+          patientId,
+          cupsCode: value.cupsCode,
+          description: value.description,
+          performedAt: value.performedAt ? new Date(value.performedAt) : null,
+          performerId: value.performerId || null,
+          status: value.status,
+        });
+      }
     },
     validators: {
       onSubmit: procedureSchema,
     },
   });
+
+  function startEdit(row: NonNullable<typeof data>[0]) {
+    setEditingId(row.id);
+    form.setFieldValue("cupsCode", row.cupsCode);
+    form.setFieldValue("description", row.description);
+    form.setFieldValue(
+      "performedAt",
+      row.performedAt
+        ? new Date(row.performedAt).toISOString().slice(0, 16)
+        : ""
+    );
+    form.setFieldValue("performerId", row.performerId ?? "");
+    form.setFieldValue("status", row.status);
+    setShowForm(true);
+  }
 
   const columns = [
     {
@@ -121,12 +172,35 @@ export function ProceduresTab({
       header: "Estado",
       accessor: (row: NonNullable<typeof data>[0]) => row.status,
     },
+    {
+      header: "",
+      accessor: (row: NonNullable<typeof data>[0]) => (
+        <Button
+          aria-label="Editar procedimiento"
+          onClick={() => startEdit(row)}
+          size="icon-xs"
+          variant="ghost"
+        >
+          <Pencil size={12} />
+        </Button>
+      ),
+      className: "w-16",
+    },
   ];
 
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <Button onClick={() => setShowForm(!showForm)} size="sm">
+        <Button
+          onClick={() => {
+            if (showForm) {
+              setEditingId(null);
+              form.reset();
+            }
+            setShowForm(!showForm);
+          }}
+          size="sm"
+        >
           {showForm ? <X size={14} /> : <Plus size={14} />}
           {showForm ? "Cancelar" : "Agregar procedimiento"}
         </Button>
@@ -144,7 +218,7 @@ export function ProceduresTab({
           <form.Field name="cupsCode">
             {(field) => (
               <div className="space-y-1">
-                <Label htmlFor={field.name}>Código CUPS</Label>
+                <Label htmlFor={field.name}>Código CUPS *</Label>
                 <SearchSelect
                   emptyMessage="Escribe para buscar en CUPS"
                   id={field.name}
@@ -184,7 +258,7 @@ export function ProceduresTab({
           <form.Field name="description">
             {(field) => (
               <div className="space-y-1 md:col-span-2">
-                <Label htmlFor={field.name}>Descripción</Label>
+                <Label htmlFor={field.name}>Descripción *</Label>
                 <Input
                   className="text-xs"
                   id={field.name}
@@ -250,24 +324,25 @@ export function ProceduresTab({
           <form.Field name="status">
             {(field) => (
               <div className="space-y-1">
-                <Label htmlFor={field.name}>Estado</Label>
-                <select
-                  className="h-8 w-full rounded-none border border-input bg-transparent px-2.5 text-xs outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50"
-                  id={field.name}
-                  name={field.name}
-                  onBlur={field.handleBlur}
-                  onChange={(e) => field.handleChange(e.target.value)}
+                <Label htmlFor={field.name}>Estado *</Label>
+                <Select
+                  onValueChange={(v) => field.handleChange(v as string)}
                   value={field.state.value}
                 >
-                  <option value="completed">Completado</option>
-                  <option value="in-progress">En progreso</option>
-                  <option value="cancelled">Cancelado</option>
-                </select>
+                  <SelectTrigger id={field.name}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="completed">Completado</SelectItem>
+                    <SelectItem value="in-progress">En progreso</SelectItem>
+                    <SelectItem value="cancelled">Cancelado</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             )}
           </form.Field>
 
-          <div className="flex items-end">
+          <div className="flex items-end gap-2">
             <form.Subscribe
               selector={(state) => ({
                 canSubmit: state.canSubmit,
@@ -276,14 +351,32 @@ export function ProceduresTab({
             >
               {({ canSubmit, isSubmitting }) => (
                 <Button
-                  disabled={!canSubmit || isSubmitting}
+                  disabled={!canSubmit || isSubmitting || update.isPending}
                   size="sm"
                   type="submit"
                 >
-                  {isSubmitting ? "Guardando..." : "Guardar procedimiento"}
+                  {isSubmitting || update.isPending
+                    ? "Guardando..."
+                    : editingId
+                      ? "Actualizar procedimiento"
+                      : "Guardar procedimiento"}
                 </Button>
               )}
             </form.Subscribe>
+            {editingId && (
+              <Button
+                onClick={() => {
+                  setEditingId(null);
+                  form.reset();
+                  setShowForm(false);
+                }}
+                size="sm"
+                type="button"
+                variant="ghost"
+              >
+                Cancelar
+              </Button>
+            )}
           </div>
         </form>
       )}

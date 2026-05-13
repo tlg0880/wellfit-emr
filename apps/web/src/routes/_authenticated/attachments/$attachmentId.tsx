@@ -1,5 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { Button } from "@wellfit-emr/ui/components/button";
 import {
   Card,
   CardContent,
@@ -7,12 +8,19 @@ import {
   CardTitle,
 } from "@wellfit-emr/ui/components/card";
 import { Skeleton } from "@wellfit-emr/ui/components/skeleton";
-import { AlertTriangle, ExternalLink, FileText } from "lucide-react";
+import {
+  AlertTriangle,
+  ExternalLink,
+  FileText,
+  Paperclip,
+  Trash2,
+} from "lucide-react";
 import { useEffect } from "react";
+import { toast } from "sonner";
 
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
-import { orpc } from "@/utils/orpc";
+import { orpc, queryClient } from "@/utils/orpc";
 
 export const Route = createFileRoute(
   "/_authenticated/attachments/$attachmentId"
@@ -86,6 +94,21 @@ function InfoRow({
 
 function AttachmentDetailPage() {
   const { attachmentId } = Route.useParams();
+  const navigate = useNavigate();
+
+  const deleteMutation = useMutation({
+    ...orpc.attachments.deleteLink.mutationOptions(),
+    onSuccess: () => {
+      toast.success("Anexo eliminado");
+      queryClient.invalidateQueries({
+        queryKey: orpc.attachments.list.key({ type: "query" }),
+      });
+      navigate({ to: "/attachments" });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Error al eliminar anexo");
+    },
+  });
 
   const {
     data: linkData,
@@ -144,8 +167,29 @@ function AttachmentDetailPage() {
   return (
     <div className="space-y-4 pb-6">
       <PageHeader
+        actions={
+          link ? (
+            <Button
+              disabled={deleteMutation.isPending}
+              onClick={() => {
+                if (confirm("¿Eliminar este anexo permanentemente?")) {
+                  deleteMutation.mutate({ id: attachmentId });
+                }
+              }}
+              size="sm"
+              variant="outline"
+            >
+              <Trash2 size={14} />
+              <span className="ml-1.5">
+                {deleteMutation.isPending ? "Eliminando..." : "Eliminar"}
+              </span>
+            </Button>
+          ) : undefined
+        }
         backTo="/attachments"
         description={description}
+        icon={Paperclip}
+        iconBgClass="bg-slate-100 text-slate-600"
         title={title}
       />
 
@@ -180,7 +224,7 @@ function AttachmentDetailPage() {
                 <p className="mt-0.5 flex items-center gap-1.5 font-medium text-xs">
                   <span>
                     {getEntityTypeLabel(link.linkedEntityType)} —{" "}
-                    {link.linkedEntityId}
+                    {link.linkedEntityId.slice(0, 8)}…
                   </span>
                   {(() => {
                     const detailRoute = getEntityDetailRoute(
@@ -192,6 +236,7 @@ function AttachmentDetailPage() {
                     }
                     return (
                       <Link
+                        aria-label="Ver entidad vinculada"
                         className="inline-flex items-center text-muted-foreground hover:text-foreground"
                         to={detailRoute}
                       >

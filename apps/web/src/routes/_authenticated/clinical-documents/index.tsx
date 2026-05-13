@@ -1,5 +1,10 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Link,
+  useNavigate,
+  useSearch,
+} from "@tanstack/react-router";
 import { Button } from "@wellfit-emr/ui/components/button";
 import {
   Card,
@@ -10,14 +15,27 @@ import {
 import { Input } from "@wellfit-emr/ui/components/input";
 import { Label } from "@wellfit-emr/ui/components/label";
 import { SearchSelect } from "@wellfit-emr/ui/components/search-select";
-import { Eye, FileText, FilterX, PenLine, Plus } from "lucide-react";
-import { useState } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@wellfit-emr/ui/components/select";
+import { Eye, FileText, FilterX, PenLine, Plus, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { z } from "zod";
 
 import { DataTable } from "@/components/data-table";
 import { PageHeader } from "@/components/page-header";
 import { authClient } from "@/lib/auth-client";
 import { orpc, queryClient } from "@/utils/orpc";
+
+const searchSchema = z.object({
+  encounterId: z.string().optional(),
+  patientId: z.string().optional(),
+});
 
 /* ─── helpers ─── */
 
@@ -55,7 +73,7 @@ function getStatusBadge(status: string): React.ReactNode {
   };
   return (
     <span
-      className={`inline-flex items-center border px-1.5 py-0.5 font-medium text-[10px] ${mapped.colorClass}`}
+      className={`inline-flex items-center rounded-full border px-2 py-0.5 font-medium text-[10px] shadow-sm ${mapped.colorClass}`}
     >
       {mapped.label}
     </span>
@@ -64,6 +82,7 @@ function getStatusBadge(status: string): React.ReactNode {
 
 export const Route = createFileRoute("/_authenticated/clinical-documents/")({
   component: ClinicalDocumentsListPage,
+  validateSearch: searchSchema,
   beforeLoad: async () => {
     const session = await authClient.getSession();
     if (!session.data) {
@@ -77,10 +96,18 @@ export const Route = createFileRoute("/_authenticated/clinical-documents/")({
   },
 });
 
-function CreateDocumentForm({ onCancel }: { onCancel: () => void }) {
+function CreateDocumentForm({
+  onCancel,
+  defaultPatientId,
+  defaultEncounterId,
+}: {
+  onCancel: () => void;
+  defaultPatientId?: string;
+  defaultEncounterId?: string;
+}) {
   const [form, setForm] = useState({
-    patientId: "",
-    encounterId: "",
+    patientId: defaultPatientId ?? "",
+    encounterId: defaultEncounterId ?? "",
     documentType: "evolucion_medica",
     authorPractitionerId: "",
     payloadJson: "{}",
@@ -114,6 +141,20 @@ function CreateDocumentForm({ onCancel }: { onCancel: () => void }) {
     })
   );
 
+  const { data: defaultPatientData } = useQuery({
+    ...orpc.patients.get.queryOptions({
+      input: { id: defaultPatientId ?? "" },
+    }),
+    enabled: !!defaultPatientId,
+  });
+
+  const { data: defaultEncounterData } = useQuery({
+    ...orpc.encounters.get.queryOptions({
+      input: { id: defaultEncounterId ?? "" },
+    }),
+    enabled: !!defaultEncounterId,
+  });
+
   const { data: practitionersData, isLoading: practitionersLoading } = useQuery(
     orpc.facilities.listPractitioners.queryOptions({
       input: {
@@ -140,6 +181,18 @@ function CreateDocumentForm({ onCancel }: { onCancel: () => void }) {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!form.patientId.trim()) {
+      toast.error("Paciente es obligatorio");
+      return;
+    }
+    if (!form.encounterId.trim()) {
+      toast.error("Atención es obligatoria");
+      return;
+    }
+    if (!form.authorPractitionerId.trim()) {
+      toast.error("Autor es obligatorio");
+      return;
+    }
     let payloadJson: Record<string, unknown> = {};
     let sectionPayloadJson: Record<string, unknown> = {};
     try {
@@ -193,19 +246,30 @@ function CreateDocumentForm({ onCancel }: { onCancel: () => void }) {
           onSubmit={handleSubmit}
         >
           <div className="space-y-1">
-            <Label>Paciente</Label>
+            <Label>Paciente *</Label>
             <SearchSelect
               emptyMessage="Escribe para buscar pacientes"
               loading={patientsLoading}
               onChange={(v) => setForm((f) => ({ ...f, patientId: v }))}
               onSearchChange={setPatientSearch}
-              options={
-                patientsData?.patients.map((p) => ({
-                  value: p.id,
-                  label: `${p.firstName} ${p.lastName1}`,
-                  description: `${p.primaryDocumentType} ${p.primaryDocumentNumber}`,
-                })) ?? []
-              }
+              options={[
+                ...(defaultPatientData && defaultPatientId
+                  ? [
+                      {
+                        value: defaultPatientData.id,
+                        label: `${defaultPatientData.firstName} ${defaultPatientData.lastName1}`,
+                        description: `${defaultPatientData.primaryDocumentType} ${defaultPatientData.primaryDocumentNumber}`,
+                      },
+                    ]
+                  : []),
+                ...(patientsData?.patients ?? [])
+                  .filter((p) => p.id !== defaultPatientId)
+                  .map((p) => ({
+                    value: p.id,
+                    label: `${p.firstName} ${p.lastName1}`,
+                    description: `${p.primaryDocumentType} ${p.primaryDocumentNumber}`,
+                  })),
+              ]}
               placeholder="Buscar paciente..."
               required
               search={patientSearch}
@@ -213,21 +277,35 @@ function CreateDocumentForm({ onCancel }: { onCancel: () => void }) {
             />
           </div>
           <div className="space-y-1">
-            <Label>Atención</Label>
+            <Label>Atención *</Label>
             <SearchSelect
               emptyMessage="Escribe para buscar atenciones"
               loading={encountersLoading}
               onChange={(v) => setForm((f) => ({ ...f, encounterId: v }))}
               onSearchChange={setEncounterSearch}
-              options={
-                encountersData?.encounters.map((e) => ({
-                  value: e.id,
-                  label: e.reasonForVisit || "Sin motivo",
-                  description: new Date(e.startedAt).toLocaleDateString(
-                    "es-CO"
-                  ),
-                })) ?? []
-              }
+              options={[
+                ...(defaultEncounterData && defaultEncounterId
+                  ? [
+                      {
+                        value: defaultEncounterData.id,
+                        label:
+                          defaultEncounterData.reasonForVisit || "Sin motivo",
+                        description: new Date(
+                          defaultEncounterData.startedAt
+                        ).toLocaleDateString("es-CO"),
+                      },
+                    ]
+                  : []),
+                ...(encountersData?.encounters ?? [])
+                  .filter((e) => e.id !== defaultEncounterId)
+                  .map((e) => ({
+                    value: e.id,
+                    label: e.reasonForVisit || "Sin motivo",
+                    description: new Date(e.startedAt).toLocaleDateString(
+                      "es-CO"
+                    ),
+                  })),
+              ]}
               placeholder="Buscar atención..."
               required
               search={encounterSearch}
@@ -236,27 +314,38 @@ function CreateDocumentForm({ onCancel }: { onCancel: () => void }) {
           </div>
           <div className="space-y-1">
             <Label>Tipo de documento</Label>
-            <select
-              className="h-8 w-full rounded-none border border-input bg-transparent px-2.5 text-xs outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50"
-              onChange={(e) =>
-                setForm({ ...form, documentType: e.target.value })
+            <Select
+              onValueChange={(v) =>
+                setForm({ ...form, documentType: v as string })
               }
-              required
               value={form.documentType}
             >
-              <option value="evolucion_medica">Evolución médica</option>
-              <option value="nota_enfermeria">Nota de enfermería</option>
-              <option value="epicrisis">Epicrisis</option>
-              <option value="informe_quirurgico">Informe quirúrgico</option>
-              <option value="orden_medica">Orden médica</option>
-              <option value="consentimiento_informado">
-                Consentimiento informado
-              </option>
-              <option value="historia_clinica">Historia clínica</option>
-            </select>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="evolucion_medica">
+                  Evolución médica
+                </SelectItem>
+                <SelectItem value="nota_enfermeria">
+                  Nota de enfermería
+                </SelectItem>
+                <SelectItem value="epicrisis">Epicrisis</SelectItem>
+                <SelectItem value="informe_quirurgico">
+                  Informe quirúrgico
+                </SelectItem>
+                <SelectItem value="orden_medica">Orden médica</SelectItem>
+                <SelectItem value="consentimiento_informado">
+                  Consentimiento informado
+                </SelectItem>
+                <SelectItem value="historia_clinica">
+                  Historia clínica
+                </SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-1">
-            <Label>Autor</Label>
+            <Label>Autor *</Label>
             <SearchSelect
               emptyMessage="Escribe para buscar profesionales"
               loading={practitionersLoading}
@@ -297,20 +386,26 @@ function CreateDocumentForm({ onCancel }: { onCancel: () => void }) {
           </div>
           <div className="space-y-1">
             <Label>Código de sección</Label>
-            <select
-              className="h-8 w-full rounded-none border border-input bg-transparent px-2.5 text-xs outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50"
-              onChange={(e) =>
-                setForm({ ...form, sectionCode: e.target.value })
+            <Select
+              onValueChange={(v) =>
+                setForm({ ...form, sectionCode: v as string })
               }
               value={form.sectionCode}
             >
-              <option value="subjective">Subjetivo</option>
-              <option value="objective">Objetivo</option>
-              <option value="assessment">Análisis / Evaluación</option>
-              <option value="plan">Plan</option>
-              <option value="evolucion">Evolución</option>
-              <option value="nota">Nota</option>
-            </select>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="subjective">Subjetivo</SelectItem>
+                <SelectItem value="objective">Objetivo</SelectItem>
+                <SelectItem value="assessment">
+                  Análisis / Evaluación
+                </SelectItem>
+                <SelectItem value="plan">Plan</SelectItem>
+                <SelectItem value="evolucion">Evolución</SelectItem>
+                <SelectItem value="nota">Nota</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-1">
             <Label>Orden de sección</Label>
@@ -352,11 +447,24 @@ function CreateDocumentForm({ onCancel }: { onCancel: () => void }) {
 
 function ClinicalDocumentsListPage() {
   const navigate = useNavigate({ from: "/clinical-documents/" });
+  const { encounterId: defaultEncounterId, patientId: defaultPatientId } =
+    useSearch({
+      from: "/_authenticated/clinical-documents/",
+    });
   const [offset, setOffset] = useState(0);
   const [limit] = useState(25);
-  const [showForm, setShowForm] = useState(false);
+  const [showForm, setShowForm] = useState(
+    !!(defaultEncounterId || defaultPatientId)
+  );
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [typeFilter, setTypeFilter] = useState<string>("");
+
+  useEffect(() => {
+    document.title = "Documentos clínicos | WellFit EMR";
+    return () => {
+      document.title = "WellFit EMR";
+    };
+  }, []);
 
   const { data, isLoading } = useQuery(
     orpc.clinicalDocuments.list.queryOptions({
@@ -365,7 +473,7 @@ function ClinicalDocumentsListPage() {
         offset,
         sortDirection: "desc",
         status: statusFilter || undefined,
-        patientId: typeFilter ? undefined : undefined,
+        documentType: typeFilter || undefined,
       },
     })
   );
@@ -383,13 +491,18 @@ function ClinicalDocumentsListPage() {
     },
   });
 
-  const filteredDocuments =
-    typeFilter && data
-      ? data.documents.filter((d) => d.documentType === typeFilter)
-      : (data?.documents ?? []);
-
-  const filteredTotal =
-    typeFilter && data ? filteredDocuments.length : (data?.total ?? 0);
+  const deleteMutation = useMutation({
+    ...orpc.clinicalDocuments.delete.mutationOptions(),
+    onSuccess: () => {
+      toast.success("Documento eliminado");
+      queryClient.invalidateQueries({
+        queryKey: orpc.clinicalDocuments.list.key({ type: "query" }),
+      });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Error al eliminar documento");
+    },
+  });
 
   const columns = [
     {
@@ -411,23 +524,26 @@ function ClinicalDocumentsListPage() {
     {
       header: "Paciente",
       accessor: (row: NonNullable<typeof data>["documents"][0]) => (
-        <span
-          className="text-[10px] text-muted-foreground"
-          title={row.patientId}
+        <Link
+          className="text-[10px] text-primary hover:underline"
+          params={{ patientId: row.patientId }}
+          to="/patients/$patientId"
         >
           {row.patientId.slice(0, 8)}…
-        </span>
+        </Link>
       ),
     },
     {
       header: "Atención",
       accessor: (row: NonNullable<typeof data>["documents"][0]) => (
-        <span
-          className="text-[10px] text-muted-foreground"
-          title={row.encounterId}
+        <Link
+          className="text-[10px] text-primary hover:underline"
+          params={{ encounterId: row.encounterId }}
+          search={{ tab: undefined }}
+          to="/encounters/$encounterId"
         >
           {row.encounterId.slice(0, 8)}…
-        </span>
+        </Link>
       ),
     },
     {
@@ -440,6 +556,7 @@ function ClinicalDocumentsListPage() {
       accessor: (row: NonNullable<typeof data>["documents"][0]) => (
         <div className="flex items-center gap-1">
           <Button
+            aria-label="Ver documento"
             onClick={() =>
               navigate({
                 to: "/clinical-documents/$documentId",
@@ -453,6 +570,7 @@ function ClinicalDocumentsListPage() {
           </Button>
           {row.status === "draft" && (
             <Button
+              aria-label="Firmar documento"
               onClick={() => signMutation.mutate({ id: row.id })}
               size="icon-xs"
               variant="ghost"
@@ -460,9 +578,22 @@ function ClinicalDocumentsListPage() {
               <PenLine size={14} />
             </Button>
           )}
+          <Button
+            aria-label="Eliminar documento"
+            disabled={deleteMutation.isPending}
+            onClick={() => {
+              if (confirm("¿Eliminar este documento permanentemente?")) {
+                deleteMutation.mutate({ id: row.id });
+              }
+            }}
+            size="icon-xs"
+            variant="ghost"
+          >
+            <Trash2 size={12} />
+          </Button>
         </div>
       ),
-      className: "w-20",
+      className: "w-24",
     },
   ];
 
@@ -476,44 +607,64 @@ function ClinicalDocumentsListPage() {
           </Button>
         }
         description="Documentos clínicos con versionado inmutable"
+        icon={FileText}
+        iconBgClass="bg-teal-50 text-teal-600"
         title="Documentos clínicos"
       />
 
-      {showForm && <CreateDocumentForm onCancel={() => setShowForm(false)} />}
+      {showForm && (
+        <CreateDocumentForm
+          defaultEncounterId={defaultEncounterId}
+          defaultPatientId={defaultPatientId}
+          onCancel={() => setShowForm(false)}
+        />
+      )}
 
       <div className="space-y-3 px-6">
-        <div className="flex flex-wrap items-center gap-2">
-          <select
-            className="h-8 rounded-none border border-input bg-transparent px-2.5 text-xs outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50"
-            onChange={(e) => {
-              setStatusFilter(e.target.value);
+        <div className="flex flex-wrap items-center gap-2 rounded-md border bg-card px-3 py-2.5 shadow-md">
+          <Select
+            onValueChange={(v) => {
+              setStatusFilter(v as string);
               setOffset(0);
             }}
             value={statusFilter}
           >
-            <option value="">Todos los estados</option>
-            <option value="draft">Borrador</option>
-            <option value="signed">Firmado</option>
-          </select>
-          <select
-            className="h-8 rounded-none border border-input bg-transparent px-2.5 text-xs outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50"
-            onChange={(e) => {
-              setTypeFilter(e.target.value);
+            <SelectTrigger className="h-8 w-auto bg-background">
+              <SelectValue placeholder="Todos los estados" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">Todos los estados</SelectItem>
+              <SelectItem value="draft">Borrador</SelectItem>
+              <SelectItem value="signed">Firmado</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select
+            onValueChange={(v) => {
+              setTypeFilter(v as string);
               setOffset(0);
             }}
             value={typeFilter}
           >
-            <option value="">Todos los tipos</option>
-            <option value="evolucion_medica">Evolución médica</option>
-            <option value="nota_enfermeria">Nota de enfermería</option>
-            <option value="epicrisis">Epicrisis</option>
-            <option value="informe_quirurgico">Informe quirúrgico</option>
-            <option value="orden_medica">Orden médica</option>
-            <option value="consentimiento_informado">
-              Consentimiento informado
-            </option>
-            <option value="historia_clinica">Historia clínica</option>
-          </select>
+            <SelectTrigger className="h-8 w-auto bg-background">
+              <SelectValue placeholder="Todos los tipos" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">Todos los tipos</SelectItem>
+              <SelectItem value="evolucion_medica">Evolución médica</SelectItem>
+              <SelectItem value="nota_enfermeria">
+                Nota de enfermería
+              </SelectItem>
+              <SelectItem value="epicrisis">Epicrisis</SelectItem>
+              <SelectItem value="informe_quirurgico">
+                Informe quirúrgico
+              </SelectItem>
+              <SelectItem value="orden_medica">Orden médica</SelectItem>
+              <SelectItem value="consentimiento_informado">
+                Consentimiento informado
+              </SelectItem>
+              <SelectItem value="historia_clinica">Historia clínica</SelectItem>
+            </SelectContent>
+          </Select>
           {(statusFilter || typeFilter) && (
             <Button
               onClick={() => {
@@ -532,17 +683,29 @@ function ClinicalDocumentsListPage() {
 
         <DataTable
           columns={columns}
-          data={filteredDocuments}
-          emptyDescription="No se encontraron documentos clínicos."
-          emptyTitle="Sin documentos"
+          data={data?.documents ?? []}
+          emptyDescription={
+            statusFilter || typeFilter
+              ? "Ningún documento coincide con los filtros aplicados."
+              : "No se encontraron documentos clínicos."
+          }
+          emptyTitle={
+            statusFilter || typeFilter ? "Sin resultados" : "Sin documentos"
+          }
           isLoading={isLoading}
           keyExtractor={(row) => row.id}
+          onRowClick={(row) => {
+            navigate({
+              to: "/clinical-documents/$documentId",
+              params: { documentId: row.id },
+            });
+          }}
           pagination={
             data
               ? {
                   limit,
                   offset,
-                  total: filteredTotal,
+                  total: data.total,
                   onPageChange: setOffset,
                 }
               : undefined

@@ -1,5 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { Button } from "@wellfit-emr/ui/components/button";
 import {
   Card,
   CardContent,
@@ -7,10 +8,13 @@ import {
   CardTitle,
 } from "@wellfit-emr/ui/components/card";
 import { Skeleton } from "@wellfit-emr/ui/components/skeleton";
+import { Hospital, Trash2 } from "lucide-react";
+import { useEffect } from "react";
+import { toast } from "sonner";
 
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
-import { orpc } from "@/utils/orpc";
+import { orpc, queryClient } from "@/utils/orpc";
 
 export const Route = createFileRoute(
   "/_authenticated/facilities/service-units/$unitId"
@@ -19,6 +23,7 @@ export const Route = createFileRoute(
 });
 
 function ServiceUnitDetailPage() {
+  const navigate = useNavigate();
   const { unitId } = Route.useParams();
 
   const { data: listData, isLoading } = useQuery(
@@ -38,15 +43,40 @@ function ServiceUnitDetailPage() {
 
   const site = sitesData?.sites.find((s) => s.id === unit?.siteId);
 
+  const deleteMutation = useMutation({
+    ...orpc.facilities.deleteServiceUnit.mutationOptions(),
+    onSuccess: () => {
+      toast.success("Unidad de servicio eliminada");
+      queryClient.invalidateQueries({
+        queryKey: orpc.facilities.listServiceUnits.key({ type: "query" }),
+      });
+      navigate({ to: "/facilities/service-units" });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Error al eliminar unidad de servicio");
+    },
+  });
+
   const title = isLoading
     ? "Cargando..."
     : (unit?.name ?? "Detalle de unidad de servicio");
+
+  useEffect(() => {
+    if (unit) {
+      document.title = `${unit.name} | WellFit EMR`;
+    }
+    return () => {
+      document.title = "WellFit EMR";
+    };
+  }, [unit]);
 
   return (
     <div className="space-y-4 pb-6">
       <PageHeader
         backTo="/facilities/service-units"
         description="Información de la unidad de servicio"
+        icon={Hospital}
+        iconBgClass="bg-teal-100 text-teal-600"
         title={title}
       />
 
@@ -70,7 +100,15 @@ function ServiceUnitDetailPage() {
                 },
                 {
                   label: "Sede",
-                  value: site?.name ?? unit.siteId,
+                  value: site?.name ?? (
+                    <Link
+                      className="text-primary hover:underline"
+                      params={{ siteId: unit.siteId }}
+                      to="/facilities/sites/$siteId"
+                    >
+                      {unit.siteId.slice(0, 8)}…
+                    </Link>
+                  ),
                 },
                 {
                   label: "Creada",
@@ -88,6 +126,31 @@ function ServiceUnitDetailPage() {
                   <p className="mt-0.5 font-medium">{item.value}</p>
                 </div>
               ))}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Acciones</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Button
+                disabled={deleteMutation.isPending}
+                onClick={() => {
+                  if (
+                    confirm(
+                      "¿Eliminar esta unidad de servicio permanentemente?"
+                    )
+                  ) {
+                    deleteMutation.mutate({ id: unitId });
+                  }
+                }}
+                size="sm"
+                variant="destructive"
+              >
+                <Trash2 size={14} />
+                <span className="ml-1.5">Eliminar</span>
+              </Button>
             </CardContent>
           </Card>
         </div>

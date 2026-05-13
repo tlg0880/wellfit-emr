@@ -76,6 +76,7 @@ const getDocumentSchema = z.object({
 });
 
 const listDocumentsSchema = z.object({
+  documentType: z.string().min(1).optional(),
   encounterId: z.string().min(1).optional(),
   limit: z.number().int().min(1).max(100).default(25),
   offset: z.number().int().min(0).default(0),
@@ -244,6 +245,9 @@ const listDocumentsProcedure = protectedProcedure
         ? eq(clinicalDocument.encounterId, input.encounterId)
         : undefined,
       input.status ? eq(clinicalDocument.status, input.status) : undefined,
+      input.documentType
+        ? eq(clinicalDocument.documentType, input.documentType)
+        : undefined,
     ].filter((filter) => filter !== undefined);
 
     const where = filters.length > 0 ? and(...filters) : undefined;

@@ -64,14 +64,14 @@ export function DataTable<T>({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="overflow-auto border">
+      <div className="overflow-auto rounded-sm border border-border bg-card shadow-md">
         <table className="w-full text-xs">
-          <thead className="bg-muted">
+          <thead className="border-border border-b bg-gradient-to-b from-primary/[0.15] to-muted/90">
             <tr>
               {columns.map((col, columnIndex) => (
                 <th
                   className={cn(
-                    "px-3 py-2 text-left font-medium text-muted-foreground",
+                    "px-5 py-3.5 text-left font-bold text-[11px] text-muted-foreground uppercase tracking-wider",
                     col.className
                   )}
                   key={columnKeys[columnIndex]}
@@ -81,32 +81,52 @@ export function DataTable<T>({
               ))}
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-border/80">
             {isLoading
               ? skeletonRows.map((rowKey) => (
-                  <tr key={rowKey}>
+                  <tr className="bg-background" key={rowKey}>
                     {columns.map((_, columnIndex) => (
                       <td
-                        className="px-3 py-2"
+                        className="px-4 py-4"
                         key={`${rowKey}-${columnKeys[columnIndex]}`}
                       >
-                        <Skeleton className="h-4 w-24" />
+                        <Skeleton className="h-3.5 w-full max-w-[8rem]" />
                       </td>
                     ))}
                   </tr>
                 ))
-              : data.map((row) => (
+              : data.map((row, rowIndex) => (
                   <tr
                     className={cn(
-                      "border-t transition-colors",
-                      onRowClick ? "cursor-pointer hover:bg-muted/50" : ""
+                      "border-transparent border-l-2 transition-all duration-150",
+                      rowIndex % 2 === 0 ? "bg-background" : "bg-muted/40",
+                      onRowClick
+                        ? "cursor-pointer hover:border-l-4 hover:border-l-primary/80 hover:bg-primary/5 hover:shadow-lg"
+                        : "hover:border-l-[3px] hover:border-l-muted-foreground/60 hover:bg-muted/40 hover:shadow-sm"
                     )}
                     key={keyExtractor(row)}
-                    onClick={onRowClick ? () => onRowClick(row) : undefined}
+                    onClick={
+                      onRowClick
+                        ? (e) => {
+                            const target = e.target as HTMLElement;
+                            if (
+                              target.closest(
+                                "button, a, input, select, textarea, [role='button']"
+                              )
+                            ) {
+                              return;
+                            }
+                            onRowClick(row);
+                          }
+                        : undefined
+                    }
                   >
                     {columns.map((col, columnIndex) => (
                       <td
-                        className={cn("px-3 py-2", col.className)}
+                        className={cn(
+                          "px-5 py-3.5 text-foreground/90",
+                          col.className
+                        )}
                         key={`${keyExtractor(row)}-${columnKeys[columnIndex]}`}
                       >
                         {col.accessor(row)}
@@ -119,7 +139,7 @@ export function DataTable<T>({
       </div>
 
       {pagination && totalPages > 1 && (
-        <div className="flex items-center justify-between px-1">
+        <div className="flex items-center justify-between rounded-md border bg-card px-3 py-2 shadow-md">
           <span className="text-muted-foreground text-xs">
             Mostrando {pagination.offset + 1} -{" "}
             {Math.min(pagination.offset + pagination.limit, pagination.total)}{" "}
@@ -127,6 +147,8 @@ export function DataTable<T>({
           </span>
           <div className="flex items-center gap-1">
             <Button
+              aria-label="Primera página"
+              className="hover:bg-primary/10 hover:text-primary"
               disabled={currentPage <= 1}
               onClick={() => pagination.onPageChange(0)}
               size="icon-xs"
@@ -135,6 +157,8 @@ export function DataTable<T>({
               <ChevronsLeft size={14} />
             </Button>
             <Button
+              aria-label="Página anterior"
+              className="hover:bg-primary/10 hover:text-primary"
               disabled={currentPage <= 1}
               onClick={() =>
                 pagination.onPageChange(pagination.offset - pagination.limit)
@@ -144,10 +168,12 @@ export function DataTable<T>({
             >
               <ChevronLeft size={14} />
             </Button>
-            <span className="px-2 text-xs">
+            <span className="rounded-sm bg-muted px-2 py-0.5 font-medium text-xs tabular-nums shadow-sm">
               {currentPage} / {totalPages}
             </span>
             <Button
+              aria-label="Página siguiente"
+              className="hover:bg-primary/10 hover:text-primary"
               disabled={currentPage >= totalPages}
               onClick={() =>
                 pagination.onPageChange(pagination.offset + pagination.limit)
@@ -158,6 +184,8 @@ export function DataTable<T>({
               <ChevronRight size={14} />
             </Button>
             <Button
+              aria-label="Última página"
+              className="hover:bg-primary/10 hover:text-primary"
               disabled={currentPage >= totalPages}
               onClick={() =>
                 pagination.onPageChange((totalPages - 1) * pagination.limit)

@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedServiceRequestsIndexRouteImport } from './routes/_authenticated/service-requests/index'
 import { Route as AuthenticatedRipsExportsIndexRouteImport } from './routes/_authenticated/rips-exports/index'
+import { Route as AuthenticatedRetentionRecordsIndexRouteImport } from './routes/_authenticated/retention-records/index'
 import { Route as AuthenticatedRegulatoryTasksIndexRouteImport } from './routes/_authenticated/regulatory-tasks/index'
 import { Route as AuthenticatedPatientsIndexRouteImport } from './routes/_authenticated/patients/index'
 import { Route as AuthenticatedPatientRequestsIndexRouteImport } from './routes/_authenticated/patient-requests/index'
@@ -22,6 +23,7 @@ import { Route as AuthenticatedInterconsultationsIndexRouteImport } from './rout
 import { Route as AuthenticatedIncapacityCertificatesIndexRouteImport } from './routes/_authenticated/incapacity-certificates/index'
 import { Route as AuthenticatedIhceBundlesIndexRouteImport } from './routes/_authenticated/ihce-bundles/index'
 import { Route as AuthenticatedEncountersIndexRouteImport } from './routes/_authenticated/encounters/index'
+import { Route as AuthenticatedDataDisclosuresIndexRouteImport } from './routes/_authenticated/data-disclosures/index'
 import { Route as AuthenticatedConsentsIndexRouteImport } from './routes/_authenticated/consents/index'
 import { Route as AuthenticatedClinicalDocumentsIndexRouteImport } from './routes/_authenticated/clinical-documents/index'
 import { Route as AuthenticatedChatIndexRouteImport } from './routes/_authenticated/chat/index'
@@ -31,7 +33,9 @@ import { Route as AuthenticatedAttachmentsIndexRouteImport } from './routes/_aut
 import { Route as AuthenticatedAppointmentsIndexRouteImport } from './routes/_authenticated/appointments/index'
 import { Route as AuthenticatedServiceRequestsRequestIdRouteImport } from './routes/_authenticated/service-requests/$requestId'
 import { Route as AuthenticatedRipsExportsExportIdRouteImport } from './routes/_authenticated/rips-exports/$exportId'
+import { Route as AuthenticatedRetentionRecordsRecordIdRouteImport } from './routes/_authenticated/retention-records/$recordId'
 import { Route as AuthenticatedPatientsPatientIdRouteImport } from './routes/_authenticated/patients/$patientId'
+import { Route as AuthenticatedPatientRequestsRequestIdRouteImport } from './routes/_authenticated/patient-requests/$requestId'
 import { Route as AuthenticatedMedicationOrdersOrderIdRouteImport } from './routes/_authenticated/medication-orders/$orderId'
 import { Route as AuthenticatedInterconsultationsInterconsultationIdRouteImport } from './routes/_authenticated/interconsultations/$interconsultationId'
 import { Route as AuthenticatedIncapacityCertificatesCertificateIdRouteImport } from './routes/_authenticated/incapacity-certificates/$certificateId'
@@ -39,8 +43,12 @@ import { Route as AuthenticatedIhceBundlesBundleIdRouteImport } from './routes/_
 import { Route as AuthenticatedFacilitiesSitesRouteImport } from './routes/_authenticated/facilities/sites'
 import { Route as AuthenticatedFacilitiesServiceUnitsRouteImport } from './routes/_authenticated/facilities/service-units'
 import { Route as AuthenticatedFacilitiesPractitionersRouteImport } from './routes/_authenticated/facilities/practitioners'
+import { Route as AuthenticatedFacilitiesPractitionerRolesRouteImport } from './routes/_authenticated/facilities/practitioner-roles'
+import { Route as AuthenticatedFacilitiesPayersRouteImport } from './routes/_authenticated/facilities/payers'
 import { Route as AuthenticatedFacilitiesOrganizationsRouteImport } from './routes/_authenticated/facilities/organizations'
 import { Route as AuthenticatedEncountersEncounterIdRouteImport } from './routes/_authenticated/encounters/$encounterId'
+import { Route as AuthenticatedDataDisclosuresDisclosureIdRouteImport } from './routes/_authenticated/data-disclosures/$disclosureId'
+import { Route as AuthenticatedConsentsConsentIdRouteImport } from './routes/_authenticated/consents/$consentId'
 import { Route as AuthenticatedClinicalDocumentsDocumentIdRouteImport } from './routes/_authenticated/clinical-documents/$documentId'
 import { Route as AuthenticatedCatalogsTableNameRouteImport } from './routes/_authenticated/catalogs/$tableName'
 import { Route as AuthenticatedAttachmentsAttachmentIdRouteImport } from './routes/_authenticated/attachments/$attachmentId'
@@ -49,6 +57,8 @@ import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authentic
 import { Route as AuthenticatedFacilitiesSitesSiteIdRouteImport } from './routes/_authenticated/facilities/sites/$siteId'
 import { Route as AuthenticatedFacilitiesServiceUnitsUnitIdRouteImport } from './routes/_authenticated/facilities/service-units/$unitId'
 import { Route as AuthenticatedFacilitiesPractitionersPractitionerIdRouteImport } from './routes/_authenticated/facilities/practitioners/$practitionerId'
+import { Route as AuthenticatedFacilitiesPayersPayerIdRouteImport } from './routes/_authenticated/facilities/payers.$payerId'
+import { Route as AuthenticatedFacilitiesOrganizationsOrganizationIdRouteImport } from './routes/_authenticated/facilities/organizations/$organizationId'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -74,6 +84,12 @@ const AuthenticatedRipsExportsIndexRoute =
   AuthenticatedRipsExportsIndexRouteImport.update({
     id: '/rips-exports/',
     path: '/rips-exports/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedRetentionRecordsIndexRoute =
+  AuthenticatedRetentionRecordsIndexRouteImport.update({
+    id: '/retention-records/',
+    path: '/retention-records/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedRegulatoryTasksIndexRoute =
@@ -122,6 +138,12 @@ const AuthenticatedEncountersIndexRoute =
   AuthenticatedEncountersIndexRouteImport.update({
     id: '/encounters/',
     path: '/encounters/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedDataDisclosuresIndexRoute =
+  AuthenticatedDataDisclosuresIndexRouteImport.update({
+    id: '/data-disclosures/',
+    path: '/data-disclosures/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedConsentsIndexRoute =
@@ -177,10 +199,22 @@ const AuthenticatedRipsExportsExportIdRoute =
     path: '/rips-exports/$exportId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedRetentionRecordsRecordIdRoute =
+  AuthenticatedRetentionRecordsRecordIdRouteImport.update({
+    id: '/retention-records/$recordId',
+    path: '/retention-records/$recordId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedPatientsPatientIdRoute =
   AuthenticatedPatientsPatientIdRouteImport.update({
     id: '/patients/$patientId',
     path: '/patients/$patientId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedPatientRequestsRequestIdRoute =
+  AuthenticatedPatientRequestsRequestIdRouteImport.update({
+    id: '/patient-requests/$requestId',
+    path: '/patient-requests/$requestId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedMedicationOrdersOrderIdRoute =
@@ -225,6 +259,18 @@ const AuthenticatedFacilitiesPractitionersRoute =
     path: '/facilities/practitioners',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedFacilitiesPractitionerRolesRoute =
+  AuthenticatedFacilitiesPractitionerRolesRouteImport.update({
+    id: '/facilities/practitioner-roles',
+    path: '/facilities/practitioner-roles',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedFacilitiesPayersRoute =
+  AuthenticatedFacilitiesPayersRouteImport.update({
+    id: '/facilities/payers',
+    path: '/facilities/payers',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedFacilitiesOrganizationsRoute =
   AuthenticatedFacilitiesOrganizationsRouteImport.update({
     id: '/facilities/organizations',
@@ -235,6 +281,18 @@ const AuthenticatedEncountersEncounterIdRoute =
   AuthenticatedEncountersEncounterIdRouteImport.update({
     id: '/encounters/$encounterId',
     path: '/encounters/$encounterId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedDataDisclosuresDisclosureIdRoute =
+  AuthenticatedDataDisclosuresDisclosureIdRouteImport.update({
+    id: '/data-disclosures/$disclosureId',
+    path: '/data-disclosures/$disclosureId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedConsentsConsentIdRoute =
+  AuthenticatedConsentsConsentIdRouteImport.update({
+    id: '/consents/$consentId',
+    path: '/consents/$consentId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedClinicalDocumentsDocumentIdRoute =
@@ -284,6 +342,18 @@ const AuthenticatedFacilitiesPractitionersPractitionerIdRoute =
     path: '/$practitionerId',
     getParentRoute: () => AuthenticatedFacilitiesPractitionersRoute,
   } as any)
+const AuthenticatedFacilitiesPayersPayerIdRoute =
+  AuthenticatedFacilitiesPayersPayerIdRouteImport.update({
+    id: '/$payerId',
+    path: '/$payerId',
+    getParentRoute: () => AuthenticatedFacilitiesPayersRoute,
+  } as any)
+const AuthenticatedFacilitiesOrganizationsOrganizationIdRoute =
+  AuthenticatedFacilitiesOrganizationsOrganizationIdRouteImport.update({
+    id: '/$organizationId',
+    path: '/$organizationId',
+    getParentRoute: () => AuthenticatedFacilitiesOrganizationsRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -293,8 +363,12 @@ export interface FileRoutesByFullPath {
   '/attachments/$attachmentId': typeof AuthenticatedAttachmentsAttachmentIdRoute
   '/catalogs/$tableName': typeof AuthenticatedCatalogsTableNameRoute
   '/clinical-documents/$documentId': typeof AuthenticatedClinicalDocumentsDocumentIdRoute
+  '/consents/$consentId': typeof AuthenticatedConsentsConsentIdRoute
+  '/data-disclosures/$disclosureId': typeof AuthenticatedDataDisclosuresDisclosureIdRoute
   '/encounters/$encounterId': typeof AuthenticatedEncountersEncounterIdRoute
-  '/facilities/organizations': typeof AuthenticatedFacilitiesOrganizationsRoute
+  '/facilities/organizations': typeof AuthenticatedFacilitiesOrganizationsRouteWithChildren
+  '/facilities/payers': typeof AuthenticatedFacilitiesPayersRouteWithChildren
+  '/facilities/practitioner-roles': typeof AuthenticatedFacilitiesPractitionerRolesRoute
   '/facilities/practitioners': typeof AuthenticatedFacilitiesPractitionersRouteWithChildren
   '/facilities/service-units': typeof AuthenticatedFacilitiesServiceUnitsRouteWithChildren
   '/facilities/sites': typeof AuthenticatedFacilitiesSitesRouteWithChildren
@@ -302,7 +376,9 @@ export interface FileRoutesByFullPath {
   '/incapacity-certificates/$certificateId': typeof AuthenticatedIncapacityCertificatesCertificateIdRoute
   '/interconsultations/$interconsultationId': typeof AuthenticatedInterconsultationsInterconsultationIdRoute
   '/medication-orders/$orderId': typeof AuthenticatedMedicationOrdersOrderIdRoute
+  '/patient-requests/$requestId': typeof AuthenticatedPatientRequestsRequestIdRoute
   '/patients/$patientId': typeof AuthenticatedPatientsPatientIdRoute
+  '/retention-records/$recordId': typeof AuthenticatedRetentionRecordsRecordIdRoute
   '/rips-exports/$exportId': typeof AuthenticatedRipsExportsExportIdRoute
   '/service-requests/$requestId': typeof AuthenticatedServiceRequestsRequestIdRoute
   '/appointments/': typeof AuthenticatedAppointmentsIndexRoute
@@ -312,6 +388,7 @@ export interface FileRoutesByFullPath {
   '/chat/': typeof AuthenticatedChatIndexRoute
   '/clinical-documents/': typeof AuthenticatedClinicalDocumentsIndexRoute
   '/consents/': typeof AuthenticatedConsentsIndexRoute
+  '/data-disclosures/': typeof AuthenticatedDataDisclosuresIndexRoute
   '/encounters/': typeof AuthenticatedEncountersIndexRoute
   '/ihce-bundles/': typeof AuthenticatedIhceBundlesIndexRoute
   '/incapacity-certificates/': typeof AuthenticatedIncapacityCertificatesIndexRoute
@@ -320,8 +397,11 @@ export interface FileRoutesByFullPath {
   '/patient-requests/': typeof AuthenticatedPatientRequestsIndexRoute
   '/patients/': typeof AuthenticatedPatientsIndexRoute
   '/regulatory-tasks/': typeof AuthenticatedRegulatoryTasksIndexRoute
+  '/retention-records/': typeof AuthenticatedRetentionRecordsIndexRoute
   '/rips-exports/': typeof AuthenticatedRipsExportsIndexRoute
   '/service-requests/': typeof AuthenticatedServiceRequestsIndexRoute
+  '/facilities/organizations/$organizationId': typeof AuthenticatedFacilitiesOrganizationsOrganizationIdRoute
+  '/facilities/payers/$payerId': typeof AuthenticatedFacilitiesPayersPayerIdRoute
   '/facilities/practitioners/$practitionerId': typeof AuthenticatedFacilitiesPractitionersPractitionerIdRoute
   '/facilities/service-units/$unitId': typeof AuthenticatedFacilitiesServiceUnitsUnitIdRoute
   '/facilities/sites/$siteId': typeof AuthenticatedFacilitiesSitesSiteIdRoute
@@ -334,8 +414,12 @@ export interface FileRoutesByTo {
   '/attachments/$attachmentId': typeof AuthenticatedAttachmentsAttachmentIdRoute
   '/catalogs/$tableName': typeof AuthenticatedCatalogsTableNameRoute
   '/clinical-documents/$documentId': typeof AuthenticatedClinicalDocumentsDocumentIdRoute
+  '/consents/$consentId': typeof AuthenticatedConsentsConsentIdRoute
+  '/data-disclosures/$disclosureId': typeof AuthenticatedDataDisclosuresDisclosureIdRoute
   '/encounters/$encounterId': typeof AuthenticatedEncountersEncounterIdRoute
-  '/facilities/organizations': typeof AuthenticatedFacilitiesOrganizationsRoute
+  '/facilities/organizations': typeof AuthenticatedFacilitiesOrganizationsRouteWithChildren
+  '/facilities/payers': typeof AuthenticatedFacilitiesPayersRouteWithChildren
+  '/facilities/practitioner-roles': typeof AuthenticatedFacilitiesPractitionerRolesRoute
   '/facilities/practitioners': typeof AuthenticatedFacilitiesPractitionersRouteWithChildren
   '/facilities/service-units': typeof AuthenticatedFacilitiesServiceUnitsRouteWithChildren
   '/facilities/sites': typeof AuthenticatedFacilitiesSitesRouteWithChildren
@@ -343,7 +427,9 @@ export interface FileRoutesByTo {
   '/incapacity-certificates/$certificateId': typeof AuthenticatedIncapacityCertificatesCertificateIdRoute
   '/interconsultations/$interconsultationId': typeof AuthenticatedInterconsultationsInterconsultationIdRoute
   '/medication-orders/$orderId': typeof AuthenticatedMedicationOrdersOrderIdRoute
+  '/patient-requests/$requestId': typeof AuthenticatedPatientRequestsRequestIdRoute
   '/patients/$patientId': typeof AuthenticatedPatientsPatientIdRoute
+  '/retention-records/$recordId': typeof AuthenticatedRetentionRecordsRecordIdRoute
   '/rips-exports/$exportId': typeof AuthenticatedRipsExportsExportIdRoute
   '/service-requests/$requestId': typeof AuthenticatedServiceRequestsRequestIdRoute
   '/appointments': typeof AuthenticatedAppointmentsIndexRoute
@@ -353,6 +439,7 @@ export interface FileRoutesByTo {
   '/chat': typeof AuthenticatedChatIndexRoute
   '/clinical-documents': typeof AuthenticatedClinicalDocumentsIndexRoute
   '/consents': typeof AuthenticatedConsentsIndexRoute
+  '/data-disclosures': typeof AuthenticatedDataDisclosuresIndexRoute
   '/encounters': typeof AuthenticatedEncountersIndexRoute
   '/ihce-bundles': typeof AuthenticatedIhceBundlesIndexRoute
   '/incapacity-certificates': typeof AuthenticatedIncapacityCertificatesIndexRoute
@@ -361,8 +448,11 @@ export interface FileRoutesByTo {
   '/patient-requests': typeof AuthenticatedPatientRequestsIndexRoute
   '/patients': typeof AuthenticatedPatientsIndexRoute
   '/regulatory-tasks': typeof AuthenticatedRegulatoryTasksIndexRoute
+  '/retention-records': typeof AuthenticatedRetentionRecordsIndexRoute
   '/rips-exports': typeof AuthenticatedRipsExportsIndexRoute
   '/service-requests': typeof AuthenticatedServiceRequestsIndexRoute
+  '/facilities/organizations/$organizationId': typeof AuthenticatedFacilitiesOrganizationsOrganizationIdRoute
+  '/facilities/payers/$payerId': typeof AuthenticatedFacilitiesPayersPayerIdRoute
   '/facilities/practitioners/$practitionerId': typeof AuthenticatedFacilitiesPractitionersPractitionerIdRoute
   '/facilities/service-units/$unitId': typeof AuthenticatedFacilitiesServiceUnitsUnitIdRoute
   '/facilities/sites/$siteId': typeof AuthenticatedFacilitiesSitesSiteIdRoute
@@ -377,8 +467,12 @@ export interface FileRoutesById {
   '/_authenticated/attachments/$attachmentId': typeof AuthenticatedAttachmentsAttachmentIdRoute
   '/_authenticated/catalogs/$tableName': typeof AuthenticatedCatalogsTableNameRoute
   '/_authenticated/clinical-documents/$documentId': typeof AuthenticatedClinicalDocumentsDocumentIdRoute
+  '/_authenticated/consents/$consentId': typeof AuthenticatedConsentsConsentIdRoute
+  '/_authenticated/data-disclosures/$disclosureId': typeof AuthenticatedDataDisclosuresDisclosureIdRoute
   '/_authenticated/encounters/$encounterId': typeof AuthenticatedEncountersEncounterIdRoute
-  '/_authenticated/facilities/organizations': typeof AuthenticatedFacilitiesOrganizationsRoute
+  '/_authenticated/facilities/organizations': typeof AuthenticatedFacilitiesOrganizationsRouteWithChildren
+  '/_authenticated/facilities/payers': typeof AuthenticatedFacilitiesPayersRouteWithChildren
+  '/_authenticated/facilities/practitioner-roles': typeof AuthenticatedFacilitiesPractitionerRolesRoute
   '/_authenticated/facilities/practitioners': typeof AuthenticatedFacilitiesPractitionersRouteWithChildren
   '/_authenticated/facilities/service-units': typeof AuthenticatedFacilitiesServiceUnitsRouteWithChildren
   '/_authenticated/facilities/sites': typeof AuthenticatedFacilitiesSitesRouteWithChildren
@@ -386,7 +480,9 @@ export interface FileRoutesById {
   '/_authenticated/incapacity-certificates/$certificateId': typeof AuthenticatedIncapacityCertificatesCertificateIdRoute
   '/_authenticated/interconsultations/$interconsultationId': typeof AuthenticatedInterconsultationsInterconsultationIdRoute
   '/_authenticated/medication-orders/$orderId': typeof AuthenticatedMedicationOrdersOrderIdRoute
+  '/_authenticated/patient-requests/$requestId': typeof AuthenticatedPatientRequestsRequestIdRoute
   '/_authenticated/patients/$patientId': typeof AuthenticatedPatientsPatientIdRoute
+  '/_authenticated/retention-records/$recordId': typeof AuthenticatedRetentionRecordsRecordIdRoute
   '/_authenticated/rips-exports/$exportId': typeof AuthenticatedRipsExportsExportIdRoute
   '/_authenticated/service-requests/$requestId': typeof AuthenticatedServiceRequestsRequestIdRoute
   '/_authenticated/appointments/': typeof AuthenticatedAppointmentsIndexRoute
@@ -396,6 +492,7 @@ export interface FileRoutesById {
   '/_authenticated/chat/': typeof AuthenticatedChatIndexRoute
   '/_authenticated/clinical-documents/': typeof AuthenticatedClinicalDocumentsIndexRoute
   '/_authenticated/consents/': typeof AuthenticatedConsentsIndexRoute
+  '/_authenticated/data-disclosures/': typeof AuthenticatedDataDisclosuresIndexRoute
   '/_authenticated/encounters/': typeof AuthenticatedEncountersIndexRoute
   '/_authenticated/ihce-bundles/': typeof AuthenticatedIhceBundlesIndexRoute
   '/_authenticated/incapacity-certificates/': typeof AuthenticatedIncapacityCertificatesIndexRoute
@@ -404,8 +501,11 @@ export interface FileRoutesById {
   '/_authenticated/patient-requests/': typeof AuthenticatedPatientRequestsIndexRoute
   '/_authenticated/patients/': typeof AuthenticatedPatientsIndexRoute
   '/_authenticated/regulatory-tasks/': typeof AuthenticatedRegulatoryTasksIndexRoute
+  '/_authenticated/retention-records/': typeof AuthenticatedRetentionRecordsIndexRoute
   '/_authenticated/rips-exports/': typeof AuthenticatedRipsExportsIndexRoute
   '/_authenticated/service-requests/': typeof AuthenticatedServiceRequestsIndexRoute
+  '/_authenticated/facilities/organizations/$organizationId': typeof AuthenticatedFacilitiesOrganizationsOrganizationIdRoute
+  '/_authenticated/facilities/payers/$payerId': typeof AuthenticatedFacilitiesPayersPayerIdRoute
   '/_authenticated/facilities/practitioners/$practitionerId': typeof AuthenticatedFacilitiesPractitionersPractitionerIdRoute
   '/_authenticated/facilities/service-units/$unitId': typeof AuthenticatedFacilitiesServiceUnitsUnitIdRoute
   '/_authenticated/facilities/sites/$siteId': typeof AuthenticatedFacilitiesSitesSiteIdRoute
@@ -420,8 +520,12 @@ export interface FileRouteTypes {
     | '/attachments/$attachmentId'
     | '/catalogs/$tableName'
     | '/clinical-documents/$documentId'
+    | '/consents/$consentId'
+    | '/data-disclosures/$disclosureId'
     | '/encounters/$encounterId'
     | '/facilities/organizations'
+    | '/facilities/payers'
+    | '/facilities/practitioner-roles'
     | '/facilities/practitioners'
     | '/facilities/service-units'
     | '/facilities/sites'
@@ -429,7 +533,9 @@ export interface FileRouteTypes {
     | '/incapacity-certificates/$certificateId'
     | '/interconsultations/$interconsultationId'
     | '/medication-orders/$orderId'
+    | '/patient-requests/$requestId'
     | '/patients/$patientId'
+    | '/retention-records/$recordId'
     | '/rips-exports/$exportId'
     | '/service-requests/$requestId'
     | '/appointments/'
@@ -439,6 +545,7 @@ export interface FileRouteTypes {
     | '/chat/'
     | '/clinical-documents/'
     | '/consents/'
+    | '/data-disclosures/'
     | '/encounters/'
     | '/ihce-bundles/'
     | '/incapacity-certificates/'
@@ -447,8 +554,11 @@ export interface FileRouteTypes {
     | '/patient-requests/'
     | '/patients/'
     | '/regulatory-tasks/'
+    | '/retention-records/'
     | '/rips-exports/'
     | '/service-requests/'
+    | '/facilities/organizations/$organizationId'
+    | '/facilities/payers/$payerId'
     | '/facilities/practitioners/$practitionerId'
     | '/facilities/service-units/$unitId'
     | '/facilities/sites/$siteId'
@@ -461,8 +571,12 @@ export interface FileRouteTypes {
     | '/attachments/$attachmentId'
     | '/catalogs/$tableName'
     | '/clinical-documents/$documentId'
+    | '/consents/$consentId'
+    | '/data-disclosures/$disclosureId'
     | '/encounters/$encounterId'
     | '/facilities/organizations'
+    | '/facilities/payers'
+    | '/facilities/practitioner-roles'
     | '/facilities/practitioners'
     | '/facilities/service-units'
     | '/facilities/sites'
@@ -470,7 +584,9 @@ export interface FileRouteTypes {
     | '/incapacity-certificates/$certificateId'
     | '/interconsultations/$interconsultationId'
     | '/medication-orders/$orderId'
+    | '/patient-requests/$requestId'
     | '/patients/$patientId'
+    | '/retention-records/$recordId'
     | '/rips-exports/$exportId'
     | '/service-requests/$requestId'
     | '/appointments'
@@ -480,6 +596,7 @@ export interface FileRouteTypes {
     | '/chat'
     | '/clinical-documents'
     | '/consents'
+    | '/data-disclosures'
     | '/encounters'
     | '/ihce-bundles'
     | '/incapacity-certificates'
@@ -488,8 +605,11 @@ export interface FileRouteTypes {
     | '/patient-requests'
     | '/patients'
     | '/regulatory-tasks'
+    | '/retention-records'
     | '/rips-exports'
     | '/service-requests'
+    | '/facilities/organizations/$organizationId'
+    | '/facilities/payers/$payerId'
     | '/facilities/practitioners/$practitionerId'
     | '/facilities/service-units/$unitId'
     | '/facilities/sites/$siteId'
@@ -503,8 +623,12 @@ export interface FileRouteTypes {
     | '/_authenticated/attachments/$attachmentId'
     | '/_authenticated/catalogs/$tableName'
     | '/_authenticated/clinical-documents/$documentId'
+    | '/_authenticated/consents/$consentId'
+    | '/_authenticated/data-disclosures/$disclosureId'
     | '/_authenticated/encounters/$encounterId'
     | '/_authenticated/facilities/organizations'
+    | '/_authenticated/facilities/payers'
+    | '/_authenticated/facilities/practitioner-roles'
     | '/_authenticated/facilities/practitioners'
     | '/_authenticated/facilities/service-units'
     | '/_authenticated/facilities/sites'
@@ -512,7 +636,9 @@ export interface FileRouteTypes {
     | '/_authenticated/incapacity-certificates/$certificateId'
     | '/_authenticated/interconsultations/$interconsultationId'
     | '/_authenticated/medication-orders/$orderId'
+    | '/_authenticated/patient-requests/$requestId'
     | '/_authenticated/patients/$patientId'
+    | '/_authenticated/retention-records/$recordId'
     | '/_authenticated/rips-exports/$exportId'
     | '/_authenticated/service-requests/$requestId'
     | '/_authenticated/appointments/'
@@ -522,6 +648,7 @@ export interface FileRouteTypes {
     | '/_authenticated/chat/'
     | '/_authenticated/clinical-documents/'
     | '/_authenticated/consents/'
+    | '/_authenticated/data-disclosures/'
     | '/_authenticated/encounters/'
     | '/_authenticated/ihce-bundles/'
     | '/_authenticated/incapacity-certificates/'
@@ -530,8 +657,11 @@ export interface FileRouteTypes {
     | '/_authenticated/patient-requests/'
     | '/_authenticated/patients/'
     | '/_authenticated/regulatory-tasks/'
+    | '/_authenticated/retention-records/'
     | '/_authenticated/rips-exports/'
     | '/_authenticated/service-requests/'
+    | '/_authenticated/facilities/organizations/$organizationId'
+    | '/_authenticated/facilities/payers/$payerId'
     | '/_authenticated/facilities/practitioners/$practitionerId'
     | '/_authenticated/facilities/service-units/$unitId'
     | '/_authenticated/facilities/sites/$siteId'
@@ -577,6 +707,13 @@ declare module '@tanstack/react-router' {
       path: '/rips-exports'
       fullPath: '/rips-exports/'
       preLoaderRoute: typeof AuthenticatedRipsExportsIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/retention-records/': {
+      id: '/_authenticated/retention-records/'
+      path: '/retention-records'
+      fullPath: '/retention-records/'
+      preLoaderRoute: typeof AuthenticatedRetentionRecordsIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/regulatory-tasks/': {
@@ -633,6 +770,13 @@ declare module '@tanstack/react-router' {
       path: '/encounters'
       fullPath: '/encounters/'
       preLoaderRoute: typeof AuthenticatedEncountersIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/data-disclosures/': {
+      id: '/_authenticated/data-disclosures/'
+      path: '/data-disclosures'
+      fullPath: '/data-disclosures/'
+      preLoaderRoute: typeof AuthenticatedDataDisclosuresIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/consents/': {
@@ -698,11 +842,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRipsExportsExportIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/retention-records/$recordId': {
+      id: '/_authenticated/retention-records/$recordId'
+      path: '/retention-records/$recordId'
+      fullPath: '/retention-records/$recordId'
+      preLoaderRoute: typeof AuthenticatedRetentionRecordsRecordIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/patients/$patientId': {
       id: '/_authenticated/patients/$patientId'
       path: '/patients/$patientId'
       fullPath: '/patients/$patientId'
       preLoaderRoute: typeof AuthenticatedPatientsPatientIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/patient-requests/$requestId': {
+      id: '/_authenticated/patient-requests/$requestId'
+      path: '/patient-requests/$requestId'
+      fullPath: '/patient-requests/$requestId'
+      preLoaderRoute: typeof AuthenticatedPatientRequestsRequestIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/medication-orders/$orderId': {
@@ -754,6 +912,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFacilitiesPractitionersRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/facilities/practitioner-roles': {
+      id: '/_authenticated/facilities/practitioner-roles'
+      path: '/facilities/practitioner-roles'
+      fullPath: '/facilities/practitioner-roles'
+      preLoaderRoute: typeof AuthenticatedFacilitiesPractitionerRolesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/facilities/payers': {
+      id: '/_authenticated/facilities/payers'
+      path: '/facilities/payers'
+      fullPath: '/facilities/payers'
+      preLoaderRoute: typeof AuthenticatedFacilitiesPayersRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/facilities/organizations': {
       id: '/_authenticated/facilities/organizations'
       path: '/facilities/organizations'
@@ -766,6 +938,20 @@ declare module '@tanstack/react-router' {
       path: '/encounters/$encounterId'
       fullPath: '/encounters/$encounterId'
       preLoaderRoute: typeof AuthenticatedEncountersEncounterIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/data-disclosures/$disclosureId': {
+      id: '/_authenticated/data-disclosures/$disclosureId'
+      path: '/data-disclosures/$disclosureId'
+      fullPath: '/data-disclosures/$disclosureId'
+      preLoaderRoute: typeof AuthenticatedDataDisclosuresDisclosureIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/consents/$consentId': {
+      id: '/_authenticated/consents/$consentId'
+      path: '/consents/$consentId'
+      fullPath: '/consents/$consentId'
+      preLoaderRoute: typeof AuthenticatedConsentsConsentIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/clinical-documents/$documentId': {
@@ -824,8 +1010,52 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFacilitiesPractitionersPractitionerIdRouteImport
       parentRoute: typeof AuthenticatedFacilitiesPractitionersRoute
     }
+    '/_authenticated/facilities/payers/$payerId': {
+      id: '/_authenticated/facilities/payers/$payerId'
+      path: '/$payerId'
+      fullPath: '/facilities/payers/$payerId'
+      preLoaderRoute: typeof AuthenticatedFacilitiesPayersPayerIdRouteImport
+      parentRoute: typeof AuthenticatedFacilitiesPayersRoute
+    }
+    '/_authenticated/facilities/organizations/$organizationId': {
+      id: '/_authenticated/facilities/organizations/$organizationId'
+      path: '/$organizationId'
+      fullPath: '/facilities/organizations/$organizationId'
+      preLoaderRoute: typeof AuthenticatedFacilitiesOrganizationsOrganizationIdRouteImport
+      parentRoute: typeof AuthenticatedFacilitiesOrganizationsRoute
+    }
   }
 }
+
+interface AuthenticatedFacilitiesOrganizationsRouteChildren {
+  AuthenticatedFacilitiesOrganizationsOrganizationIdRoute: typeof AuthenticatedFacilitiesOrganizationsOrganizationIdRoute
+}
+
+const AuthenticatedFacilitiesOrganizationsRouteChildren: AuthenticatedFacilitiesOrganizationsRouteChildren =
+  {
+    AuthenticatedFacilitiesOrganizationsOrganizationIdRoute:
+      AuthenticatedFacilitiesOrganizationsOrganizationIdRoute,
+  }
+
+const AuthenticatedFacilitiesOrganizationsRouteWithChildren =
+  AuthenticatedFacilitiesOrganizationsRoute._addFileChildren(
+    AuthenticatedFacilitiesOrganizationsRouteChildren,
+  )
+
+interface AuthenticatedFacilitiesPayersRouteChildren {
+  AuthenticatedFacilitiesPayersPayerIdRoute: typeof AuthenticatedFacilitiesPayersPayerIdRoute
+}
+
+const AuthenticatedFacilitiesPayersRouteChildren: AuthenticatedFacilitiesPayersRouteChildren =
+  {
+    AuthenticatedFacilitiesPayersPayerIdRoute:
+      AuthenticatedFacilitiesPayersPayerIdRoute,
+  }
+
+const AuthenticatedFacilitiesPayersRouteWithChildren =
+  AuthenticatedFacilitiesPayersRoute._addFileChildren(
+    AuthenticatedFacilitiesPayersRouteChildren,
+  )
 
 interface AuthenticatedFacilitiesPractitionersRouteChildren {
   AuthenticatedFacilitiesPractitionersPractitionerIdRoute: typeof AuthenticatedFacilitiesPractitionersPractitionerIdRoute
@@ -879,8 +1109,12 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAttachmentsAttachmentIdRoute: typeof AuthenticatedAttachmentsAttachmentIdRoute
   AuthenticatedCatalogsTableNameRoute: typeof AuthenticatedCatalogsTableNameRoute
   AuthenticatedClinicalDocumentsDocumentIdRoute: typeof AuthenticatedClinicalDocumentsDocumentIdRoute
+  AuthenticatedConsentsConsentIdRoute: typeof AuthenticatedConsentsConsentIdRoute
+  AuthenticatedDataDisclosuresDisclosureIdRoute: typeof AuthenticatedDataDisclosuresDisclosureIdRoute
   AuthenticatedEncountersEncounterIdRoute: typeof AuthenticatedEncountersEncounterIdRoute
-  AuthenticatedFacilitiesOrganizationsRoute: typeof AuthenticatedFacilitiesOrganizationsRoute
+  AuthenticatedFacilitiesOrganizationsRoute: typeof AuthenticatedFacilitiesOrganizationsRouteWithChildren
+  AuthenticatedFacilitiesPayersRoute: typeof AuthenticatedFacilitiesPayersRouteWithChildren
+  AuthenticatedFacilitiesPractitionerRolesRoute: typeof AuthenticatedFacilitiesPractitionerRolesRoute
   AuthenticatedFacilitiesPractitionersRoute: typeof AuthenticatedFacilitiesPractitionersRouteWithChildren
   AuthenticatedFacilitiesServiceUnitsRoute: typeof AuthenticatedFacilitiesServiceUnitsRouteWithChildren
   AuthenticatedFacilitiesSitesRoute: typeof AuthenticatedFacilitiesSitesRouteWithChildren
@@ -888,7 +1122,9 @@ interface AuthenticatedRouteChildren {
   AuthenticatedIncapacityCertificatesCertificateIdRoute: typeof AuthenticatedIncapacityCertificatesCertificateIdRoute
   AuthenticatedInterconsultationsInterconsultationIdRoute: typeof AuthenticatedInterconsultationsInterconsultationIdRoute
   AuthenticatedMedicationOrdersOrderIdRoute: typeof AuthenticatedMedicationOrdersOrderIdRoute
+  AuthenticatedPatientRequestsRequestIdRoute: typeof AuthenticatedPatientRequestsRequestIdRoute
   AuthenticatedPatientsPatientIdRoute: typeof AuthenticatedPatientsPatientIdRoute
+  AuthenticatedRetentionRecordsRecordIdRoute: typeof AuthenticatedRetentionRecordsRecordIdRoute
   AuthenticatedRipsExportsExportIdRoute: typeof AuthenticatedRipsExportsExportIdRoute
   AuthenticatedServiceRequestsRequestIdRoute: typeof AuthenticatedServiceRequestsRequestIdRoute
   AuthenticatedAppointmentsIndexRoute: typeof AuthenticatedAppointmentsIndexRoute
@@ -898,6 +1134,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedChatIndexRoute: typeof AuthenticatedChatIndexRoute
   AuthenticatedClinicalDocumentsIndexRoute: typeof AuthenticatedClinicalDocumentsIndexRoute
   AuthenticatedConsentsIndexRoute: typeof AuthenticatedConsentsIndexRoute
+  AuthenticatedDataDisclosuresIndexRoute: typeof AuthenticatedDataDisclosuresIndexRoute
   AuthenticatedEncountersIndexRoute: typeof AuthenticatedEncountersIndexRoute
   AuthenticatedIhceBundlesIndexRoute: typeof AuthenticatedIhceBundlesIndexRoute
   AuthenticatedIncapacityCertificatesIndexRoute: typeof AuthenticatedIncapacityCertificatesIndexRoute
@@ -906,6 +1143,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedPatientRequestsIndexRoute: typeof AuthenticatedPatientRequestsIndexRoute
   AuthenticatedPatientsIndexRoute: typeof AuthenticatedPatientsIndexRoute
   AuthenticatedRegulatoryTasksIndexRoute: typeof AuthenticatedRegulatoryTasksIndexRoute
+  AuthenticatedRetentionRecordsIndexRoute: typeof AuthenticatedRetentionRecordsIndexRoute
   AuthenticatedRipsExportsIndexRoute: typeof AuthenticatedRipsExportsIndexRoute
   AuthenticatedServiceRequestsIndexRoute: typeof AuthenticatedServiceRequestsIndexRoute
 }
@@ -920,10 +1158,17 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedCatalogsTableNameRoute: AuthenticatedCatalogsTableNameRoute,
   AuthenticatedClinicalDocumentsDocumentIdRoute:
     AuthenticatedClinicalDocumentsDocumentIdRoute,
+  AuthenticatedConsentsConsentIdRoute: AuthenticatedConsentsConsentIdRoute,
+  AuthenticatedDataDisclosuresDisclosureIdRoute:
+    AuthenticatedDataDisclosuresDisclosureIdRoute,
   AuthenticatedEncountersEncounterIdRoute:
     AuthenticatedEncountersEncounterIdRoute,
   AuthenticatedFacilitiesOrganizationsRoute:
-    AuthenticatedFacilitiesOrganizationsRoute,
+    AuthenticatedFacilitiesOrganizationsRouteWithChildren,
+  AuthenticatedFacilitiesPayersRoute:
+    AuthenticatedFacilitiesPayersRouteWithChildren,
+  AuthenticatedFacilitiesPractitionerRolesRoute:
+    AuthenticatedFacilitiesPractitionerRolesRoute,
   AuthenticatedFacilitiesPractitionersRoute:
     AuthenticatedFacilitiesPractitionersRouteWithChildren,
   AuthenticatedFacilitiesServiceUnitsRoute:
@@ -937,7 +1182,11 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
     AuthenticatedInterconsultationsInterconsultationIdRoute,
   AuthenticatedMedicationOrdersOrderIdRoute:
     AuthenticatedMedicationOrdersOrderIdRoute,
+  AuthenticatedPatientRequestsRequestIdRoute:
+    AuthenticatedPatientRequestsRequestIdRoute,
   AuthenticatedPatientsPatientIdRoute: AuthenticatedPatientsPatientIdRoute,
+  AuthenticatedRetentionRecordsRecordIdRoute:
+    AuthenticatedRetentionRecordsRecordIdRoute,
   AuthenticatedRipsExportsExportIdRoute: AuthenticatedRipsExportsExportIdRoute,
   AuthenticatedServiceRequestsRequestIdRoute:
     AuthenticatedServiceRequestsRequestIdRoute,
@@ -949,6 +1198,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedClinicalDocumentsIndexRoute:
     AuthenticatedClinicalDocumentsIndexRoute,
   AuthenticatedConsentsIndexRoute: AuthenticatedConsentsIndexRoute,
+  AuthenticatedDataDisclosuresIndexRoute:
+    AuthenticatedDataDisclosuresIndexRoute,
   AuthenticatedEncountersIndexRoute: AuthenticatedEncountersIndexRoute,
   AuthenticatedIhceBundlesIndexRoute: AuthenticatedIhceBundlesIndexRoute,
   AuthenticatedIncapacityCertificatesIndexRoute:
@@ -962,6 +1213,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedPatientsIndexRoute: AuthenticatedPatientsIndexRoute,
   AuthenticatedRegulatoryTasksIndexRoute:
     AuthenticatedRegulatoryTasksIndexRoute,
+  AuthenticatedRetentionRecordsIndexRoute:
+    AuthenticatedRetentionRecordsIndexRoute,
   AuthenticatedRipsExportsIndexRoute: AuthenticatedRipsExportsIndexRoute,
   AuthenticatedServiceRequestsIndexRoute:
     AuthenticatedServiceRequestsIndexRoute,

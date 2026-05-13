@@ -1,5 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { Button } from "@wellfit-emr/ui/components/button";
 import {
   Card,
   CardContent,
@@ -7,10 +8,13 @@ import {
   CardTitle,
 } from "@wellfit-emr/ui/components/card";
 import { Skeleton } from "@wellfit-emr/ui/components/skeleton";
+import { FileOutput, Trash2 } from "lucide-react";
+import { useEffect } from "react";
+import { toast } from "sonner";
 
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
-import { orpc } from "@/utils/orpc";
+import { orpc, queryClient } from "@/utils/orpc";
 
 export const Route = createFileRoute("/_authenticated/rips-exports/$exportId")({
   component: RipsExportDetailPage,
@@ -18,6 +22,21 @@ export const Route = createFileRoute("/_authenticated/rips-exports/$exportId")({
 
 function RipsExportDetailPage() {
   const { exportId } = Route.useParams();
+  const navigate = useNavigate();
+
+  const deleteMutation = useMutation({
+    ...orpc.ripsExports.delete.mutationOptions(),
+    onSuccess: () => {
+      toast.success("Exportación eliminada");
+      queryClient.invalidateQueries({
+        queryKey: orpc.ripsExports.list.key({ type: "query" }),
+      });
+      navigate({ to: "/rips-exports" });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Error al eliminar exportación");
+    },
+  });
 
   const { data: listData, isLoading } = useQuery(
     orpc.ripsExports.list.queryOptions({
@@ -27,15 +46,52 @@ function RipsExportDetailPage() {
 
   const exportItem = listData?.items.find((i) => i.id === exportId);
 
+  const { data: payerData } = useQuery({
+    ...orpc.payers.get.queryOptions({
+      input: { id: exportItem?.payerId ?? "" },
+    }),
+    enabled: !!exportItem?.payerId,
+  });
+
   const title = isLoading
     ? "Cargando..."
     : (exportItem?.status ?? "Detalle de export RIPS");
 
+  useEffect(() => {
+    if (exportItem) {
+      document.title = `RIPS ${exportItem.status} | WellFit EMR`;
+    }
+    return () => {
+      document.title = "WellFit EMR";
+    };
+  }, [exportItem]);
+
   return (
     <div className="space-y-4 pb-6">
       <PageHeader
+        actions={
+          exportItem ? (
+            <Button
+              disabled={deleteMutation.isPending}
+              onClick={() => {
+                if (confirm("¿Eliminar esta exportación permanentemente?")) {
+                  deleteMutation.mutate({ id: exportId });
+                }
+              }}
+              size="sm"
+              variant="outline"
+            >
+              <Trash2 size={14} />
+              <span className="ml-1.5">
+                {deleteMutation.isPending ? "Eliminando..." : "Eliminar"}
+              </span>
+            </Button>
+          ) : undefined
+        }
         backTo="/rips-exports"
         description="Información de la exportación RIPS"
+        icon={FileOutput}
+        iconBgClass="bg-emerald-100 text-emerald-600"
         title={title}
       />
 
@@ -69,7 +125,8 @@ function RipsExportDetailPage() {
                 },
                 {
                   label: "Pagador",
-                  value: exportItem.payerId,
+                  value:
+                    payerData?.name ?? `${exportItem.payerId.slice(0, 8)}…`,
                 },
                 {
                   label: "Periodo desde",
