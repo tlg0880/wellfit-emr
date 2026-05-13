@@ -81,7 +81,7 @@ export function DataTable<T>({
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-border/60">
+          <tbody className="divide-y divide-border/80">
             {isLoading
               ? skeletonRows.map((rowKey) => (
                   <tr className="bg-background" key={rowKey}>
