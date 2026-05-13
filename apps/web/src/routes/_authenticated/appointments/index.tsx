@@ -1020,7 +1020,7 @@ function AppointmentsPage() {
 
                   function getDayNumberClass() {
                     if (isToday) {
-                      return "inline-flex size-6 items-center justify-center bg-primary font-bold text-primary-foreground shadow-sm";
+                      return "inline-flex size-7 items-center justify-center bg-primary font-bold text-primary-foreground shadow-sm";
                     }
                     if (isCurrentMonth) {
                       return "font-medium text-foreground";
