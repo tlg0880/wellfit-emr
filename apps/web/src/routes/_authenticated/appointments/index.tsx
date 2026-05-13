@@ -606,7 +606,7 @@ function AppointmentForm({
         </div>
       )}
 
-      <div className="flex justify-end gap-2 pt-2">
+      <div className="flex justify-end gap-3 pt-2">
         <Button onClick={onCancel} type="button" variant="outline">
           Cancelar
         </Button>
@@ -1271,7 +1271,7 @@ function AppointmentsPage() {
                   </div>
                 )}
               </div>
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="flex justify-end gap-3 pt-2">
                 <Button
                   onClick={() => setSelectedAppointmentId(null)}
                   size="sm"
