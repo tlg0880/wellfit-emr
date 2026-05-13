@@ -1287,6 +1287,7 @@ function AppointmentsPage() {
               </div>
               <div className="flex justify-end gap-3 pt-2">
                 <Button
+                  className="shadow-sm"
                   onClick={() => setSelectedAppointmentId(null)}
                   size="sm"
                   variant="outline"
@@ -1296,6 +1297,7 @@ function AppointmentsPage() {
                 {selectedAppointment.status !== "cancelled" &&
                   selectedAppointment.status !== "completed" && (
                     <Button
+                      className="shadow-sm"
                       onClick={() => {
                         setSelectedAppointmentId(null);
                         setEditingAppointment(selectedAppointment);
@@ -1333,6 +1335,7 @@ function AppointmentsPage() {
                 {selectedAppointment.status !== "cancelled" &&
                   selectedAppointment.status !== "completed" && (
                     <Button
+                      className="shadow-md"
                       disabled={cancelMutation.isPending}
                       onClick={() =>
                         cancelMutation.mutate({
