@@ -1006,10 +1006,10 @@ function AppointmentsPage() {
                     className="min-h-28 border-r border-b bg-background p-1.5 shadow-sm last:border-r-0"
                     key={`sk-${i}`}
                   >
-                    <div className="mb-2 h-4 w-6 rounded-sm bg-muted" />
+                    <div className="mb-2 h-4 w-6 animate-pulse rounded-sm bg-muted" />
                     <div className="space-y-1">
-                      <div className="h-4 w-full rounded-sm bg-muted" />
-                      <div className="h-4 w-3/4 rounded-sm bg-muted" />
+                      <div className="h-4 w-full animate-pulse rounded-sm bg-muted" />
+                      <div className="h-4 w-3/4 animate-pulse rounded-sm bg-muted" />
                     </div>
                   </div>
                 ))
