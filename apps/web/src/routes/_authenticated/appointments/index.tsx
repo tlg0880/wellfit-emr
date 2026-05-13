@@ -1044,7 +1044,7 @@ function AppointmentsPage() {
 
                   return (
                     <button
-                      className={`min-h-28 cursor-pointer border-r border-b p-1.5 text-left shadow-sm transition-all duration-200 last:border-r-0 hover:-translate-y-px hover:shadow-md ${
+                      className={`min-h-28 cursor-pointer border-r border-b p-2 text-left shadow-sm transition-all duration-200 last:border-r-0 hover:-translate-y-px hover:shadow-md ${
                         isCurrentMonth ? "bg-background" : "bg-muted/30"
                       } ${isToday ? "bg-primary/5 dark:bg-primary/10" : ""} hover:bg-muted/40`}
                       key={dateKey}
