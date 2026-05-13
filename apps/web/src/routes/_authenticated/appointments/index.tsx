@@ -1070,7 +1070,7 @@ function AppointmentsPage() {
                             <button
                               className={`flex w-full items-center gap-2 rounded-sm px-2 py-1 text-left text-[10px] shadow-sm transition-all duration-200 hover:-translate-y-px hover:opacity-80 hover:shadow-md ${
                                 appt.status === "cancelled"
-                                  ? "bg-muted line-through opacity-60"
+                                  ? "bg-muted line-through opacity-60 hover:opacity-100"
                                   : appt.status === "scheduled"
                                     ? "bg-sky-50 text-sky-700 dark:bg-sky-950 dark:text-sky-300"
                                     : appt.status === "confirmed"
