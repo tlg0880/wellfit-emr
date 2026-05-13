@@ -1306,6 +1306,7 @@ function AppointmentsPage() {
                   selectedAppointment.status !== "completed" &&
                   !selectedAppointment.encounterId && (
                     <Button
+                      className="shadow-md"
                       disabled={
                         createEncounterMutation.isPending ||
                         updateAppointmentMutation.isPending

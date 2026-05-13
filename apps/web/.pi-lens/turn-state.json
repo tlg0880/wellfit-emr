@@ -1217,10 +1217,14 @@
         {
           "start": 1274,
           "end": 1274
+        },
+        {
+          "start": 1309,
+          "end": 1309
         }
       ],
       "importsChanged": true,
-      "lastEdit": "2026-05-13T00:14:41.335Z"
+      "lastEdit": "2026-05-13T00:15:02.647Z"
     },
     "src/routes/_authenticated/patients/$patientId.tsx": {
       "modifiedRanges": [
@@ -1403,6 +1407,6 @@
   },
   "turnCycles": 0,
   "maxCycles": 3,
-  "lastUpdated": "2026-05-13T00:14:41.335Z",
+  "lastUpdated": "2026-05-13T00:15:02.647Z",
   "sessionId": "lens-mp32rgkz-3e9ca4af"
 }
