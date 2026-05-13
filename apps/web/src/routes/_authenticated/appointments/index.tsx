@@ -1017,7 +1017,7 @@ function AppointmentsPage() {
             {isLoading
               ? Array.from({ length: 35 }).map((_, i) => (
                   <div
-                    className="min-h-28 border-r border-b bg-background p-1.5 shadow-sm last:border-r-0"
+                    className="min-h-28 border-r border-b bg-background p-2 shadow-sm last:border-r-0"
                     key={`sk-${i}`}
                   >
                     <div className="mb-2 h-4 w-6 animate-pulse rounded-sm bg-muted" />
