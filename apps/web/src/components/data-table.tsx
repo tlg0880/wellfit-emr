@@ -71,7 +71,7 @@ export function DataTable<T>({
               {columns.map((col, columnIndex) => (
                 <th
                   className={cn(
-                    "px-5 py-3 text-left font-bold text-[11px] text-muted-foreground uppercase tracking-wider",
+                    "px-5 py-3.5 text-left font-bold text-[11px] text-muted-foreground uppercase tracking-wider",
                     col.className
                   )}
                   key={columnKeys[columnIndex]}
