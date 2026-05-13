@@ -1190,7 +1190,7 @@ function AppointmentsPage() {
             <CardContent className="space-y-4">
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-sm">
-                  <div className="flex size-7 items-center justify-center rounded-sm bg-primary/10 text-primary shadow-sm">
+                  <div className="flex size-7 items-center justify-center rounded-sm bg-primary/10 text-primary shadow-md">
                     <Clock size={14} />
                   </div>
                   <span>
@@ -1206,7 +1206,7 @@ function AppointmentsPage() {
                   </span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
-                  <div className="flex size-7 items-center justify-center rounded-sm bg-teal-100 text-teal-600 shadow-sm">
+                  <div className="flex size-7 items-center justify-center rounded-sm bg-teal-100 text-teal-600 shadow-md">
                     <User size={14} />
                   </div>
                   <span>
@@ -1218,7 +1218,7 @@ function AppointmentsPage() {
                 </div>
                 {selectedAppointment.practitionerId && (
                   <div className="flex items-center gap-2 text-sm">
-                    <div className="flex size-7 items-center justify-center rounded-sm bg-violet-100 text-violet-600 shadow-sm">
+                    <div className="flex size-7 items-center justify-center rounded-sm bg-violet-100 text-violet-600 shadow-md">
                       <Stethoscope size={14} />
                     </div>
                     <span>
@@ -1230,7 +1230,7 @@ function AppointmentsPage() {
                   </div>
                 )}
                 <div className="flex items-center gap-2 text-sm">
-                  <div className="flex size-7 items-center justify-center rounded-sm bg-slate-100 text-slate-600 shadow-sm">
+                  <div className="flex size-7 items-center justify-center rounded-sm bg-slate-100 text-slate-600 shadow-md">
                     <span
                       className={`size-2.5 rounded-full ${
                         statusConfig[selectedAppointment.status]?.color ??
