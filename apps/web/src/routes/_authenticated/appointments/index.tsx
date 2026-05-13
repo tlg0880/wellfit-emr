@@ -1068,7 +1068,7 @@ function AppointmentsPage() {
                           };
                           return (
                             <button
-                              className={`flex w-full items-center gap-1.5 rounded-sm px-2 py-1 text-left text-[10px] shadow-sm transition-all duration-200 hover:-translate-y-px hover:opacity-80 hover:shadow-md ${
+                              className={`flex w-full items-center gap-2 rounded-sm px-2 py-1 text-left text-[10px] shadow-sm transition-all duration-200 hover:-translate-y-px hover:opacity-80 hover:shadow-md ${
                                 appt.status === "cancelled"
                                   ? "bg-muted line-through opacity-60"
                                   : appt.status === "scheduled"
