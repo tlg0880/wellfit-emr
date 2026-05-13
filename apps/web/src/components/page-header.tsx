@@ -79,7 +79,7 @@ export function PageHeader({
                 ))}
               </nav>
             )}
-            <h1 className="font-semibold text-foreground/90 text-xl tracking-tight">
+            <h1 className="font-semibold text-2xl text-foreground/90 tracking-tight">
               {title}
             </h1>
             {description && (
