@@ -1104,7 +1104,7 @@ function AppointmentsPage() {
           <Card className="mx-4 max-h-[90vh] w-full max-w-lg overflow-auto shadow-lg">
             <CardHeader className="flex flex-row items-center justify-between pb-4">
               <div className="flex items-center gap-2.5">
-                <div className="flex size-8 items-center justify-center rounded-sm bg-rose-100 text-rose-600 shadow-sm">
+                <div className="flex size-8 items-center justify-center rounded-sm bg-rose-100 text-rose-600 shadow-md">
                   <Calendar size={16} />
                 </div>
                 <CardTitle>
@@ -1173,7 +1173,7 @@ function AppointmentsPage() {
           <Card className="mx-4 w-full max-w-sm shadow-lg">
             <CardHeader className="flex flex-row items-center justify-between pb-4">
               <div className="flex items-center gap-2.5">
-                <div className="flex size-8 items-center justify-center rounded-sm bg-rose-100 text-rose-600 shadow-sm">
+                <div className="flex size-8 items-center justify-center rounded-sm bg-rose-100 text-rose-600 shadow-md">
                   <Calendar size={16} />
                 </div>
                 <CardTitle>Detalle de cita</CardTitle>
