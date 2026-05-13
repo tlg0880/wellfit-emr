@@ -965,7 +965,7 @@ function AppointmentsPage() {
                 size="icon"
                 variant="ghost"
               >
-                <ChevronLeft size={16} />
+                <ChevronLeft size={18} />
               </Button>
               <h2 className="min-w-40 text-center font-semibold text-lg">
                 {MONTH_NAMES[currentMonth]} {currentYear}
@@ -977,7 +977,7 @@ function AppointmentsPage() {
                 size="icon"
                 variant="ghost"
               >
-                <ChevronRight size={16} />
+                <ChevronRight size={18} />
               </Button>
             </div>
             <div className="hidden items-center gap-3 text-xs sm:flex">
