@@ -994,7 +994,7 @@ function AppointmentsPage() {
           <div className="grid grid-cols-7">
             {WEEK_DAYS.map((day) => (
               <div
-                className="border-r border-b bg-muted/30 py-2 text-center font-medium text-muted-foreground text-xs uppercase tracking-wider shadow-md last:border-r-0"
+                className="border-r border-b bg-muted/30 py-3 text-center font-medium text-muted-foreground text-xs uppercase tracking-wider shadow-md last:border-r-0"
                 key={day}
               >
                 {day}
