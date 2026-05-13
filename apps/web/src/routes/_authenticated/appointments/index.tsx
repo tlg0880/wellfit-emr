@@ -1245,14 +1245,14 @@ function AppointmentsPage() {
                   </span>
                 </div>
                 <div className="rounded-sm border bg-card p-4 text-sm shadow-sm">
-                  <p className="font-medium text-muted-foreground text-xs">
+                  <p className="font-medium text-muted-foreground text-sm">
                     Motivo
                   </p>
                   <p className="mt-1">{selectedAppointment.reason}</p>
                 </div>
                 {selectedAppointment.notes && (
                   <div className="rounded-sm border bg-card p-4 text-sm shadow-sm">
-                    <p className="font-medium text-muted-foreground text-xs">
+                    <p className="font-medium text-muted-foreground text-sm">
                       Notas
                     </p>
                     <p className="mt-1 text-muted-foreground">
