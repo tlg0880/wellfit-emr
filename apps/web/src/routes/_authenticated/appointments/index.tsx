@@ -862,7 +862,12 @@ function AppointmentsPage() {
       <PageHeader
         actions={
           <div className="flex items-center gap-2">
-            <Button onClick={goToToday} size="sm" variant="outline">
+            <Button
+              className="shadow-sm"
+              onClick={goToToday}
+              size="sm"
+              variant="outline"
+            >
               <CalendarDays size={14} />
               <span className="ml-1.5">Hoy</span>
             </Button>
