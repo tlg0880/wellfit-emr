@@ -994,7 +994,7 @@ function AppointmentsPage() {
                 <ChevronRight size={18} />
               </Button>
             </div>
-            <div className="hidden items-center gap-3 text-xs sm:flex">
+            <div className="hidden items-center gap-4 text-xs sm:flex">
               {Object.entries(statusConfig).map(([key, cfg]) => (
                 <div className="flex items-center gap-1.5" key={key}>
                   <Circle className={cfg.color} fill="currentColor" size={12} />
