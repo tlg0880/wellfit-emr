@@ -1037,9 +1037,9 @@ function AppointmentsPage() {
                       return "inline-flex size-7 items-center justify-center bg-primary font-bold text-sm text-primary-foreground shadow-sm";
                     }
                     if (isCurrentMonth) {
-                      return "font-medium text-foreground";
+                      return "font-medium text-sm text-foreground";
                     }
-                    return "text-muted-foreground";
+                    return "text-sm text-muted-foreground";
                   }
 
                   return (
