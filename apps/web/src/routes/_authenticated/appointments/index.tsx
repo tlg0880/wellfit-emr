@@ -1032,7 +1032,7 @@ function AppointmentsPage() {
                     <button
                       className={`min-h-28 cursor-pointer border-r border-b p-1.5 text-left shadow-sm transition-all duration-150 last:border-r-0 hover:shadow-md ${
                         isCurrentMonth ? "bg-background" : "bg-muted/30"
-                      } ${isToday ? "bg-blue-50/50 dark:bg-blue-950/20" : ""} hover:bg-muted/40`}
+                      } ${isToday ? "bg-blue-50/70 dark:bg-blue-950/30" : ""} hover:bg-muted/40`}
                       key={dateKey}
                       onClick={() => {
                         setEditingAppointment(null);
