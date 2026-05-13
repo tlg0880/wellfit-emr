@@ -1030,7 +1030,7 @@ function AppointmentsPage() {
 
                   return (
                     <button
-                      className={`min-h-28 cursor-pointer border-r border-b p-1.5 text-left shadow-sm transition-all duration-150 last:border-r-0 hover:shadow-md ${
+                      className={`min-h-28 cursor-pointer border-r border-b p-1.5 text-left shadow-sm transition-all duration-200 last:border-r-0 hover:shadow-md ${
                         isCurrentMonth ? "bg-background" : "bg-muted/30"
                       } ${isToday ? "bg-primary/5 dark:bg-primary/10" : ""} hover:bg-muted/40`}
                       key={dateKey}
@@ -1054,7 +1054,7 @@ function AppointmentsPage() {
                           };
                           return (
                             <button
-                              className={`flex w-full items-center gap-1.5 rounded-sm px-1.5 py-0.5 text-left text-[10px] shadow-sm transition-all duration-150 hover:opacity-80 hover:shadow-md ${
+                              className={`flex w-full items-center gap-1.5 rounded-sm px-1.5 py-0.5 text-left text-[10px] shadow-sm transition-all duration-200 hover:opacity-80 hover:shadow-md ${
                                 appt.status === "cancelled"
                                   ? "bg-muted line-through opacity-60"
                                   : appt.status === "scheduled"
