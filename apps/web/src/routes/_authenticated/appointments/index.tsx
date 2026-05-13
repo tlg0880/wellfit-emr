@@ -618,6 +618,7 @@ function AppointmentForm({
         >
           {({ canSubmit, isSubmitting }) => (
             <Button
+              className="shadow-md"
               disabled={
                 !canSubmit || isSubmitting || pendingConflicts.length > 0
               }
