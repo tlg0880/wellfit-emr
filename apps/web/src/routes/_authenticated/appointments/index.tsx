@@ -967,7 +967,7 @@ function AppointmentsPage() {
               >
                 <ChevronLeft size={18} />
               </Button>
-              <h2 className="min-w-40 text-center font-semibold text-lg">
+              <h2 className="min-w-40 text-center font-semibold text-xl">
                 {MONTH_NAMES[currentMonth]} {currentYear}
               </h2>
               <Button
