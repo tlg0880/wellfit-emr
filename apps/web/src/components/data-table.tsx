@@ -66,8 +66,8 @@ export function DataTable<T>({
     <div className="flex flex-col gap-3">
       <div className="overflow-auto rounded-sm border border-border bg-card shadow-md">
         <table className="w-full text-xs">
-          <thead className="border-border border-b bg-gradient-to-b from-primary/[0.15] to-muted/90">
-            <tr>
+          <thead className="bg-gradient-to-b from-primary/[0.15] to-muted/90">
+            <tr className="border-border border-b">
               {columns.map((col, columnIndex) => (
                 <th
                   className={cn(
@@ -98,11 +98,11 @@ export function DataTable<T>({
               : data.map((row, rowIndex) => (
                   <tr
                     className={cn(
-                      "border-transparent border-l-2 transition-all duration-150",
+                      "transition-all duration-150",
                       rowIndex % 2 === 0 ? "bg-background" : "bg-muted/40",
                       onRowClick
-                        ? "cursor-pointer hover:border-l-4 hover:border-l-primary/80 hover:bg-primary/5 hover:shadow-lg"
-                        : "hover:border-l-[3px] hover:border-l-muted-foreground/60 hover:bg-muted/40 hover:shadow-sm"
+                        ? "cursor-pointer hover:bg-primary/10 hover:shadow-md hover:ring-1 hover:ring-primary/20 hover:ring-inset"
+                        : "hover:bg-muted/50 hover:shadow-sm hover:ring-1 hover:ring-muted-foreground/10 hover:ring-inset"
                     )}
                     key={keyExtractor(row)}
                     onClick={
