@@ -1,6 +1,6 @@
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { env } from "@wellfit-emr/env/web";
 import { Button } from "@wellfit-emr/ui/components/button";
 import {
@@ -9,6 +9,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@wellfit-emr/ui/components/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@wellfit-emr/ui/components/dropdown-menu";
 import { Input } from "@wellfit-emr/ui/components/input";
 import { Label } from "@wellfit-emr/ui/components/label";
 import { SearchSelect } from "@wellfit-emr/ui/components/search-select";
@@ -21,9 +30,18 @@ import {
 } from "@wellfit-emr/ui/components/select";
 import { Skeleton } from "@wellfit-emr/ui/components/skeleton";
 import {
+  Tabs,
+  TabsList,
+  TabsPanel,
+  TabsTab,
+} from "@wellfit-emr/ui/components/tabs";
+import {
+  Activity,
   AlertCircle,
   Calendar,
   CheckCircle2,
+  ChevronDown,
+  ClipboardList,
   ClipboardPlus,
   Clock,
   Download,
@@ -31,6 +49,7 @@ import {
   FileText,
   FileUp,
   FlaskConical,
+  IdCard,
   Pencil,
   Pill,
   Plus,
@@ -48,23 +67,71 @@ import { DataTable } from "@/components/data-table";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { PatientTimeline } from "@/components/patient-timeline";
-import { authClient } from "@/lib/auth-client";
 import { formatAge } from "@/utils/age";
 import { orpc, queryClient } from "@/utils/orpc";
 
+const PATIENT_TABS = [
+  { id: "timeline", label: "Línea de tiempo", icon: Activity },
+  { id: "encounters", label: "Atenciones", icon: ClipboardList },
+  { id: "documents", label: "Documentos", icon: FileText },
+  { id: "admin", label: "Administrativo", icon: IdCard },
+] as const;
+
+type PatientTabId = (typeof PATIENT_TABS)[number]["id"];
+
+const DEFAULT_TAB: PatientTabId = "timeline";
+
+const DOC_TYPE_LABELS: Record<string, string> = {
+  CC: "Cédula de ciudadanía",
+  CE: "Cédula de extranjería",
+  PA: "Pasaporte",
+  RC: "Registro civil",
+  TI: "Tarjeta de identidad",
+  PEP: "Permiso especial de permanencia",
+  PPT: "Permiso por protección temporal",
+  NIT: "NIT",
+};
+
+const SEX_AT_BIRTH_LABELS: Record<string, string> = {
+  H: "Hombre",
+  M: "Mujer",
+  I: "Indeterminado",
+};
+
+const GENDER_IDENTITY_LABELS: Record<string, string> = {
+  masculino: "Masculino",
+  femenino: "Femenino",
+  transgenero: "Transgénero",
+  no_binario: "No binario",
+  otro: "Otro",
+  prefiero_no_decir: "Prefiero no decir",
+};
+
+const ZONE_LABELS: Record<string, string> = {
+  "01": "Rural",
+  "02": "Urbano",
+};
+
+function isPatientTabId(value: unknown): value is PatientTabId {
+  return (
+    typeof value === "string" && PATIENT_TABS.some((tab) => tab.id === value)
+  );
+}
+
+const patientDetailSearchSchema = z.object({
+  tab: z
+    .union([
+      z.literal("timeline"),
+      z.literal("encounters"),
+      z.literal("documents"),
+      z.literal("admin"),
+    ])
+    .optional(),
+});
+
 export const Route = createFileRoute("/_authenticated/patients/$patientId")({
   component: PatientDetailPage,
-  beforeLoad: async () => {
-    const session = await authClient.getSession();
-    if (!session.data) {
-      throw new Error("UNAUTHORIZED");
-    }
-    return { session };
-  },
-  errorComponent: () => {
-    window.location.href = "/login";
-    return null;
-  },
+  validateSearch: patientDetailSearchSchema,
 });
 
 const updatePatientSchema = z.object({
@@ -558,6 +625,62 @@ function EditPatientForm({
   );
 }
 
+function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <dt className="font-medium text-[10px] text-muted-foreground uppercase tracking-wider">
+        {label}
+      </dt>
+      <dd className="font-medium text-foreground/90 text-xs">{value}</dd>
+    </div>
+  );
+}
+
+function InfoSection({
+  icon: Icon,
+  title,
+  children,
+}: {
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="space-y-3">
+      <div className="flex items-center gap-1.5 border-border/60 border-b pb-1.5">
+        <Icon className="text-primary" size={12} />
+        <h3 className="font-semibold text-[11px] text-foreground/80 uppercase tracking-wider">
+          {title}
+        </h3>
+      </div>
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-3">{children}</dl>
+    </section>
+  );
+}
+
+function DeceasedBanner({ deceasedAt }: { deceasedAt: Date }) {
+  return (
+    <div className="mx-6 flex items-center gap-2.5 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2.5 shadow-sm">
+      <AlertCircle className="shrink-0 text-destructive" size={16} />
+      <div className="min-w-0 flex-1">
+        <p className="font-semibold text-destructive text-xs">
+          Paciente fallecido
+        </p>
+        <p className="text-[11px] text-destructive/80">
+          Registrado el{" "}
+          {new Date(deceasedAt).toLocaleString("es-CO", {
+            day: "2-digit",
+            month: "long",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function PatientInfoCard({
   patient,
   onEdit,
@@ -565,64 +688,77 @@ function PatientInfoCard({
   patient: Patient;
   onEdit: () => void;
 }) {
-  const infoRows = [
-    { label: "Tipo de documento", value: patient.primaryDocumentType },
-    { label: "Número de documento", value: patient.primaryDocumentNumber },
-    {
-      label: "Nombres",
-      value: `${patient.firstName} ${patient.middleName ?? ""}`.trim(),
-    },
-    {
-      label: "Apellidos",
-      value: `${patient.lastName1} ${patient.lastName2 ?? ""}`.trim(),
-    },
-    {
-      label: "Fecha de nacimiento",
-      value: new Date(patient.birthDate).toLocaleDateString("es-CO", {
-        day: "2-digit",
-        month: "long",
-        year: "numeric",
-      }),
-    },
-    { label: "Edad", value: formatAge(patient.birthDate) },
-    { label: "Sexo al nacer", value: patient.sexAtBirth },
-    { label: "Identidad de género", value: patient.genderIdentity ?? "—" },
-    { label: "País", value: patient.countryCode ?? "—" },
-    { label: "Municipio", value: patient.municipalityCode ?? "—" },
-    { label: "Zona", value: patient.zoneCode ?? "—" },
-    ...(patient.deceasedAt
-      ? [
-          {
-            label: "Fallecimiento",
-            value: (
-              <span className="text-destructive">
-                {new Date(patient.deceasedAt).toLocaleString("es-CO")}
-              </span>
-            ),
-          },
-        ]
-      : []),
-  ];
+  const docTypeLabel =
+    DOC_TYPE_LABELS[patient.primaryDocumentType] ?? patient.primaryDocumentType;
+  const sexLabel =
+    SEX_AT_BIRTH_LABELS[patient.sexAtBirth] ?? patient.sexAtBirth;
+  const genderLabel = patient.genderIdentity
+    ? (GENDER_IDENTITY_LABELS[patient.genderIdentity] ?? patient.genderIdentity)
+    : "—";
+  const zoneLabel = patient.zoneCode
+    ? (ZONE_LABELS[patient.zoneCode] ?? patient.zoneCode)
+    : "—";
+
+  const fullName = [
+    patient.firstName,
+    patient.middleName,
+    patient.lastName1,
+    patient.lastName2,
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <Card className="mx-6" size="sm">
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Información personal</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <User className="text-primary" size={14} />
+          Información personal
+        </CardTitle>
         <Button onClick={onEdit} size="sm" variant="outline">
           <Pencil size={14} />
           Editar
         </Button>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {infoRows.map((row) => (
-            <div key={row.label}>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                {row.label}
-              </p>
-              <p className="mt-0.5 font-medium text-xs">{row.value}</p>
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <InfoSection icon={IdCard} title="Identificación">
+            <InfoRow label="Tipo" value={docTypeLabel} />
+            <InfoRow
+              label="Número"
+              value={
+                <span className="font-mono">
+                  {patient.primaryDocumentNumber}
+                </span>
+              }
+            />
+          </InfoSection>
+
+          <InfoSection icon={User} title="Datos personales">
+            <div className="col-span-2">
+              <InfoRow label="Nombre completo" value={fullName} />
             </div>
-          ))}
+            <InfoRow
+              label="Fecha de nacimiento"
+              value={new Date(patient.birthDate).toLocaleDateString("es-CO", {
+                day: "2-digit",
+                month: "long",
+                year: "numeric",
+              })}
+            />
+            <InfoRow label="Edad" value={formatAge(patient.birthDate)} />
+            <InfoRow label="Sexo al nacer" value={sexLabel} />
+            <InfoRow label="Identidad de género" value={genderLabel} />
+          </InfoSection>
+
+          <InfoSection icon={Activity} title="Ubicación">
+            <InfoRow label="País" value={patient.countryCode ?? "—"} />
+            <InfoRow
+              label="Municipio"
+              value={patient.municipalityCode ?? "—"}
+            />
+            <InfoRow label="Zona" value={zoneLabel} />
+          </InfoSection>
         </div>
       </CardContent>
     </Card>
@@ -822,7 +958,7 @@ function ContactsSection({ patientId }: { patientId: string }) {
   ];
 
   return (
-    <Card className="mx-6" size="sm">
+    <Card size="sm">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Contactos</CardTitle>
         <Button
@@ -1164,7 +1300,7 @@ function CoverageSection({ patientId }: { patientId: string }) {
   ];
 
   return (
-    <Card className="mx-6" size="sm">
+    <Card size="sm">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Cobertura / Afiliación</CardTitle>
         <Button
@@ -1472,7 +1608,7 @@ function IdentifiersSection({ patientId }: { patientId: string }) {
   ];
 
   return (
-    <Card className="mx-6" size="sm">
+    <Card size="sm">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Identificadores</CardTitle>
         <Button
@@ -1642,7 +1778,7 @@ function EncountersSection({ patientId }: { patientId: string }) {
   ];
 
   return (
-    <Card className="mx-6" size="sm">
+    <Card size="sm">
       <CardHeader>
         <CardTitle>Historial de atenciones</CardTitle>
       </CardHeader>
@@ -1905,7 +2041,7 @@ function PatientDocumentsSection({ patientId }: { patientId: string }) {
   ];
 
   return (
-    <Card className="mx-6" size="sm">
+    <Card size="sm">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Documentos adjuntos</CardTitle>
       </CardHeader>
@@ -1994,9 +2130,116 @@ function PatientDocumentsSection({ patientId }: { patientId: string }) {
   );
 }
 
+function PatientCreateActions({ patientId }: { patientId: string }) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <Button className="gap-1" size="sm">
+            <Plus size={14} />
+            Crear nuevo
+            <ChevronDown size={12} />
+          </Button>
+        }
+      />
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>Atención clínica</DropdownMenuLabel>
+          <DropdownMenuItem
+            render={
+              <Link search={{ patientId }} to="/encounters">
+                <ClipboardPlus size={14} />
+                Atención
+              </Link>
+            }
+          />
+          <DropdownMenuItem
+            render={
+              <Link search={{ patientId }} to="/appointments">
+                <Calendar size={14} />
+                Cita
+              </Link>
+            }
+          />
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>Órdenes y prescripciones</DropdownMenuLabel>
+          <DropdownMenuItem
+            render={
+              <Link search={{ patientId }} to="/medication-orders">
+                <Pill size={14} />
+                Prescripción
+              </Link>
+            }
+          />
+          <DropdownMenuItem
+            render={
+              <Link search={{ patientId }} to="/service-requests">
+                <FlaskConical size={14} />
+                Orden de servicio
+              </Link>
+            }
+          />
+          <DropdownMenuItem
+            render={
+              <Link search={{ patientId }} to="/incapacity-certificates">
+                <FileCheck size={14} />
+                Incapacidad
+              </Link>
+            }
+          />
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>Documentación</DropdownMenuLabel>
+          <DropdownMenuItem
+            render={
+              <Link search={{ patientId }} to="/clinical-documents">
+                <FileText size={14} />
+                Documento clínico
+              </Link>
+            }
+          />
+          <DropdownMenuItem
+            render={
+              <Link search={{ patientId }} to="/consents">
+                <ShieldCheck size={14} />
+                Consentimiento
+              </Link>
+            }
+          />
+        </DropdownMenuGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function buildPatientDescription(patient: Patient): string {
+  const docTypeLabel =
+    DOC_TYPE_LABELS[patient.primaryDocumentType] ?? patient.primaryDocumentType;
+  const sexLabel =
+    SEX_AT_BIRTH_LABELS[patient.sexAtBirth] ?? patient.sexAtBirth;
+  const age = formatAge(patient.birthDate);
+  return `${docTypeLabel} ${patient.primaryDocumentNumber} · ${age} · ${sexLabel}`;
+}
+
 function PatientDetailPage() {
   const { patientId } = Route.useParams();
+  const search = Route.useSearch();
+  const navigate = useNavigate({ from: "/patients/$patientId" });
   const [editing, setEditing] = useState(false);
+
+  const activeTab: PatientTabId = search.tab ?? DEFAULT_TAB;
+
+  function setTab(tabId: string) {
+    if (isPatientTabId(tabId)) {
+      navigate({
+        search: (prev) => ({ ...prev, tab: tabId }),
+        replace: true,
+      });
+    }
+  }
 
   const {
     data: patient,
@@ -2023,51 +2266,7 @@ function PatientDetailPage() {
         actions={
           !editing && patient ? (
             <div className="flex items-center gap-2">
-              <Link search={{ patientId: patient.id }} to="/encounters">
-                <Button size="sm" variant="outline">
-                  <ClipboardPlus size={14} />
-                  Nueva atención
-                </Button>
-              </Link>
-              <Link search={{ patientId: patient.id }} to="/medication-orders">
-                <Button size="sm" variant="outline">
-                  <Pill size={14} />
-                  Nueva prescripción
-                </Button>
-              </Link>
-              <Link search={{ patientId: patient.id }} to="/service-requests">
-                <Button size="sm" variant="outline">
-                  <FlaskConical size={14} />
-                  Nueva orden
-                </Button>
-              </Link>
-              <Link search={{ patientId: patient.id }} to="/appointments">
-                <Button size="sm" variant="outline">
-                  <Calendar size={14} />
-                  Nueva cita
-                </Button>
-              </Link>
-              <Link
-                search={{ patientId: patient.id }}
-                to="/incapacity-certificates"
-              >
-                <Button size="sm" variant="outline">
-                  <FileCheck size={14} />
-                  Nueva incapacidad
-                </Button>
-              </Link>
-              <Link search={{ patientId: patient.id }} to="/clinical-documents">
-                <Button size="sm" variant="outline">
-                  <FileText size={14} />
-                  Nuevo documento
-                </Button>
-              </Link>
-              <Link search={{ patientId: patient.id }} to="/consents">
-                <Button size="sm" variant="outline">
-                  <ShieldCheck size={14} />
-                  Nuevo consentimiento
-                </Button>
-              </Link>
+              <PatientCreateActions patientId={patient.id} />
               <Button
                 onClick={() => setEditing(true)}
                 size="sm"
@@ -2080,7 +2279,11 @@ function PatientDetailPage() {
           ) : undefined
         }
         backTo="/patients"
-        description="Información clínica y atenciones del paciente"
+        description={
+          patient
+            ? buildPatientDescription(patient)
+            : "Información clínica y atenciones del paciente"
+        }
         icon={User}
         iconBgClass="bg-teal-100 text-teal-600"
         title={fullName}
@@ -2104,11 +2307,16 @@ function PatientDetailPage() {
         </div>
       ) : patientLoading ? (
         <div className="mx-6 space-y-4">
-          <Skeleton className="h-40 w-full" />
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-9 w-72" />
           <Skeleton className="h-40 w-full" />
         </div>
       ) : patient ? (
         <>
+          {patient.deceasedAt && (
+            <DeceasedBanner deceasedAt={patient.deceasedAt} />
+          )}
+
           {editing ? (
             <EditPatientForm
               onCancel={() => setEditing(false)}
@@ -2120,12 +2328,39 @@ function PatientDetailPage() {
               patient={patient}
             />
           )}
-          <ContactsSection patientId={patientId} />
-          <CoverageSection patientId={patientId} />
-          <IdentifiersSection patientId={patientId} />
-          <PatientTimeline patientId={patientId} />
-          <EncountersSection patientId={patientId} />
-          <PatientDocumentsSection patientId={patientId} />
+
+          <div className="px-6">
+            <Tabs onValueChange={(v) => setTab(v as string)} value={activeTab}>
+              <TabsList className="mb-3 w-full justify-start overflow-x-auto">
+                {PATIENT_TABS.map((tab) => (
+                  <TabsTab key={tab.id} value={tab.id}>
+                    <tab.icon size={14} />
+                    {tab.label}
+                  </TabsTab>
+                ))}
+              </TabsList>
+
+              <TabsPanel value="timeline">
+                <PatientTimeline patientId={patientId} />
+              </TabsPanel>
+
+              <TabsPanel value="encounters">
+                <EncountersSection patientId={patientId} />
+              </TabsPanel>
+
+              <TabsPanel value="documents">
+                <PatientDocumentsSection patientId={patientId} />
+              </TabsPanel>
+
+              <TabsPanel value="admin">
+                <div className="space-y-4">
+                  <ContactsSection patientId={patientId} />
+                  <CoverageSection patientId={patientId} />
+                  <IdentifiersSection patientId={patientId} />
+                </div>
+              </TabsPanel>
+            </Tabs>
+          </div>
         </>
       ) : (
         <EmptyState

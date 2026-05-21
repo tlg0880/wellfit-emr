@@ -31,22 +31,10 @@ import {
   Users,
 } from "lucide-react";
 import { useEffect } from "react";
-import { authClient } from "@/lib/auth-client";
 import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/_authenticated/")({
   component: DashboardPage,
-  beforeLoad: async () => {
-    const session = await authClient.getSession();
-    if (!session.data) {
-      throw new Error("UNAUTHORIZED");
-    }
-    return { session };
-  },
-  errorComponent: () => {
-    window.location.href = "/login";
-    return null;
-  },
 });
 
 function ComplianceSummaryBlock() {

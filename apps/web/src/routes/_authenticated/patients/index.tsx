@@ -24,23 +24,11 @@ import { toast } from "sonner";
 import z from "zod";
 import { DataTable } from "@/components/data-table";
 import { PageHeader } from "@/components/page-header";
-import { authClient } from "@/lib/auth-client";
 import { calculateAge } from "@/utils/age";
 import { orpc, queryClient } from "@/utils/orpc";
 
 export const Route = createFileRoute("/_authenticated/patients/")({
   component: PatientsListPage,
-  beforeLoad: async () => {
-    const session = await authClient.getSession();
-    if (!session.data) {
-      throw new Error("UNAUTHORIZED");
-    }
-    return { session };
-  },
-  errorComponent: () => {
-    window.location.href = "/login";
-    return null;
-  },
 });
 
 const createPatientSchema = z.object({

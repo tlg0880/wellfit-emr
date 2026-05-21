@@ -8,22 +8,10 @@ import { useEffect, useState } from "react";
 
 import { DataTable } from "@/components/data-table";
 import { PageHeader } from "@/components/page-header";
-import { authClient } from "@/lib/auth-client";
 import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/_authenticated/audit-events/")({
   component: AuditEventsListPage,
-  beforeLoad: async () => {
-    const session = await authClient.getSession();
-    if (!session.data) {
-      throw new Error("UNAUTHORIZED");
-    }
-    return { session };
-  },
-  errorComponent: () => {
-    window.location.href = "/login";
-    return null;
-  },
 });
 
 function AuditEventsListPage() {
@@ -216,19 +204,19 @@ function AuditEventsListPage() {
               setOffset(0);
             }}
             onSearchChange={setUserSearch}
-            options={
-              (
-                usersData?.users as Array<{
-                  id: string;
-                  name: string | null;
-                  email: string;
-                }>
-              ).map((u) => ({
-                value: u.id,
-                label: u.name || u.email,
-                description: u.email,
-              })) ?? []
-            }
+            options={(
+              (usersData?.users as
+                | Array<{
+                    id: string;
+                    name: string | null;
+                    email: string;
+                  }>
+                | undefined) ?? []
+            ).map((u) => ({
+              value: u.id,
+              label: u.name || u.email,
+              description: u.email,
+            }))}
             placeholder="Usuario..."
             search={userSearch}
             value={userId}

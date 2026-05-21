@@ -39,7 +39,6 @@ import { z } from "zod";
 
 import { DataTable } from "@/components/data-table";
 import { PageHeader } from "@/components/page-header";
-import { authClient } from "@/lib/auth-client";
 import { orpc, queryClient } from "@/utils/orpc";
 
 const TRAILING_ZERO_DECIMALS_REGEX = /\.?0+$/;
@@ -52,17 +51,6 @@ const searchSchema = z.object({
 export const Route = createFileRoute("/_authenticated/medication-orders/")({
   component: MedicationOrdersListPage,
   validateSearch: searchSchema,
-  beforeLoad: async () => {
-    const session = await authClient.getSession();
-    if (!session.data) {
-      throw new Error("UNAUTHORIZED");
-    }
-    return { session };
-  },
-  errorComponent: () => {
-    window.location.href = "/login";
-    return null;
-  },
 });
 
 const medicationOrderSchema = z.object({

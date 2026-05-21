@@ -6,22 +6,10 @@ import { RefreshCw, Table } from "lucide-react";
 import { useEffect } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/page-header";
-import { authClient } from "@/lib/auth-client";
 import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/_authenticated/catalogs/")({
   component: CatalogsPage,
-  beforeLoad: async () => {
-    const session = await authClient.getSession();
-    if (!session.data) {
-      throw new Error("UNAUTHORIZED");
-    }
-    return { session };
-  },
-  errorComponent: () => {
-    window.location.href = "/login";
-    return null;
-  },
 });
 
 function CatalogsPage() {

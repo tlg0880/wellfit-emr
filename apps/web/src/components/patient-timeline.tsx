@@ -583,7 +583,7 @@ export function PatientTimeline({ patientId }: { patientId: string }) {
   }, []);
 
   return (
-    <Card className="mx-6" size="sm">
+    <Card size="sm">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Línea de tiempo clínica</CardTitle>
         {errors.length > 0 && (

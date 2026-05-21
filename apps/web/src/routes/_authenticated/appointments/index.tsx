@@ -39,7 +39,6 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 import { PageHeader } from "@/components/page-header";
-import { authClient } from "@/lib/auth-client";
 import { orpc, queryClient } from "@/utils/orpc";
 
 const searchSchema = z.object({
@@ -49,17 +48,6 @@ const searchSchema = z.object({
 export const Route = createFileRoute("/_authenticated/appointments/")({
   component: AppointmentsPage,
   validateSearch: searchSchema,
-  beforeLoad: async () => {
-    const session = await authClient.getSession();
-    if (!session.data) {
-      throw new Error("UNAUTHORIZED");
-    }
-    return { session };
-  },
-  errorComponent: () => {
-    window.location.href = "/login";
-    return null;
-  },
 });
 
 const WEEK_DAYS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];

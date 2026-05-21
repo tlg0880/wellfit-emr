@@ -30,7 +30,6 @@ import { z } from "zod";
 
 import { DataTable } from "@/components/data-table";
 import { PageHeader } from "@/components/page-header";
-import { authClient } from "@/lib/auth-client";
 import { orpc, queryClient } from "@/utils/orpc";
 
 const searchSchema = z.object({
@@ -43,17 +42,6 @@ export const Route = createFileRoute(
 )({
   component: IncapacityCertificatesListPage,
   validateSearch: searchSchema,
-  beforeLoad: async () => {
-    const session = await authClient.getSession();
-    if (!session.data) {
-      throw new Error("UNAUTHORIZED");
-    }
-    return { session };
-  },
-  errorComponent: () => {
-    window.location.href = "/login";
-    return null;
-  },
 });
 
 const incapacitySchema = z
