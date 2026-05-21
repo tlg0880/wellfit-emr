@@ -142,14 +142,11 @@ function ChatPage() {
     if (!container) {
       return;
     }
-
     const handleScroll = () => {
-      const threshold = 100;
       isNearBottomRef.current =
         container.scrollHeight - container.scrollTop - container.clientHeight <
-        threshold;
+        100;
     };
-
     container.addEventListener("scroll", handleScroll);
     return () => container.removeEventListener("scroll", handleScroll);
   }, []);
@@ -194,14 +191,17 @@ function ChatPage() {
     if (isLoading) {
       stop();
     }
-
     clearError();
     setMessages([]);
     setInput("");
   };
 
+  const patientName = selectedPatient
+    ? formatPatientName(selectedPatient)
+    : null;
+
   return (
-    <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
+    <div className="flex h-[calc(100vh-4rem)] overflow-hidden bg-background">
       {sidebarOpen && (
         <PatientSidebar
           onPatientIdChange={setSelectedPatientId}
@@ -218,189 +218,205 @@ function ChatPage() {
       )}
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <ChatHeader
-          hasMessages={messages.length > 0}
-          isLoading={isLoading}
-          onNewChat={handleNewChat}
-          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-          patientName={
-            selectedPatient ? formatPatientName(selectedPatient) : null
-          }
-          sidebarOpen={sidebarOpen}
-        />
+        {/* Header */}
+        <div className="flex items-center gap-2 border-b bg-card/80 px-3 py-2.5 backdrop-blur-sm">
+          <Button
+            aria-label={
+              sidebarOpen
+                ? "Cerrar panel de paciente"
+                : "Abrir panel de paciente"
+            }
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            size="icon-xs"
+            type="button"
+            variant="ghost"
+          >
+            {sidebarOpen ? <X size={14} /> : <Stethoscope size={14} />}
+          </Button>
 
-        <div className="flex-1 overflow-auto p-4" ref={messagesContainerRef}>
-          {messages.length === 0 && !isLoading && (
+          <div className="flex items-center gap-2">
+            <div className="flex size-6 items-center justify-center rounded-sm bg-primary text-primary-foreground">
+              <Bot size={13} />
+            </div>
+            <span className="font-semibold text-sm">Asistente Médico</span>
+          </div>
+
+          {patientName && (
+            <span className="ml-1 rounded-sm bg-primary/10 px-2 py-0.5 text-primary text-xs">
+              {patientName}
+            </span>
+          )}
+
+          <Button
+            aria-label="Nuevo chat"
+            className="ml-auto"
+            disabled={!(messages.length > 0 || isLoading)}
+            onClick={handleNewChat}
+            size="icon-xs"
+            title="Nuevo chat"
+            type="button"
+            variant="ghost"
+          >
+            <MessageSquarePlus size={14} />
+          </Button>
+        </div>
+
+        {/* Messages */}
+        <div className="flex-1 overflow-auto" ref={messagesContainerRef}>
+          {messages.length === 0 && !isLoading ? (
             <EmptyState
               hasPatient={!!selectedPatientId}
               onOpenSidebar={() => setSidebarOpen(true)}
               onSendMessage={sendMessage}
             />
+          ) : (
+            <div className="mx-auto max-w-3xl space-y-6 px-4 py-6">
+              {messages.map((message) => (
+                <MessageRow
+                  isLoading={isLoading}
+                  key={message.id}
+                  message={message}
+                />
+              ))}
+
+              {showLoadingIndicator && <LoadingIndicator />}
+
+              <div ref={messagesEndRef} />
+            </div>
           )}
-
-          <div className="space-y-4">
-            {messages.map((message) => (
-              <div
-                className={`flex gap-3 ${message.role === "user" ? "justify-end" : "justify-start"}`}
-                key={message.id}
-              >
-                {message.role === "assistant" && (
-                  <div className="flex size-7 shrink-0 items-center justify-center bg-primary text-primary-foreground">
-                    <Bot size={14} />
-                  </div>
-                )}
-                <div
-                  className={`max-w-[80%] ${
-                    message.role === "user"
-                      ? "bg-primary px-4 py-3 text-primary-foreground"
-                      : "bg-muted px-4 py-3"
-                  }`}
-                >
-                  <MessageParts isLoading={isLoading} message={message} />
-                </div>
-
-                {message.role === "user" && (
-                  <div className="flex size-7 shrink-0 items-center justify-center bg-muted">
-                    <User size={14} />
-                  </div>
-                )}
-              </div>
-            ))}
-
-            {showLoadingIndicator && <LoadingIndicator />}
-
-            <div ref={messagesEndRef} />
-          </div>
         </div>
 
+        {/* Error banner */}
         {error && (
-          <div className="border-destructive/50 border-t bg-destructive/5 px-4 py-2 text-destructive text-xs">
-            Error: {error.message}
+          <div className="flex items-center gap-2 border-destructive/30 border-t bg-destructive/5 px-4 py-2">
+            <p className="flex-1 text-destructive text-xs">{error.message}</p>
+            <Button
+              onClick={clearError}
+              size="icon-xs"
+              type="button"
+              variant="ghost"
+            >
+              <X size={12} />
+            </Button>
           </div>
         )}
 
-        <form
-          className="flex items-center gap-2 border-t px-4 py-3"
-          onSubmit={handleSubmit}
-        >
-          <Input
-            aria-label="Mensaje para el asistente médico"
-            className="flex-1 text-sm"
-            disabled={isLoading}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder={
-              selectedPatientId
-                ? "Escribe tu consulta médica..."
-                : "Escribe un mensaje (selecciona un paciente para contexto clínico)..."
-            }
-            value={input}
-          />
-          {isLoading ? (
-            <Button
-              aria-label="Detener generación"
-              onClick={() => stop()}
-              size="icon-sm"
-              type="button"
-              variant="outline"
-            >
-              <X size={14} />
-            </Button>
-          ) : (
-            <Button
-              aria-label="Enviar mensaje"
-              disabled={!input.trim()}
-              size="icon-sm"
-              type="submit"
-            >
-              <Send size={14} />
-            </Button>
-          )}
-        </form>
+        {/* Input */}
+        <div className="border-t bg-card/80 px-4 py-3 backdrop-blur-sm">
+          <form
+            className="mx-auto flex max-w-3xl items-end gap-2"
+            onSubmit={handleSubmit}
+          >
+            <div className="relative flex-1">
+              <Input
+                aria-label="Mensaje para el asistente médico"
+                className="pr-2 text-sm"
+                disabled={isLoading}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSubmit(e as unknown as React.FormEvent);
+                  }
+                }}
+                placeholder={
+                  selectedPatientId
+                    ? "Escribe tu consulta médica..."
+                    : "Escribe un mensaje (selecciona un paciente para contexto clínico)..."
+                }
+                value={input}
+              />
+            </div>
+            {isLoading ? (
+              <Button
+                aria-label="Detener generación"
+                onClick={() => stop()}
+                size="icon-sm"
+                type="button"
+                variant="outline"
+              >
+                <X size={14} />
+              </Button>
+            ) : (
+              <Button
+                aria-label="Enviar mensaje"
+                disabled={!input.trim()}
+                size="icon-sm"
+                type="submit"
+              >
+                <Send size={14} />
+              </Button>
+            )}
+          </form>
+          <p className="mx-auto mt-1.5 max-w-3xl text-center text-[10px] text-muted-foreground">
+            El asistente puede cometer errores. Verifica la información clínica
+            antes de actuar.
+          </p>
+        </div>
       </div>
     </div>
   );
 }
 
-function shouldShowLoadingIndicator(
-  messages: Array<{ role: string; parts?: Array<{ type: string }> }>,
-  status: string
-) {
-  if (status === "submitted") {
-    return true;
-  }
+// ─── Message row ──────────────────────────────────────────────────────────────
 
-  if (status !== "streaming") {
-    return false;
-  }
-
-  const lastMessage = messages.at(-1);
-  return (
-    lastMessage?.role === "assistant" &&
-    !lastMessage.parts?.some(
-      (part) => part.type === "text" || part.type.startsWith("tool-")
-    )
-  );
-}
-
-function formatPatientName(p: {
-  firstName: string;
-  middleName: string | null;
-  lastName1: string;
-  lastName2: string | null;
-}) {
-  return `${p.firstName}${p.middleName ? ` ${p.middleName}` : ""} ${p.lastName1}${p.lastName2 ? ` ${p.lastName2}` : ""}`;
-}
-
-function ChatHeader({
-  patientName,
-  sidebarOpen,
-  hasMessages,
+function MessageRow({
+  message,
   isLoading,
-  onNewChat,
-  onToggleSidebar,
 }: {
-  patientName: string | null;
-  sidebarOpen: boolean;
-  hasMessages: boolean;
+  message: { id: string; role: string; parts: unknown[] };
   isLoading: boolean;
-  onNewChat: () => void;
-  onToggleSidebar: () => void;
 }) {
-  return (
-    <div className="flex items-center gap-2 border-b px-4 py-3">
-      <Button
-        aria-label={sidebarOpen ? "Cerrar panel" : "Abrir panel"}
-        onClick={onToggleSidebar}
-        size="icon-xs"
-        type="button"
-        variant="ghost"
-      >
-        {sidebarOpen ? <X size={14} /> : <Stethoscope size={14} />}
-      </Button>
-      <div className="flex items-center gap-2">
-        <Bot size={16} />
-        <h1 className="font-semibold text-sm">Asistente Médico</h1>
+  const isUser = message.role === "user";
+
+  if (isUser) {
+    return (
+      <div className="flex justify-end gap-3">
+        <div className="max-w-[75%] rounded-sm bg-primary px-4 py-2.5 text-primary-foreground shadow-sm">
+          <MessageParts
+            isLoading={isLoading}
+            message={message as Parameters<typeof MessageParts>[0]["message"]}
+          />
+        </div>
+        <div className="flex size-7 shrink-0 items-center justify-center rounded-sm bg-muted">
+          <User size={13} />
+        </div>
       </div>
-      {patientName && (
-        <span className="ml-2 rounded-sm bg-primary/10 px-2 py-0.5 text-primary text-xs">
-          {patientName}
-        </span>
-      )}
-      <Button
-        aria-label="Nuevo chat"
-        className="ml-auto"
-        disabled={!(hasMessages || isLoading)}
-        onClick={onNewChat}
-        size="icon-xs"
-        title="Nuevo chat"
-        type="button"
-        variant="ghost"
-      >
-        <MessageSquarePlus size={14} />
-      </Button>
+    );
+  }
+
+  return (
+    <div className="flex gap-3">
+      <div className="flex size-7 shrink-0 items-center justify-center rounded-sm bg-primary text-primary-foreground shadow-sm">
+        <Bot size={13} />
+      </div>
+      <div className="min-w-0 flex-1">
+        <MessageParts
+          isLoading={isLoading}
+          message={message as Parameters<typeof MessageParts>[0]["message"]}
+        />
+      </div>
     </div>
   );
 }
+
+// ─── Loading indicator ────────────────────────────────────────────────────────
+
+function LoadingIndicator() {
+  return (
+    <div className="flex gap-3">
+      <div className="flex size-7 shrink-0 items-center justify-center rounded-sm bg-primary text-primary-foreground shadow-sm">
+        <Bot size={13} />
+      </div>
+      <div className="flex items-center gap-2 rounded-sm bg-muted/50 px-3 py-2 text-muted-foreground text-sm">
+        <Loader2 className="animate-spin" size={13} />
+        <span>Pensando...</span>
+      </div>
+    </div>
+  );
+}
+
+// ─── Empty state ──────────────────────────────────────────────────────────────
 
 function EmptyState({
   hasPatient,
@@ -412,82 +428,66 @@ function EmptyState({
   onSendMessage: (opts: { text: string }) => void;
 }) {
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-4">
-      <div className="flex size-16 items-center justify-center bg-muted">
-        <Bot className="text-muted-foreground" size={32} />
+    <div className="flex h-full flex-col items-center justify-center gap-6 px-4 py-12">
+      <div className="flex size-14 items-center justify-center rounded-sm bg-primary/10 text-primary shadow-sm">
+        <Bot size={28} />
       </div>
+
       <div className="text-center">
         <h2 className="font-semibold text-lg">Asistente Médico WellFit</h2>
-        <p className="mt-1 text-muted-foreground text-sm">
-          Selecciona un paciente y haz preguntas sobre su historia clínica,
-          prescribe medicamentos, o consulta catálogos RIPS.
+        <p className="mt-1 max-w-sm text-muted-foreground text-sm">
+          {hasPatient
+            ? "Paciente seleccionado. Puedes consultar su historia clínica, prescribir medicamentos o generar resúmenes."
+            : "Selecciona un paciente en el panel lateral para que el asistente tenga contexto clínico completo."}
         </p>
       </div>
-      <div className="grid max-w-md grid-cols-2 gap-2">
-        {hasPatient ? (
-          <>
-            <QuickAction
-              icon={<Activity size={14} />}
-              label="Resumen clínico"
-              onClick={() =>
-                onSendMessage({
-                  text: "Genera un resumen clínico completo de este paciente, incluyendo antecedentes, alergias, medicamentos activos y atenciones recientes.",
-                })
-              }
-            />
-            <QuickAction
-              icon={<Pill size={14} />}
-              label="Revisar medicamentos"
-              onClick={() =>
-                onSendMessage({
-                  text: "Revisa los medicamentos actuales del paciente, identifica posibles interacciones o duplicidades.",
-                })
-              }
-            />
-            <QuickAction
-              icon={<FileText size={14} />}
-              label="Alergias"
-              onClick={() =>
-                onSendMessage({
-                  text: "Lista todas las alergias registradas del paciente y clasifica su criticidad.",
-                })
-              }
-            />
-            <QuickAction
-              icon={<Stethoscope size={14} />}
-              label="Atenciones recientes"
-              onClick={() =>
-                onSendMessage({
-                  text: "Muestra las atenciones clínicas recientes del paciente con diagnóstico y evolución.",
-                })
-              }
-            />
-          </>
-        ) : (
-          <QuickAction
-            className="col-span-2"
-            icon={<User size={14} />}
-            label="Buscar paciente"
-            onClick={onOpenSidebar}
-          />
-        )}
-      </div>
-    </div>
-  );
-}
 
-function LoadingIndicator() {
-  return (
-    <div className="flex gap-3">
-      <div className="flex size-7 shrink-0 items-center justify-center bg-primary text-primary-foreground">
-        <Bot size={14} />
-      </div>
-      <div className="bg-muted px-4 py-3">
-        <div className="flex items-center gap-2 text-muted-foreground text-sm">
-          <Loader2 className="animate-spin" size={14} />
-          <span>Pensando...</span>
+      {hasPatient ? (
+        <div className="grid w-full max-w-md grid-cols-2 gap-2">
+          <QuickAction
+            icon={<Activity size={14} />}
+            label="Resumen clínico"
+            onClick={() =>
+              onSendMessage({
+                text: "Genera un resumen clínico completo de este paciente, incluyendo antecedentes, alergias, medicamentos activos y atenciones recientes.",
+              })
+            }
+          />
+          <QuickAction
+            icon={<Pill size={14} />}
+            label="Revisar medicamentos"
+            onClick={() =>
+              onSendMessage({
+                text: "Revisa los medicamentos actuales del paciente, identifica posibles interacciones o duplicidades.",
+              })
+            }
+          />
+          <QuickAction
+            icon={<FileText size={14} />}
+            label="Alergias"
+            onClick={() =>
+              onSendMessage({
+                text: "Lista todas las alergias registradas del paciente y clasifica su criticidad.",
+              })
+            }
+          />
+          <QuickAction
+            icon={<Stethoscope size={14} />}
+            label="Atenciones recientes"
+            onClick={() =>
+              onSendMessage({
+                text: "Muestra las atenciones clínicas recientes del paciente con diagnóstico y evolución.",
+              })
+            }
+          />
         </div>
-      </div>
+      ) : (
+        <QuickAction
+          icon={<User size={14} />}
+          label="Abrir panel de paciente"
+          onClick={onOpenSidebar}
+        />
+      )}
     </div>
   );
 }
@@ -505,12 +505,42 @@ function QuickAction({
 }) {
   return (
     <button
-      className={`flex items-center gap-2 rounded-sm border px-3 py-2 text-xs transition-colors hover:bg-muted/60 ${className ?? ""}`}
+      className={`flex items-center gap-2 rounded-sm border bg-card px-3 py-2.5 text-xs shadow-sm transition-colors hover:bg-muted/60 hover:shadow-md ${className ?? ""}`}
       onClick={onClick}
       type="button"
     >
-      {icon}
+      <span className="text-primary">{icon}</span>
       {label}
     </button>
   );
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function shouldShowLoadingIndicator(
+  messages: Array<{ role: string; parts?: Array<{ type: string }> }>,
+  status: string
+) {
+  if (status === "submitted") {
+    return true;
+  }
+  if (status !== "streaming") {
+    return false;
+  }
+  const lastMessage = messages.at(-1);
+  return (
+    lastMessage?.role === "assistant" &&
+    !lastMessage.parts?.some(
+      (part) => part.type === "text" || part.type.startsWith("tool-")
+    )
+  );
+}
+
+function formatPatientName(p: {
+  firstName: string;
+  middleName: string | null;
+  lastName1: string;
+  lastName2: string | null;
+}) {
+  return `${p.firstName}${p.middleName ? ` ${p.middleName}` : ""} ${p.lastName1}${p.lastName2 ? ` ${p.lastName2}` : ""}`;
 }

@@ -112,6 +112,16 @@ _Ninguno. Todos los routers planificados están implementados._
 
 ### Cambios recientes (2026-05-21)
 
+- **Overhaul del chat médico** (`/chat`): Rediseño completo de la interfaz del asistente clínico.
+  - **Tool call cards colapsables**: Reemplazado el JSON crudo de tool calls por cards compactas estilo Claude/ChatGPT. Cada card muestra icono, nombre legible en español y estado animado. Al hacer clic se expande para ver los resultados. Cubre las 30+ herramientas del agente con metadatos en `TOOL_META`.
+  - **Categorías de color**: Las cards usan color semántico según categoría: `read` (muted), `search` (sky), `write` (teal), `safety` (amber). Errores en rojo destructivo.
+  - **GenericOutput inteligente**: Arrays se renderizan como listas compactas con label/sublabel extraídos automáticamente. Objetos como pares clave-valor con labels en español. Sin JSON crudo visible por defecto.
+  - **Layout mejorado**: Área de mensajes centrada con `max-w-3xl`, avatares con `rounded-sm`, header con badge de paciente, footer con disclaimer, Enter para enviar, banner de error con botón de dismiss.
+  - **EmptyState mejorado**: Icono primario grande, descripción contextual según si hay paciente seleccionado, quick actions con icono de color primario y estilo card.
+  - **Validación**: `bun run check-types` en verde, `bun x ultracite check` en verde.
+
+### Cambios recientes (2026-05-21)
+
 - **Fix redirección errónea a `/login` en 25 rutas autenticadas**: Detectado y corregido un bug donde rutas como `/audit-events`, `/appointments`, `/medication-orders`, `/clinical-documents`, `/incapacity-certificates`, `/service-requests`, `/consents`, `/patients`, `/patients/$patientId`, `/admin/users`, `/attachments`, `/catalogs`, `/catalogs/$tableName`, `/consents/$consentId`, `/facilities/*`, `/ihce-bundles`, `/interconsultations`, `/retention-records`, `/rips-exports`, `/index` y otras redirigían a `/login` aún con sesión válida. Causa raíz: cada child route tenía un `beforeLoad: async () => { const session = await authClient.getSession(); if (!session.data) throw new Error("UNAUTHORIZED"); ... }` redundante (el padre `_authenticated.tsx` ya hace esto correctamente con `throw redirect({ to: "/login" })`) y un `errorComponent: () => { window.location.href = "/login"; return null; }` que disparaba un hard redirect ante CUALQUIER error en la ruta (no solo errores de auth: incluía errores transitorios de query, errores de validación de search params, errores de render, etc.). Se eliminó el bloque redundante de las 25 rutas afectadas. La protección de autenticación queda exclusivamente en el padre `_authenticated.tsx` que usa el `redirect()` correcto de TanStack Router. Ultracite limpió imports `authClient` no usados como efecto secundario. `bun run check-types` en verde, `bun x ultracite check` en verde.
 
 ### Cambios recientes (2026-05-21)
