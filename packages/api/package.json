@@ -17,6 +17,7 @@
     "@ai-sdk/fireworks": "^2.0.46",
     "@ai-sdk/gateway": "^3.0.104",
     "@ai-sdk/google": "^3.0.64",
+    "@aws-sdk/client-s3": "^3.750.0",
     "@orpc/client": "catalog:",
     "@orpc/openapi": "catalog:",
     "@orpc/server": "catalog:",

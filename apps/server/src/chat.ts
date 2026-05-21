@@ -6,6 +6,7 @@ import {
   encounter,
   medicationOrder,
   patient,
+  patientDocument,
 } from "@wellfit-emr/db/schema/clinical";
 import { createAgentUIStreamResponse, type UIMessage } from "ai";
 import { and, desc, eq } from "drizzle-orm";
@@ -93,7 +94,7 @@ async function buildPatientContext(patientId: string) {
     return "No se encontró el paciente seleccionado.";
   }
 
-  const [allergies, medications, encounters] = await Promise.all([
+  const [allergies, medications, encounters, documents] = await Promise.all([
     db
       .select()
       .from(allergyIntolerance)
@@ -116,6 +117,19 @@ async function buildPatientContext(patientId: string) {
       .from(encounter)
       .where(eq(encounter.patientId, patientId))
       .orderBy(desc(encounter.startedAt))
+      .limit(10),
+    db
+      .select({
+        id: patientDocument.id,
+        originalFileName: patientDocument.originalFileName,
+        mimeType: patientDocument.mimeType,
+        status: patientDocument.status,
+        createdAt: patientDocument.createdAt,
+        hasSummary: patientDocument.summaryText,
+      })
+      .from(patientDocument)
+      .where(eq(patientDocument.patientId, patientId))
+      .orderBy(desc(patientDocument.createdAt))
       .limit(10),
   ]);
 
@@ -149,6 +163,16 @@ async function buildPatientContext(patientId: string) {
           .join("\n")
       : "- Sin atenciones registradas.";
 
+  const documentText =
+    documents.length > 0
+      ? documents
+          .map(
+            (d) =>
+              `- ${new Date(d.createdAt).toLocaleDateString("es-CO")}: ${d.originalFileName} (${d.mimeType}) — estado: ${d.status}${d.hasSummary ? "; resumen disponible" : ""}; id: ${d.id}`
+          )
+          .join("\n")
+      : "- Sin documentos adjuntos registrados.";
+
   return `Paciente:
 - ID: ${found.id}
 - Nombre: ${fullName}
@@ -164,5 +188,8 @@ Medicamentos:
 ${medicationText}
 
 Atenciones recientes:
-${encounterText}`;
+${encounterText}
+
+Documentos adjuntos recientes (máx. 10):
+${documentText}`;
 }

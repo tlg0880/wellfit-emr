@@ -995,12 +995,40 @@ export const patientCopyRequest = sqliteTable(
   ]
 );
 
+export const patientDocument = sqliteTable(
+  "patient_document",
+  {
+    id: text("id").primaryKey(),
+    patientId: text("patient_id")
+      .notNull()
+      .references(() => patient.id, { onDelete: "cascade" }),
+    originalFileName: text("original_file_name").notNull(),
+    mimeType: text("mime_type").notNull(),
+    sizeBytes: integer("size_bytes").notNull(),
+    storageKey: text("storage_key").notNull(),
+    uploadedByUserId: text("uploaded_by_user_id").references(() => user.id),
+    status: text("status").notNull().default("pending"),
+    summaryText: text("summary_text"),
+    summaryJson: jsonText<JsonRecord>("summary_json"),
+    extractedText: text("extracted_text"),
+    errorMessage: text("error_message"),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (table) => [
+    index("patient_document_patient_idx").on(table.patientId),
+    index("patient_document_status_idx").on(table.status),
+    index("patient_document_uploaded_by_idx").on(table.uploadedByUserId),
+  ]
+);
+
 export const patientRelations = relations(patient, ({ many }) => ({
   identifiers: many(patientIdentifier),
   contacts: many(patientContact),
   coverages: many(coverage),
   encounters: many(encounter),
   clinicalDocuments: many(clinicalDocument),
+  patientDocuments: many(patientDocument),
 }));
 
 export const practitionerRelations = relations(practitioner, ({ many }) => ({
@@ -1095,3 +1123,17 @@ export const appointmentRelations = relations(appointment, ({ one }) => ({
     references: [encounter.id],
   }),
 }));
+
+export const patientDocumentRelations = relations(
+  patientDocument,
+  ({ one }) => ({
+    patient: one(patient, {
+      fields: [patientDocument.patientId],
+      references: [patient.id],
+    }),
+    uploadedBy: one(user, {
+      fields: [patientDocument.uploadedByUserId],
+      references: [user.id],
+    }),
+  })
+);

@@ -18,6 +18,7 @@ import {
   medicationOrder,
   observation,
   patient,
+  patientDocument,
   practitioner,
   procedureRecord,
   serviceRequest,
@@ -350,6 +351,37 @@ export function createMedicalTools(db: Db, options: MedicalToolOptions = {}) {
       ok: false as const,
       error:
         "No se puede verificar el alcance del anexo para el paciente seleccionado.",
+    };
+  };
+
+  const assertPatientDocumentScope = async (documentId: string) => {
+    if (!options.selectedPatientId) {
+      return {
+        ok: false as const,
+        error: "Selecciona un paciente antes de consultar documentos adjuntos.",
+      };
+    }
+
+    const [doc] = await db
+      .select({ patientId: patientDocument.patientId })
+      .from(patientDocument)
+      .where(eq(patientDocument.id, documentId))
+      .limit(1);
+
+    if (!doc) {
+      return {
+        ok: false as const,
+        error: "Documento no encontrado.",
+      };
+    }
+
+    if (doc.patientId === options.selectedPatientId) {
+      return { ok: true as const };
+    }
+
+    return {
+      ok: false as const,
+      error: "El documento solicitado no pertenece al paciente seleccionado.",
     };
   };
 
@@ -2125,6 +2157,133 @@ export function createMedicalTools(db: Db, options: MedicalToolOptions = {}) {
           ...item,
           capturedAt: formatDate(item.capturedAt),
         }));
+      },
+    }),
+
+    list_patient_documents: tool({
+      description:
+        "Listar documentos adjuntos de un paciente. Retorna metadatos compactos (sin contenido). Útil para saber qué documentos están disponibles y si tienen resumen generado.",
+      inputSchema: z.object({
+        patientId: z.string().describe("ID del paciente"),
+        limit: z.number().int().min(1).max(25).default(10),
+      }),
+      execute: async ({ patientId, limit }) => {
+        if (!options.selectedPatientId) {
+          return {
+            error:
+              "Selecciona un paciente antes de consultar documentos adjuntos.",
+          };
+        }
+
+        const scopeCheck = assertSelectedPatient(patientId);
+        if (!scopeCheck.ok) {
+          return { error: scopeCheck.error };
+        }
+
+        const docs = await db
+          .select({
+            createdAt: patientDocument.createdAt,
+            id: patientDocument.id,
+            mimeType: patientDocument.mimeType,
+            originalFileName: patientDocument.originalFileName,
+            sizeBytes: patientDocument.sizeBytes,
+            status: patientDocument.status,
+            summaryText: patientDocument.summaryText,
+          })
+          .from(patientDocument)
+          .where(eq(patientDocument.patientId, patientId))
+          .orderBy(desc(patientDocument.createdAt))
+          .limit(limit);
+
+        return docs.map((d) => ({
+          createdAt: formatDate(d.createdAt),
+          hasSummary: d.summaryText != null,
+          id: d.id,
+          mimeType: d.mimeType,
+          originalFileName: d.originalFileName,
+          sizeBytes: d.sizeBytes,
+          status: d.status,
+        }));
+      },
+    }),
+
+    get_patient_document_summary: tool({
+      description:
+        "Obtener el resumen de IA de un documento adjunto del paciente. El resumen ayuda a la navegación y comprensión del documento; no reemplaza el criterio médico ni la revisión directa del archivo.",
+      inputSchema: z.object({
+        documentId: z.string().describe("ID del documento adjunto"),
+      }),
+      execute: async ({ documentId }) => {
+        const scopeCheck = await assertPatientDocumentScope(documentId);
+        if (!scopeCheck.ok) {
+          return { error: scopeCheck.error };
+        }
+
+        const [doc] = await db
+          .select({
+            errorMessage: patientDocument.errorMessage,
+            originalFileName: patientDocument.originalFileName,
+            status: patientDocument.status,
+            summaryJson: patientDocument.summaryJson,
+            summaryText: patientDocument.summaryText,
+          })
+          .from(patientDocument)
+          .where(eq(patientDocument.id, documentId))
+          .limit(1);
+
+        if (!doc) {
+          return { error: "Documento no encontrado." };
+        }
+
+        return {
+          errorMessage: doc.errorMessage,
+          originalFileName: doc.originalFileName,
+          status: doc.status,
+          summaryJson: doc.summaryJson,
+          summaryText: doc.summaryText,
+        };
+      },
+    }),
+
+    get_patient_document_text: tool({
+      description:
+        "Obtener el texto extraído de un documento adjunto del paciente (solo cuando esté disponible). El contenido está truncado a 4.000 caracteres. No reemplaza la revisión directa del archivo.",
+      inputSchema: z.object({
+        documentId: z.string().describe("ID del documento adjunto"),
+      }),
+      execute: async ({ documentId }) => {
+        const scopeCheck = await assertPatientDocumentScope(documentId);
+        if (!scopeCheck.ok) {
+          return { error: scopeCheck.error };
+        }
+
+        const [doc] = await db
+          .select({
+            extractedText: patientDocument.extractedText,
+            mimeType: patientDocument.mimeType,
+            originalFileName: patientDocument.originalFileName,
+            status: patientDocument.status,
+          })
+          .from(patientDocument)
+          .where(eq(patientDocument.id, documentId))
+          .limit(1);
+
+        if (!doc) {
+          return { error: "Documento no encontrado." };
+        }
+
+        const MAX_TEXT_LENGTH = 4000;
+        const text =
+          doc.extractedText && doc.extractedText.length > MAX_TEXT_LENGTH
+            ? `${doc.extractedText.slice(0, MAX_TEXT_LENGTH)}\n\n[Texto truncado por límite de contexto.]`
+            : doc.extractedText;
+
+        return {
+          mimeType: doc.mimeType,
+          originalFileName: doc.originalFileName,
+          status: doc.status,
+          text,
+        };
       },
     }),
 

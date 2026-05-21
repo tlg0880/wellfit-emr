@@ -1,6 +1,7 @@
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { env } from "@wellfit-emr/env/web";
 import { Button } from "@wellfit-emr/ui/components/button";
 import {
   Card,
@@ -20,15 +21,21 @@ import {
 } from "@wellfit-emr/ui/components/select";
 import { Skeleton } from "@wellfit-emr/ui/components/skeleton";
 import {
+  AlertCircle,
   Calendar,
+  CheckCircle2,
   ClipboardPlus,
+  Clock,
+  Download,
   FileCheck,
   FileText,
+  FileUp,
   FlaskConical,
   Pencil,
   Pill,
   Plus,
   RefreshCw,
+  RotateCcw,
   ShieldCheck,
   Trash2,
   User,
@@ -37,7 +44,6 @@ import {
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import z from "zod";
-
 import { DataTable } from "@/components/data-table";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
@@ -1664,6 +1670,330 @@ function EncountersSection({ patientId }: { patientId: string }) {
   );
 }
 
+const PATIENT_DOCUMENT_ALLOWED_MIME_TYPES = new Set([
+  "application/pdf",
+  "image/png",
+  "image/jpeg",
+  "image/jpg",
+  "text/plain",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+]);
+
+const PATIENT_DOCUMENT_MAX_SIZE_BYTES = 20 * 1024 * 1024;
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) {
+    return `${bytes} B`;
+  }
+  if (bytes < 1024 * 1024) {
+    return `${(bytes / 1024).toFixed(1)} KB`;
+  }
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function PatientDocumentsSection({ patientId }: { patientId: string }) {
+  const [file, setFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+
+  const { data, isLoading } = useQuery(
+    orpc.patientDocuments.list.queryOptions({
+      input: { patientId, limit: 25, offset: 0, sortDirection: "desc" },
+    })
+  );
+
+  const deleteMutation = useMutation({
+    ...orpc.patientDocuments.delete.mutationOptions(),
+    onSuccess: () => {
+      toast.success("Documento eliminado");
+      queryClient.invalidateQueries({
+        queryKey: orpc.patientDocuments.list.key({ type: "query" }),
+      });
+      setConfirmingId(null);
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Error al eliminar documento");
+    },
+  });
+
+  const generateSummaryMutation = useMutation({
+    ...orpc.patientDocuments.generateSummary.mutationOptions(),
+    onSuccess: () => {
+      toast.success("Resumen en proceso");
+      queryClient.invalidateQueries({
+        queryKey: orpc.patientDocuments.list.key({ type: "query" }),
+      });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Error al iniciar resumen");
+    },
+  });
+
+  async function handleUpload(e: React.FormEvent) {
+    e.preventDefault();
+    if (!file) {
+      return;
+    }
+    if (!PATIENT_DOCUMENT_ALLOWED_MIME_TYPES.has(file.type)) {
+      toast.error("Tipo de archivo no permitido");
+      return;
+    }
+    if (file.size > PATIENT_DOCUMENT_MAX_SIZE_BYTES) {
+      toast.error("El archivo supera el máximo de 20 MB");
+      return;
+    }
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("patientId", patientId);
+      formData.append("file", file);
+      const res = await fetch(
+        `${env.VITE_SERVER_URL}/api/patient-documents/upload`,
+        { method: "POST", body: formData, credentials: "include" }
+      );
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || "Error al subir documento");
+      }
+      toast.success("Documento subido correctamente");
+      queryClient.invalidateQueries({
+        queryKey: orpc.patientDocuments.list.key({ type: "query" }),
+      });
+      setFile(null);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Error al subir documento"
+      );
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  const statusBadge = (status: string) => {
+    if (status === "completed") {
+      return (
+        <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 font-medium text-[10px] text-emerald-700">
+          <CheckCircle2 size={10} />
+          Completado
+        </span>
+      );
+    }
+    if (status === "processing") {
+      return (
+        <span className="inline-flex items-center gap-1 rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 font-medium text-[10px] text-sky-700">
+          <Clock size={10} />
+          Procesando
+        </span>
+      );
+    }
+    if (status === "failed") {
+      return (
+        <span className="inline-flex items-center gap-1 rounded-full border border-red-200 bg-red-50 px-2 py-0.5 font-medium text-[10px] text-red-700">
+          <AlertCircle size={10} />
+          Fallido
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 font-medium text-[10px] text-amber-700">
+        <Clock size={10} />
+        Pendiente
+      </span>
+    );
+  };
+
+  const columns = [
+    {
+      header: "Nombre",
+      accessor: (row: { originalFileName: string; id: string }) => (
+        <span className="font-medium">{row.originalFileName}</span>
+      ),
+    },
+    {
+      header: "Tipo",
+      accessor: (row: { mimeType: string }) => row.mimeType,
+    },
+    {
+      header: "Tamaño",
+      accessor: (row: { sizeBytes: number }) => formatFileSize(row.sizeBytes),
+    },
+    {
+      header: "Fecha",
+      accessor: (row: { createdAt: Date }) =>
+        new Date(row.createdAt).toLocaleDateString("es-CO", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        }),
+    },
+    {
+      header: "Estado",
+      accessor: (row: { status: string; summaryText: string | null }) => (
+        <div className="flex items-center gap-1.5">
+          {statusBadge(row.status)}
+          {row.summaryText && (
+            <span className="text-[10px] text-muted-foreground">Resumen</span>
+          )}
+        </div>
+      ),
+    },
+    {
+      header: "",
+      accessor: (row: {
+        id: string;
+        status: string;
+        summaryText: string | null;
+      }) => (
+        <div className="flex items-center gap-1">
+          <a
+            aria-label="Descargar documento"
+            className="inline-flex h-6 w-6 items-center justify-center rounded-sm text-muted-foreground hover:bg-accent hover:text-foreground"
+            href={`${env.VITE_SERVER_URL}/api/patient-documents/${row.id}/download`}
+            rel="noopener noreferrer"
+          >
+            <Download size={12} />
+          </a>
+          {(row.status === "failed" ||
+            (!row.summaryText && row.status !== "processing")) && (
+            <Button
+              aria-label="Generar resumen"
+              disabled={generateSummaryMutation.isPending}
+              onClick={() => generateSummaryMutation.mutate({ id: row.id })}
+              size="icon-xs"
+              variant="ghost"
+            >
+              <RotateCcw size={12} />
+            </Button>
+          )}
+          {confirmingId === row.id ? (
+            <>
+              <Button
+                aria-label="Confirmar eliminación"
+                disabled={deleteMutation.isPending}
+                onClick={() => deleteMutation.mutate({ id: row.id })}
+                size="icon-xs"
+                variant="ghost"
+              >
+                <Trash2 size={12} />
+              </Button>
+              <Button
+                aria-label="Cancelar"
+                onClick={() => setConfirmingId(null)}
+                size="icon-xs"
+                variant="ghost"
+              >
+                <X size={12} />
+              </Button>
+            </>
+          ) : (
+            <Button
+              aria-label="Eliminar documento"
+              onClick={() => setConfirmingId(row.id)}
+              size="icon-xs"
+              variant="ghost"
+            >
+              <Trash2 size={12} />
+            </Button>
+          )}
+        </div>
+      ),
+      className: "w-24",
+    },
+  ];
+
+  return (
+    <Card className="mx-6" size="sm">
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle>Documentos adjuntos</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form
+          className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end"
+          onSubmit={handleUpload}
+        >
+          <div className="flex-1 space-y-1">
+            <Label>Adjuntar archivo</Label>
+            <Input
+              accept="application/pdf,image/png,image/jpeg,image/jpg,text/plain,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              type="file"
+            />
+            <p className="text-[10px] text-muted-foreground">
+              Máximo 20 MB. Formatos: PDF, PNG, JPG, TXT, Word, Excel.
+            </p>
+          </div>
+          <Button
+            disabled={!file || uploading}
+            size="sm"
+            type="submit"
+            variant="outline"
+          >
+            <FileUp size={14} />
+            {uploading ? "Subiendo..." : "Subir"}
+          </Button>
+        </form>
+
+        <DataTable
+          columns={columns}
+          data={data?.items ?? []}
+          emptyDescription="Este paciente no tiene documentos adjuntos."
+          emptyTitle="Sin documentos adjuntos"
+          isLoading={isLoading}
+          keyExtractor={(row) => row.id}
+        />
+
+        {data && data.items.length > 0 && (
+          <div className="mt-4 space-y-3">
+            {data.items
+              .filter(
+                (d) =>
+                  typeof d.summaryText === "string" && d.summaryText.length > 0
+              )
+              .slice(0, 3)
+              .map((doc) => (
+                <div
+                  className="rounded-md border bg-muted/20 p-3"
+                  key={`summary-${doc.id}`}
+                >
+                  <div className="flex items-center justify-between">
+                    <p className="font-medium text-xs">
+                      {doc.originalFileName}
+                    </p>
+                    <span className="text-[10px] text-muted-foreground">
+                      Resumen IA
+                    </span>
+                  </div>
+                  <p className="mt-1 text-muted-foreground text-xs leading-relaxed">
+                    {doc.summaryText}
+                  </p>
+                  {doc.summaryJson &&
+                    typeof doc.summaryJson === "object" &&
+                    Array.isArray(
+                      doc.summaryJson.puntosClinicamenteRelevantes
+                    ) &&
+                    doc.summaryJson.puntosClinicamenteRelevantes.length > 0 && (
+                      <ul className="mt-2 list-disc pl-4 text-muted-foreground text-xs">
+                        {doc.summaryJson.puntosClinicamenteRelevantes.map(
+                          (p: unknown, i: number) => (
+                            <li key={i}>
+                              {typeof p === "string" ? p : String(p)}
+                            </li>
+                          )
+                        )}
+                      </ul>
+                    )}
+                </div>
+              ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 function PatientDetailPage() {
   const { patientId } = Route.useParams();
   const [editing, setEditing] = useState(false);
@@ -1795,6 +2125,7 @@ function PatientDetailPage() {
           <IdentifiersSection patientId={patientId} />
           <PatientTimeline patientId={patientId} />
           <EncountersSection patientId={patientId} />
+          <PatientDocumentsSection patientId={patientId} />
         </>
       ) : (
         <EmptyState

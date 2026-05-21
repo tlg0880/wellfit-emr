@@ -18,6 +18,7 @@ import { interconsultationsRouter } from "./interconsultations";
 import { medicationOrdersRouter } from "./medication-orders";
 import { patientContactsRouter } from "./patient-contacts";
 import { patientCopyRequestsRouter } from "./patient-copy-requests";
+import { patientDocumentsRouter } from "./patient-documents";
 import { patientIdentifiersRouter } from "./patient-identifiers";
 import { patientsRouter } from "./patients";
 import { payersRouter } from "./payers";
@@ -53,6 +54,7 @@ export interface AppRouter extends Record<string, AnyRouter> {
   medicationOrders: typeof medicationOrdersRouter;
   patientContacts: typeof patientContactsRouter;
   patientCopyRequests: typeof patientCopyRequestsRouter;
+  patientDocuments: typeof patientDocumentsRouter;
   patientIdentifiers: typeof patientIdentifiersRouter;
   patients: typeof patientsRouter;
   payers: typeof payersRouter;
@@ -83,6 +85,7 @@ export const appRouter: AppRouter = {
   medicationOrders: medicationOrdersRouter,
   patientContacts: patientContactsRouter,
   patientCopyRequests: patientCopyRequestsRouter,
+  patientDocuments: patientDocumentsRouter,
   patientIdentifiers: patientIdentifiersRouter,
   patients: patientsRouter,
   payers: payersRouter,
