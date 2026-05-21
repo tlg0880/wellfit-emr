@@ -1830,14 +1830,142 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+const MIME_LABELS: Record<string, string> = {
+  "application/pdf": "PDF",
+  "image/png": "PNG",
+  "image/jpeg": "JPG",
+  "image/jpg": "JPG",
+  "text/plain": "TXT",
+  "application/msword": "Word",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+    "Word",
+  "application/vnd.ms-excel": "Excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "Excel",
+};
+
+function mimeLabel(mime: string) {
+  return MIME_LABELS[mime.split(";")[0].trim()] ?? mime.split("/")[1] ?? mime;
+}
+
+interface PatientDoc {
+  createdAt: Date;
+  id: string;
+  mimeType: string;
+  originalFileName: string;
+  sizeBytes: number;
+  status: string;
+  summaryJson: Record<string, unknown> | null;
+  summaryText: string | null;
+}
+
+function DocStatusBadge({ status }: { status: string }) {
+  if (status === "completed") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 font-medium text-[10px] text-emerald-700">
+        <CheckCircle2 size={10} />
+        Completado
+      </span>
+    );
+  }
+  if (status === "processing") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 font-medium text-[10px] text-sky-700">
+        <RefreshCw className="animate-spin" size={10} />
+        Procesando IA…
+      </span>
+    );
+  }
+  if (status === "pending") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 font-medium text-[10px] text-amber-700">
+        <Clock size={10} />
+        En cola
+      </span>
+    );
+  }
+  if (status === "failed") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full border border-red-200 bg-red-50 px-2 py-0.5 font-medium text-[10px] text-red-700">
+        <AlertCircle size={10} />
+        Fallido
+      </span>
+    );
+  }
+  return null;
+}
+
+function DocSummaryPanel({ doc }: { doc: PatientDoc }) {
+  if (doc.status === "processing" || doc.status === "pending") {
+    return (
+      <div className="flex items-center gap-2 rounded-md border border-sky-100 bg-sky-50/60 px-3 py-2.5 text-sky-700 text-xs">
+        <RefreshCw className="shrink-0 animate-spin" size={13} />
+        <span>
+          La IA está analizando este documento. El resumen aparecerá aquí
+          automáticamente cuando esté listo.
+        </span>
+      </div>
+    );
+  }
+  if (doc.status === "failed") {
+    return (
+      <p className="text-muted-foreground text-xs">
+        No se pudo generar el resumen para este documento.
+      </p>
+    );
+  }
+  if (!doc.summaryText) {
+    return (
+      <p className="text-muted-foreground text-xs">
+        Sin resumen disponible. Usa el botón ↺ para generarlo.
+      </p>
+    );
+  }
+  const points =
+    doc.summaryJson &&
+    typeof doc.summaryJson === "object" &&
+    Array.isArray(doc.summaryJson.puntosClinicamenteRelevantes) &&
+    (doc.summaryJson.puntosClinicamenteRelevantes as unknown[]).length > 0
+      ? (doc.summaryJson.puntosClinicamenteRelevantes as unknown[])
+      : null;
+
+  return (
+    <div className="space-y-2">
+      <p className="text-muted-foreground text-xs leading-relaxed">
+        {doc.summaryText}
+      </p>
+      {points && (
+        <div>
+          <p className="mb-1 font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
+            Puntos clínicamente relevantes
+          </p>
+          <ul className="list-disc space-y-0.5 pl-4 text-muted-foreground text-xs">
+            {points.map((p, i) => (
+              <li key={i}>{typeof p === "string" ? p : String(p)}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function PatientDocumentsSection({ patientId }: { patientId: string }) {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery(
     orpc.patientDocuments.list.queryOptions({
       input: { patientId, limit: 25, offset: 0, sortDirection: "desc" },
+      refetchInterval: (query) => {
+        const items = (query.state.data as { items?: PatientDoc[] } | undefined)
+          ?.items;
+        const hasInProgress = items?.some(
+          (d) => d.status === "pending" || d.status === "processing"
+        );
+        return hasInProgress ? 3000 : false;
+      },
     })
   );
 
@@ -1908,221 +2036,180 @@ function PatientDocumentsSection({ patientId }: { patientId: string }) {
     }
   }
 
-  const statusBadge = (status: string) => {
-    if (status === "completed") {
-      return (
-        <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 font-medium text-[10px] text-emerald-700">
-          <CheckCircle2 size={10} />
-          Completado
-        </span>
-      );
-    }
-    if (status === "processing") {
-      return (
-        <span className="inline-flex items-center gap-1 rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 font-medium text-[10px] text-sky-700">
-          <Clock size={10} />
-          Procesando
-        </span>
-      );
-    }
-    if (status === "failed") {
-      return (
-        <span className="inline-flex items-center gap-1 rounded-full border border-red-200 bg-red-50 px-2 py-0.5 font-medium text-[10px] text-red-700">
-          <AlertCircle size={10} />
-          Fallido
-        </span>
-      );
-    }
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 font-medium text-[10px] text-amber-700">
-        <Clock size={10} />
-        Pendiente
-      </span>
-    );
-  };
-
-  const columns = [
-    {
-      header: "Nombre",
-      accessor: (row: { originalFileName: string; id: string }) => (
-        <span className="font-medium">{row.originalFileName}</span>
-      ),
-    },
-    {
-      header: "Tipo",
-      accessor: (row: { mimeType: string }) => row.mimeType,
-    },
-    {
-      header: "Tamaño",
-      accessor: (row: { sizeBytes: number }) => formatFileSize(row.sizeBytes),
-    },
-    {
-      header: "Fecha",
-      accessor: (row: { createdAt: Date }) =>
-        new Date(row.createdAt).toLocaleDateString("es-CO", {
-          day: "2-digit",
-          month: "short",
-          year: "numeric",
-        }),
-    },
-    {
-      header: "Estado",
-      accessor: (row: { status: string; summaryText: string | null }) => (
-        <div className="flex items-center gap-1.5">
-          {statusBadge(row.status)}
-          {row.summaryText && (
-            <span className="text-[10px] text-muted-foreground">Resumen</span>
-          )}
-        </div>
-      ),
-    },
-    {
-      header: "",
-      accessor: (row: {
-        id: string;
-        status: string;
-        summaryText: string | null;
-      }) => (
-        <div className="flex items-center gap-1">
-          <a
-            aria-label="Descargar documento"
-            className="inline-flex h-6 w-6 items-center justify-center rounded-sm text-muted-foreground hover:bg-accent hover:text-foreground"
-            href={`${env.VITE_SERVER_URL}/api/patient-documents/${row.id}/download`}
-            rel="noopener noreferrer"
-          >
-            <Download size={12} />
-          </a>
-          {(row.status === "failed" ||
-            (!row.summaryText && row.status !== "processing")) && (
-            <Button
-              aria-label="Generar resumen"
-              disabled={generateSummaryMutation.isPending}
-              onClick={() => generateSummaryMutation.mutate({ id: row.id })}
-              size="icon-xs"
-              variant="ghost"
-            >
-              <RotateCcw size={12} />
-            </Button>
-          )}
-          {confirmingId === row.id ? (
-            <>
-              <Button
-                aria-label="Confirmar eliminación"
-                disabled={deleteMutation.isPending}
-                onClick={() => deleteMutation.mutate({ id: row.id })}
-                size="icon-xs"
-                variant="ghost"
-              >
-                <Trash2 size={12} />
-              </Button>
-              <Button
-                aria-label="Cancelar"
-                onClick={() => setConfirmingId(null)}
-                size="icon-xs"
-                variant="ghost"
-              >
-                <X size={12} />
-              </Button>
-            </>
-          ) : (
-            <Button
-              aria-label="Eliminar documento"
-              onClick={() => setConfirmingId(row.id)}
-              size="icon-xs"
-              variant="ghost"
-            >
-              <Trash2 size={12} />
-            </Button>
-          )}
-        </div>
-      ),
-      className: "w-24",
-    },
-  ];
+  const items = data?.items ?? [];
 
   return (
     <Card size="sm">
-      <CardHeader className="flex flex-row items-center justify-between">
+      <CardHeader>
         <CardTitle>Documentos adjuntos</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-4">
+        {/* Upload form */}
         <form
-          className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end"
+          className="flex flex-col gap-2 rounded-md border bg-muted/30 p-3 sm:flex-row sm:items-center"
           onSubmit={handleUpload}
         >
           <div className="flex-1 space-y-1">
-            <Label>Adjuntar archivo</Label>
+            <Label className="text-xs">Adjuntar archivo</Label>
             <Input
               accept="application/pdf,image/png,image/jpeg,image/jpg,text/plain,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
               onChange={(e) => setFile(e.target.files?.[0] ?? null)}
               type="file"
             />
             <p className="text-[10px] text-muted-foreground">
-              Máximo 20 MB. Formatos: PDF, PNG, JPG, TXT, Word, Excel.
+              Máximo 20 MB · PDF, PNG, JPG, TXT, Word, Excel
             </p>
           </div>
           <Button
+            className="shrink-0"
             disabled={!file || uploading}
             size="sm"
             type="submit"
             variant="outline"
           >
             <FileUp size={14} />
-            {uploading ? "Subiendo..." : "Subir"}
+            {uploading ? "Subiendo…" : "Subir"}
           </Button>
         </form>
 
-        <DataTable
-          columns={columns}
-          data={data?.items ?? []}
-          emptyDescription="Este paciente no tiene documentos adjuntos."
-          emptyTitle="Sin documentos adjuntos"
-          isLoading={isLoading}
-          keyExtractor={(row) => row.id}
-        />
+        {/* Document list */}
+        {isLoading ? (
+          <div className="space-y-2">
+            {[1, 2, 3].map((i) => (
+              <Skeleton className="h-12 w-full" key={i} />
+            ))}
+          </div>
+        ) : items.length === 0 ? (
+          <p className="py-6 text-center text-muted-foreground text-sm">
+            Este paciente no tiene documentos adjuntos.
+          </p>
+        ) : (
+          <div className="divide-y rounded-md border">
+            {items.map((doc) => {
+              const isExpanded = expandedId === doc.id;
+              const canRetry =
+                doc.status === "failed" ||
+                (!doc.summaryText &&
+                  doc.status !== "processing" &&
+                  doc.status !== "pending");
+              return (
+                <div key={doc.id}>
+                  {/* Row */}
+                  <div className="flex items-center gap-3 px-3 py-2.5">
+                    {/* File icon */}
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-sm bg-muted text-muted-foreground">
+                      <FileText size={14} />
+                    </div>
 
-        {data && data.items.length > 0 && (
-          <div className="mt-4 space-y-3">
-            {data.items
-              .filter(
-                (d) =>
-                  typeof d.summaryText === "string" && d.summaryText.length > 0
-              )
-              .slice(0, 3)
-              .map((doc) => (
-                <div
-                  className="rounded-md border bg-muted/20 p-3"
-                  key={`summary-${doc.id}`}
-                >
-                  <div className="flex items-center justify-between">
-                    <p className="font-medium text-xs">
-                      {doc.originalFileName}
-                    </p>
-                    <span className="text-[10px] text-muted-foreground">
-                      Resumen IA
-                    </span>
+                    {/* Name + meta */}
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-medium text-sm">
+                        {doc.originalFileName}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {mimeLabel(doc.mimeType)} ·{" "}
+                        {formatFileSize(doc.sizeBytes)} ·{" "}
+                        {new Date(doc.createdAt).toLocaleDateString("es-CO", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                        })}
+                      </p>
+                    </div>
+
+                    {/* Status badge */}
+                    <DocStatusBadge status={doc.status} />
+
+                    {/* Actions */}
+                    <div className="flex shrink-0 items-center gap-0.5">
+                      {/* Expand/collapse summary */}
+                      <Button
+                        aria-label={
+                          isExpanded ? "Ocultar resumen" : "Ver resumen"
+                        }
+                        onClick={() =>
+                          setExpandedId(isExpanded ? null : doc.id)
+                        }
+                        size="icon-xs"
+                        variant="ghost"
+                      >
+                        <ChevronDown
+                          className={`transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                          size={12}
+                        />
+                      </Button>
+
+                      <a
+                        aria-label="Descargar documento"
+                        className="inline-flex h-6 w-6 items-center justify-center rounded-sm text-muted-foreground hover:bg-accent hover:text-foreground"
+                        href={`${env.VITE_SERVER_URL}/api/patient-documents/${doc.id}/download`}
+                        rel="noopener noreferrer"
+                      >
+                        <Download size={12} />
+                      </a>
+
+                      {canRetry && (
+                        <Button
+                          aria-label="Generar resumen IA"
+                          disabled={generateSummaryMutation.isPending}
+                          onClick={() =>
+                            generateSummaryMutation.mutate({ id: doc.id })
+                          }
+                          size="icon-xs"
+                          variant="ghost"
+                        >
+                          <RotateCcw size={12} />
+                        </Button>
+                      )}
+
+                      {confirmingId === doc.id ? (
+                        <>
+                          <Button
+                            aria-label="Confirmar eliminación"
+                            className="text-red-600 hover:text-red-700"
+                            disabled={deleteMutation.isPending}
+                            onClick={() =>
+                              deleteMutation.mutate({ id: doc.id })
+                            }
+                            size="icon-xs"
+                            variant="ghost"
+                          >
+                            <Trash2 size={12} />
+                          </Button>
+                          <Button
+                            aria-label="Cancelar"
+                            onClick={() => setConfirmingId(null)}
+                            size="icon-xs"
+                            variant="ghost"
+                          >
+                            <X size={12} />
+                          </Button>
+                        </>
+                      ) : (
+                        <Button
+                          aria-label="Eliminar documento"
+                          onClick={() => setConfirmingId(doc.id)}
+                          size="icon-xs"
+                          variant="ghost"
+                        >
+                          <Trash2 size={12} />
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                  <p className="mt-1 text-muted-foreground text-xs leading-relaxed">
-                    {doc.summaryText}
-                  </p>
-                  {doc.summaryJson &&
-                    typeof doc.summaryJson === "object" &&
-                    Array.isArray(
-                      doc.summaryJson.puntosClinicamenteRelevantes
-                    ) &&
-                    doc.summaryJson.puntosClinicamenteRelevantes.length > 0 && (
-                      <ul className="mt-2 list-disc pl-4 text-muted-foreground text-xs">
-                        {doc.summaryJson.puntosClinicamenteRelevantes.map(
-                          (p: unknown, i: number) => (
-                            <li key={i}>
-                              {typeof p === "string" ? p : String(p)}
-                            </li>
-                          )
-                        )}
-                      </ul>
-                    )}
+
+                  {/* Expandable summary panel */}
+                  {isExpanded && (
+                    <div className="border-t bg-muted/20 px-3 py-3">
+                      <p className="mb-1.5 font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
+                        Resumen IA
+                      </p>
+                      <DocSummaryPanel doc={doc} />
+                    </div>
+                  )}
                 </div>
-              ))}
+              );
+            })}
           </div>
         )}
       </CardContent>

@@ -47,7 +47,7 @@ export function Topbar() {
   const title = getPageTitle(pathname);
 
   return (
-    <header className="flex h-14 items-center justify-between border-border/60 border-b bg-card/90 px-6 shadow-md backdrop-blur-md">
+    <header className="flex h-14 items-center justify-between border-border/60 border-b bg-card/90 px-6 shadow-sm backdrop-blur-md">
       <div className="flex items-center gap-3">
         <div className="flex size-9 items-center justify-center rounded-sm bg-primary text-primary-foreground shadow-md lg:hidden">
           <HeartPulse size={18} strokeWidth={2.5} />

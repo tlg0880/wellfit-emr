@@ -31,7 +31,7 @@ export function PageHeader({
   return (
     <div
       className={cn(
-        "border-border/60 border-b bg-card/90 px-6 py-5 shadow-md backdrop-blur-md",
+        "border-border/60 border-b bg-card/90 px-6 py-5 shadow-sm backdrop-blur-md",
         className
       )}
     >
