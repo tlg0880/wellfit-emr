@@ -2168,7 +2168,7 @@ export function createMedicalAgent(
   const agent = new ToolLoopAgent({
     id: "wellfit-medical-agent",
     instructions: systemPrompt,
-    model: fireworks("accounts/fireworks/routers/kimi-k2p5-turbo"),
+    model: fireworks("accounts/fireworks/routers/kimi-k2p6-turbo"),
     stopWhen: stepCountIs(10),
     tools,
     onFinish: ({ finishReason, steps, totalUsage }) => {
