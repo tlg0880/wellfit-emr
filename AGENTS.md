@@ -1,6 +1,8 @@
 # WellFit EMR — Contexto del proyecto
 
 > **Regla para agentes:** Si realizas cualquier avance funcional, arquitectónico o de implementación en este proyecto, debes actualizar este archivo `AGENTS.md` para reflejar el nuevo estado. No dejes el documento desactualizado.
+>
+> **Regla para variables de entorno:** Si agregas, modificas o eliminas cualquier variable de entorno (en `apps/server/.env`, `apps/web/.env` o en `@wellfit-emr/env`), debes actualizar el archivo `.env.example` en la raíz del repo para mantenerlo sincronizado. No dejes `.env.example` desactualizado.
 
 Historia Clínica Electrónica conforme con la normativa colombiana. Diseñada para cumplir con: Ley 23 de 1981, Resolución 1995 de 1999, Ley 2015 de 2020 (HCE interoperable), Resolución 866 de 2021, Resolución 1888 de 2025 (IHCE/RDA), Ley 1581 de 2012 (protección de datos), Decreto 780 de 2016 (habilitación), y regulación de RIPS.
 
@@ -13,6 +15,48 @@ Historia Clínica Electrónica conforme con la normativa colombiana. Diseñada p
 - **Auth**: Better Auth (email/password, admin plugin)
 - **IA médica**: AI SDK v6 + ToolLoopAgent + proveedor server-side configurado en `packages/api/src/ai/agent.ts` + Streamdown para chat clínico con streaming, herramientas server-side y contexto de paciente construido desde la DB.
 - **UI**: Componentes custom basados en `@base-ui/react` (shadcn-like), estilo cuadrado/angular (`rounded-none`). Incluye `SearchSelect` (búsqueda con dropdown) para reemplazar inputs de ID crudos y seleccionar entidades de catálogos RIPS. Los formularios de pacientes, prescripciones, atenciones y otros usan catálogos SISPRO en vivo. La revisión transversal de formularios cubre edición de pacientes, creación de atenciones, detalle de atenciones (diagnósticos CIE10/tipo diagnóstico, procedimientos CUPS/profesionales), sedes/unidades de servicio y anexos para evitar IDs/códigos manuales cuando existe fuente consultable.
+- **Almacenamiento S3**: RustFS (vía Docker Compose) como object storage local compatible S3. Puerto API `9000`, consola web `9001`. Bucket `wellfit-emr` creado automáticamente. Variables de entorno validadas en `@wellfit-emr/env/server`: `S3_ENDPOINT`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_BUCKET`, `S3_REGION`.
+
+## Infraestructura local — RustFS (S3)
+
+El proyecto incluye `docker-compose.yml` con RustFS para almacenamiento de objetos S3 local.
+
+### Servicios
+
+- **`rustfs`** (`wellfit-rustfs`): image `rustfs/rustfs:latest`. Expone API S3 en `localhost:9000` y consola web en `localhost:9001`.
+- **`rustfs-init`**: usa `minio/mc:latest` para crear automáticamente el bucket `wellfit-emr` cuando RustFS está listo.
+
+### Credenciales por defecto
+
+- Usuario: `rustfsadmin`
+- Contraseña: `rustfsadmin`
+- Bucket: `wellfit-emr`
+
+### Comandos
+
+```bash
+# Levantar RustFS (la primera vez crea el bucket automáticamente)
+docker compose up -d
+
+# Ver estado
+docker compose ps
+
+# Detener
+docker compose down
+
+# Acceder a la consola web
+open http://localhost:9001
+```
+
+### Variables de entorno (server)
+
+Configuradas en `apps/server/.env` y validadas en `packages/env/src/server.ts`:
+
+- `S3_ENDPOINT=http://localhost:9000`
+- `S3_ACCESS_KEY_ID=rustfsadmin`
+- `S3_SECRET_ACCESS_KEY=rustfsadmin`
+- `S3_BUCKET=wellfit-emr`
+- `S3_REGION=us-east-1`
 
 ## Arquitectura de rutas (frontend)
 
@@ -65,6 +109,14 @@ const mutation = useMutation({ ...orpc.patients.create.mutationOptions(), onSucc
 ### Backend routers PENDIENTES
 
 _Ninguno. Todos los routers planificados están implementados._
+
+### Cambios recientes (2026-05-21)
+
+- **Configuración de RustFS como almacenamiento S3 local**: Agregado servicio RustFS al stack de desarrollo.
+  - **`docker-compose.yml`**: Nuevo archivo en raíz con servicios `rustfs` (`rustfs/rustfs:latest`, puertos `9000`/`9001`) y `rustfs-init` (`minio/mc:latest`) que crea automáticamente el bucket `wellfit-emr`.
+  - **Variables de entorno**: Agregadas `S3_ENDPOINT`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_BUCKET` y `S3_REGION` a `apps/server/.env` y validadas en `packages/env/src/server.ts` vía Zod.
+  - **Documentación**: Sección "Infraestructura local — RustFS (S3)" añadida a `AGENTS.md` con credenciales, comandos y detalle de variables.
+- **`.env.example` y regla de sincronización**: Creado `.env.example` en raíz con todas las variables del proyecto (server + web) y valores descriptivos. Agregada regla explícita en `AGENTS.md`: toda nueva/modificada variable de entorno debe reflejarse en `.env.example`.
 
 ### Cambios recientes (2026-05-12)
 

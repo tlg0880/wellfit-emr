@@ -1,0 +1,34 @@
+services:
+  rustfs:
+    image: rustfs/rustfs:latest
+    container_name: wellfit-rustfs
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - rustfs-data:/data
+      - rustfs-logs:/logs
+    restart: unless-stopped
+
+  rustfs-init:
+    image: minio/mc:latest
+    depends_on:
+      - rustfs
+    entrypoint: >
+      /bin/sh -c "
+        echo 'Esperando RustFS...';
+        for i in 1 2 3 4 5 6 7 8 9 10; do
+          if mc alias set rustfs http://wellfit-rustfs:9000 rustfsadmin rustfsadmin 2>/dev/null; then
+            echo 'Alias configurado';
+            break;
+          fi;
+          echo 'Reintento $$i...';
+          sleep 3;
+        done;
+        mc mb rustfs/wellfit-emr --ignore-existing;
+        echo 'Bucket wellfit-emr listo';
+      "
+
+volumes:
+  rustfs-data:
+  rustfs-logs:
