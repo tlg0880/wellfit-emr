@@ -2,6 +2,7 @@ import { fireworks } from "@ai-sdk/fireworks";
 import { patientDocument } from "@wellfit-emr/db/schema/clinical";
 import { generateText, Output, zodSchema } from "ai";
 import { eq } from "drizzle-orm";
+import { extractText, getDocumentProxy } from "unpdf";
 import { z } from "zod";
 import type { Db } from "../context";
 import type { StorageService } from "./storage";
@@ -18,11 +19,59 @@ const summarySchema = z.object({
   disclaimer: z.string(),
 });
 
+interface ExtractedDocumentText {
+  errorMessage?: string;
+  pdfTotalPages?: number;
+  text: string | null;
+}
+
+export async function extractTextFromDocument(
+  bytes: Uint8Array,
+  mimeType: string
+): Promise<ExtractedDocumentText> {
+  if (mimeType === "text/plain") {
+    const decoder = new TextDecoder("utf-8", { fatal: false });
+    const text = decoder.decode(bytes);
+    return {
+      text:
+        text.length > MAX_EXTRACTED_TEXT_LENGTH
+          ? text.slice(0, MAX_EXTRACTED_TEXT_LENGTH)
+          : text,
+    };
+  }
+
+  if (mimeType === "application/pdf") {
+    try {
+      const pdf = await getDocumentProxy(new Uint8Array(bytes));
+      const { text, totalPages } = await extractText(pdf, { mergePages: true });
+      return {
+        text:
+          text && text.length > MAX_EXTRACTED_TEXT_LENGTH
+            ? text.slice(0, MAX_EXTRACTED_TEXT_LENGTH)
+            : text,
+        pdfTotalPages: totalPages,
+      };
+    } catch (error) {
+      console.error("[patient-document-summary] PDF extraction failed", error);
+      return {
+        errorMessage:
+          error instanceof Error
+            ? error.message
+            : "No se pudo extraer texto del PDF.",
+        text: null,
+      };
+    }
+  }
+
+  return { text: null };
+}
+
 export async function generatePatientDocumentSummary(
   db: Db,
   storage: StorageService,
   documentId: string,
-  generateTextFn: typeof generateText = generateText
+  generateTextFn: typeof generateText = generateText,
+  extractFn: typeof extractTextFromDocument = extractTextFromDocument
 ) {
   await db
     .update(patientDocument)
@@ -44,36 +93,44 @@ export async function generatePatientDocumentSummary(
     record = found;
 
     const bytes = await storage.get(record.storageKey);
-    let extractedText: string | null = null;
+    const {
+      errorMessage: extractionErrorMessage,
+      text: extractedText,
+      pdfTotalPages,
+    } = await extractFn(bytes, record.mimeType);
 
-    if (record.mimeType === "text/plain") {
-      const decoder = new TextDecoder("utf-8", { fatal: false });
-      extractedText = decoder.decode(bytes);
-      if (extractedText.length > MAX_EXTRACTED_TEXT_LENGTH) {
-        extractedText = extractedText.slice(0, MAX_EXTRACTED_TEXT_LENGTH);
+    if (extractedText == null || extractedText.trim() === "") {
+      let limitationText =
+        "El documento no contiene texto extraíble. Podría ser un archivo escaneado, protegido o con contenido solo visual.";
+      if (extractionErrorMessage) {
+        limitationText = `No se pudo extraer texto del documento: ${extractionErrorMessage}`;
+      } else if (extractedText == null) {
+        limitationText = `El formato ${record.mimeType} no admite extracción automática de texto. Se soporta text/plain y application/pdf.`;
       }
-    }
 
-    if (extractedText == null) {
-      const limitationSummary = {
+      const limitationSummary: Record<string, unknown> = {
         resumenGeneral:
           "No se pudo extraer texto del documento porque el formato no es compatible con extracción automática en esta versión.",
         puntosClinicamenteRelevantes: [],
         fechasImportantes: [],
         advertencias: "Requiere revisión manual del archivo original.",
-        limitaciones: `El formato ${record.mimeType} no admite extracción automática de texto. Solo se soporta text/plain.`,
+        limitaciones: limitationText,
         disclaimer:
           "Este resumen es una ayuda para navegación y comprensión del documento. No sustituye el criterio médico ni la revisión directa del archivo.",
       };
+
+      if (pdfTotalPages != null) {
+        limitationSummary.pdfTotalPages = pdfTotalPages;
+      }
 
       await db
         .update(patientDocument)
         .set({
           status: "failed",
-          summaryText: limitationSummary.resumenGeneral,
-          summaryJson: limitationSummary as Record<string, unknown>,
+          summaryText: String(limitationSummary.resumenGeneral),
+          summaryJson: limitationSummary,
           extractedText: null,
-          errorMessage: limitationSummary.limitaciones,
+          errorMessage: String(limitationSummary.limitaciones),
         })
         .where(eq(patientDocument.id, documentId));
 
@@ -96,12 +153,17 @@ export async function generatePatientDocumentSummary(
       }),
     });
 
+    const summaryJson: Record<string, unknown> = { ...summaryOutput };
+    if (pdfTotalPages != null) {
+      summaryJson.pdfTotalPages = pdfTotalPages;
+    }
+
     await db
       .update(patientDocument)
       .set({
         status: "completed",
         summaryText: summaryOutput.resumenGeneral,
-        summaryJson: summaryOutput as Record<string, unknown>,
+        summaryJson,
         extractedText,
         errorMessage: null,
       })

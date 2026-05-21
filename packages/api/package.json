@@ -28,6 +28,7 @@
     "ai": "^6.0.168",
     "dotenv": "catalog:",
     "drizzle-orm": "^0.45.1",
+    "unpdf": "^0.12.1",
     "zod": "catalog:"
   },
   "devDependencies": {
