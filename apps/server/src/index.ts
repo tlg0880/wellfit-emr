@@ -13,6 +13,7 @@ import { logger } from "hono/logger";
 import { chatHandler } from "./chat";
 import { patientDocumentsDownloadHandler } from "./patient-documents-download";
 import { patientDocumentsUploadHandler } from "./patient-documents-upload";
+import { patientsPdfAutofillHandler } from "./patients-pdf-autofill";
 
 const app = new Hono();
 
@@ -39,6 +40,7 @@ app.post("/api/chat", async (c) => {
 });
 
 app.post("/api/patient-documents/upload", patientDocumentsUploadHandler);
+app.post("/api/patients/extract-from-pdf", patientsPdfAutofillHandler);
 app.get(
   "/api/patient-documents/:documentId/download",
   patientDocumentsDownloadHandler

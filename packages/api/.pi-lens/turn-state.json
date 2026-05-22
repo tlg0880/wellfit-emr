@@ -1,0 +1,84 @@
+{
+  "files": {
+    "src/services/patient-pdf-autofill.ts": {
+      "modifiedRanges": [
+        {
+          "start": 32,
+          "end": 34
+        },
+        {
+          "start": 447,
+          "end": 456
+        },
+        {
+          "start": 663,
+          "end": 733
+        },
+        {
+          "start": 736,
+          "end": 737
+        },
+        {
+          "start": 744,
+          "end": 747
+        },
+        {
+          "start": 751,
+          "end": 772
+        },
+        {
+          "start": 849,
+          "end": 849
+        },
+        {
+          "start": 859,
+          "end": 859
+        },
+        {
+          "start": 901,
+          "end": 901
+        },
+        {
+          "start": 915,
+          "end": 929
+        },
+        {
+          "start": 931,
+          "end": 931
+        },
+        {
+          "start": 935,
+          "end": 950
+        },
+        {
+          "start": 974,
+          "end": 976
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-22T16:20:49.623Z"
+    },
+    "src/services/patient-pdf-autofill.test.ts": {
+      "modifiedRanges": [
+        {
+          "start": 2,
+          "end": 2
+        },
+        {
+          "start": 6,
+          "end": 6
+        },
+        {
+          "start": 333,
+          "end": 481
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-22T16:15:27.875Z"
+    }
+  },
+  "turnCycles": 0,
+  "maxCycles": 3,
+  "lastUpdated": "2026-05-22T16:20:49.623Z",
+  "sessionId": "lens-mph3tykv-be3f22f6"
+}

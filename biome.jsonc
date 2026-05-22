@@ -2,7 +2,11 @@
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
   "extends": ["ultracite/biome/core", "ultracite/biome/react"],
   "files": {
-    "includes": ["!!.agents", "!!apps/web/src/routeTree.gen.ts"]
+    "includes": [
+      "!!.agents",
+      "!!**/.pi-lens",
+      "!!apps/web/src/routeTree.gen.ts"
+    ]
   },
   "overrides": [
     {

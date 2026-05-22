@@ -1,6 +1,7 @@
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { env } from "@wellfit-emr/env/web";
 import { Button } from "@wellfit-emr/ui/components/button";
 import {
   Card,
@@ -18,7 +19,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@wellfit-emr/ui/components/select";
-import { Eye, Pencil, Plus, Search, Trash2, Users, X } from "lucide-react";
+import {
+  AlertCircle,
+  CheckCircle2,
+  Eye,
+  FileUp,
+  Pencil,
+  Plus,
+  Search,
+  Sparkles,
+  Trash2,
+  Users,
+  X,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import z from "zod";
@@ -46,6 +59,54 @@ const createPatientSchema = z.object({
   zoneCode: z.string(),
   deceasedAt: z.string(),
 });
+
+type CreatePatientFormValues = z.infer<typeof createPatientSchema>;
+
+type PatientFormFieldName = keyof CreatePatientFormValues;
+
+const PATIENT_PDF_AUTOFILL_MAX_SIZE_BYTES = 20 * 1024 * 1024;
+const PATIENT_PDF_AUTOFILL_FIELD_NAMES = [
+  "primaryDocumentType",
+  "primaryDocumentNumber",
+  "firstName",
+  "middleName",
+  "lastName1",
+  "lastName2",
+  "birthDate",
+  "sexAtBirth",
+  "genderIdentity",
+  "countryCode",
+  "municipalityCode",
+  "zoneCode",
+  "deceasedAt",
+] as const satisfies readonly PatientFormFieldName[];
+
+const PATIENT_AUTOFILL_FIELD_LABELS: Record<PatientFormFieldName, string> = {
+  birthDate: "fecha de nacimiento",
+  countryCode: "país",
+  deceasedAt: "fecha de fallecimiento",
+  firstName: "primer nombre",
+  genderIdentity: "identidad de género",
+  lastName1: "primer apellido",
+  lastName2: "segundo apellido",
+  middleName: "segundo nombre",
+  municipalityCode: "municipio",
+  primaryDocumentNumber: "número de documento",
+  primaryDocumentType: "tipo de documento",
+  sexAtBirth: "sexo al nacer",
+  zoneCode: "zona",
+};
+
+interface PatientPdfAutofillResponse {
+  displayLabels?: Partial<Record<PatientFormFieldName, string>>;
+  documentKind?: string | null;
+  fieldConfidence?: Partial<Record<PatientFormFieldName, number>>;
+  fieldEvidence?: Partial<Record<PatientFormFieldName, string>>;
+  fields: Partial<Record<PatientFormFieldName, string | null>>;
+  pdfTotalPages?: number;
+  summary?: string;
+  warnings?: string[];
+}
 
 interface PatientRow {
   birthDate: Date | string;
@@ -77,6 +138,13 @@ function PatientForm({
 }) {
   const [countrySearch, setCountrySearch] = useState("");
   const [municipalitySearch, setMunicipalitySearch] = useState("");
+  const [pdfAutofillFile, setPdfAutofillFile] = useState<File | null>(null);
+  const [isAutofilling, setIsAutofilling] = useState(false);
+  const [autofillResult, setAutofillResult] =
+    useState<PatientPdfAutofillResponse | null>(null);
+  const [appliedAutofillLabels, setAppliedAutofillLabels] = useState<string[]>(
+    []
+  );
 
   const { data: countriesData, isLoading: countriesLoading } = useQuery(
     orpc.ripsReference.listEntries.queryOptions({
@@ -188,6 +256,83 @@ function PatientForm({
     },
   });
 
+  function applyPatientAutofill(result: PatientPdfAutofillResponse): number {
+    const appliedLabels: string[] = [];
+
+    for (const fieldName of PATIENT_PDF_AUTOFILL_FIELD_NAMES) {
+      const value = result.fields[fieldName];
+      if (typeof value === "string" && value.trim()) {
+        form.setFieldValue(fieldName, value);
+        appliedLabels.push(PATIENT_AUTOFILL_FIELD_LABELS[fieldName]);
+      }
+    }
+
+    if (result.displayLabels?.countryCode) {
+      setCountrySearch(result.displayLabels.countryCode);
+    }
+    if (result.displayLabels?.municipalityCode) {
+      setMunicipalitySearch(result.displayLabels.municipalityCode);
+    }
+
+    setAutofillResult(result);
+    setAppliedAutofillLabels(appliedLabels);
+    return appliedLabels.length;
+  }
+
+  async function handlePdfAutofill() {
+    if (!pdfAutofillFile) {
+      return;
+    }
+
+    const isPdf =
+      pdfAutofillFile.type === "application/pdf" ||
+      pdfAutofillFile.name.toLowerCase().endsWith(".pdf");
+
+    if (!isPdf) {
+      toast.error("Selecciona un archivo PDF");
+      return;
+    }
+    if (pdfAutofillFile.size > PATIENT_PDF_AUTOFILL_MAX_SIZE_BYTES) {
+      toast.error("El PDF supera el máximo de 20 MB");
+      return;
+    }
+
+    setIsAutofilling(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", pdfAutofillFile);
+      const res = await fetch(
+        `${env.VITE_SERVER_URL}/api/patients/extract-from-pdf`,
+        { body: formData, credentials: "include", method: "POST" }
+      );
+      const body = (await res.json().catch(() => ({}))) as Partial<
+        PatientPdfAutofillResponse & { error: string }
+      >;
+
+      if (!res.ok) {
+        throw new Error(body.error || "No se pudo analizar el PDF");
+      }
+      if (!body.fields) {
+        throw new Error("La respuesta de extracción no incluyó campos");
+      }
+
+      const appliedCount = applyPatientAutofill(
+        body as PatientPdfAutofillResponse
+      );
+      if (appliedCount === 0) {
+        toast("La IA no encontró campos confiables para prellenar");
+        return;
+      }
+      toast.success(`Campos prellenados: ${appliedCount}`);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "No se pudo analizar el PDF"
+      );
+    } finally {
+      setIsAutofilling(false);
+    }
+  }
+
   const fieldGrid = "space-y-1";
 
   return (
@@ -205,6 +350,100 @@ function PatientForm({
             form.handleSubmit();
           }}
         >
+          {!editingId && (
+            <div className="mb-4 rounded-md border border-primary/20 bg-primary/5 p-3">
+              <div className="flex gap-3">
+                <div className="flex size-9 shrink-0 items-center justify-center rounded-sm bg-primary/10 text-primary">
+                  <Sparkles size={17} />
+                </div>
+                <div className="min-w-0 flex-1 space-y-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="font-medium text-sm">
+                      Autorrellenar desde PDF
+                    </h3>
+                    {autofillResult?.pdfTotalPages && (
+                      <span className="rounded-full border bg-background px-2 py-0.5 text-[10px] text-muted-foreground">
+                        {autofillResult.pdfTotalPages} pág.
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-muted-foreground text-xs leading-relaxed">
+                    Sube un PDF con identificación, admisión o documento
+                    clínico. La IA extrae solo datos demográficos del paciente y
+                    los prellena para revisión antes de guardar.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+                <Input
+                  accept="application/pdf"
+                  className="bg-background text-xs"
+                  onChange={(e) => {
+                    setPdfAutofillFile(e.target.files?.[0] ?? null);
+                    setAutofillResult(null);
+                    setAppliedAutofillLabels([]);
+                  }}
+                  type="file"
+                />
+                <Button
+                  className="shrink-0"
+                  disabled={!pdfAutofillFile || isAutofilling}
+                  onClick={handlePdfAutofill}
+                  size="sm"
+                  type="button"
+                  variant="outline"
+                >
+                  <FileUp size={14} />
+                  {isAutofilling ? "Analizando…" : "Analizar PDF"}
+                </Button>
+              </div>
+
+              {autofillResult && (
+                <div className="mt-3 space-y-2 rounded-sm border bg-background/80 p-3">
+                  <div className="flex items-start gap-2 text-xs">
+                    {appliedAutofillLabels.length > 0 ? (
+                      <CheckCircle2
+                        className="mt-0.5 shrink-0 text-emerald-600"
+                        size={14}
+                      />
+                    ) : (
+                      <AlertCircle
+                        className="mt-0.5 shrink-0 text-amber-600"
+                        size={14}
+                      />
+                    )}
+                    <div className="space-y-1">
+                      <p className="font-medium">
+                        {appliedAutofillLabels.length > 0
+                          ? `Se prellenaron ${appliedAutofillLabels.length} campos`
+                          : "No se detectaron campos confiables"}
+                      </p>
+                      {appliedAutofillLabels.length > 0 && (
+                        <p className="text-muted-foreground">
+                          {appliedAutofillLabels.join(", ")}
+                        </p>
+                      )}
+                      {autofillResult.summary && (
+                        <p className="text-muted-foreground leading-relaxed">
+                          {autofillResult.summary}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  {autofillResult.warnings &&
+                    autofillResult.warnings.length > 0 && (
+                      <ul className="list-disc space-y-0.5 pl-8 text-amber-700 text-xs">
+                        {autofillResult.warnings.map((warning) => (
+                          <li key={warning}>{warning}</li>
+                        ))}
+                      </ul>
+                    )}
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <form.Field name="primaryDocumentType">
               {(field) => (
