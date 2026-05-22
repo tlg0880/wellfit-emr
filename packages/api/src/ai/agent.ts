@@ -58,7 +58,8 @@ REGLAS IMPORTANTES:
 7. Usa terminología médica colombiana (CIE-10 para diagnósticos, CUPS para procedimientos).
 8. Responde en español por defecto.
 9. Si no tienes un paciente seleccionado, pide al usuario que seleccione uno primero.
-10. No entregues diagnósticos definitivos ni sustituyas el criterio clínico del médico; prioriza resúmenes, verificación de datos, alertas de seguridad y borradores accionables.`;
+10. No entregues diagnósticos definitivos ni sustituyas el criterio clínico del médico; prioriza resúmenes, verificación de datos, alertas de seguridad y borradores accionables.
+11. HERRAMIENTAS DE SELECCIÓN INTERACTIVA: Cuando necesites una fecha, un profesional o una atención, USA DIRECTAMENTE pick_date, pick_practitioner o pick_encounter SIN preguntar primero al usuario si quiere usar el selector. Invoca la herramienta de inmediato; el usuario verá la interfaz y seleccionará. No digas "¿quieres que muestre el selector?" ni "¿deseas que use la interfaz?"; simplemente úsala.`;
 
 interface MedicalToolOptions {
   selectedPatientId?: string | null;
@@ -2317,6 +2318,49 @@ export interface MedicalAgentConfig {
   systemPrompt: string;
   tools: MedicalTools;
 }
+
+/**
+ * Tools that require client-side UI interaction (no execute function).
+ * The agent calls these when it needs the user to pick a date, practitioner, or encounter.
+ * The client renders the appropriate UI and submits the result via addToolOutput.
+ */
+export const UI_TOOLS = {
+  pick_date: tool({
+    description:
+      "Muestra un selector de fecha interactivo al usuario. ÚSALA DIRECTAMENTE sin preguntar cuando necesites una fecha específica (inicio de incapacidad, fecha de procedimiento, etc.). No pidas la fecha por texto; invoca esta herramienta de inmediato.",
+    inputSchema: z.object({
+      label: z
+        .string()
+        .describe(
+          "Etiqueta descriptiva para el selector, ej: 'Fecha de inicio de incapacidad'"
+        ),
+      defaultValue: z
+        .string()
+        .nullable()
+        .describe("Fecha por defecto en formato YYYY-MM-DD, o null"),
+    }),
+  }),
+  pick_practitioner: tool({
+    description:
+      "Muestra un selector de profesional de salud al usuario. ÚSALA DIRECTAMENTE sin preguntar cuando necesites el ID de un profesional (prescriptor, responsable de atención, etc.). No pidas el nombre por texto; invoca esta herramienta de inmediato.",
+    inputSchema: z.object({
+      label: z
+        .string()
+        .describe("Etiqueta descriptiva, ej: 'Profesional prescriptor'"),
+    }),
+  }),
+  pick_encounter: tool({
+    description:
+      "Muestra un selector de atención clínica al usuario. ÚSALA DIRECTAMENTE sin preguntar cuando necesites el ID de una atención específica. No pidas el ID por texto; invoca esta herramienta de inmediato.",
+    inputSchema: z.object({
+      label: z
+        .string()
+        .describe("Etiqueta descriptiva, ej: 'Atención a la que vincular'"),
+    }),
+  }),
+} as const;
+
+export type UITools = typeof UI_TOOLS;
 
 export function createMedicalAgent(
   db: Db,

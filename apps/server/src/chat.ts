@@ -1,4 +1,9 @@
-import { createMedicalAgent, SYSTEM_PROMPT } from "@wellfit-emr/api/ai/agent";
+import { fireworks } from "@ai-sdk/fireworks";
+import {
+  createMedicalTools,
+  SYSTEM_PROMPT,
+  UI_TOOLS,
+} from "@wellfit-emr/api/ai/agent";
 import { auth } from "@wellfit-emr/auth";
 import { db } from "@wellfit-emr/db";
 import {
@@ -8,7 +13,12 @@ import {
   patient,
   patientDocument,
 } from "@wellfit-emr/db/schema/clinical";
-import { createAgentUIStreamResponse, type UIMessage } from "ai";
+import {
+  convertToModelMessages,
+  stepCountIs,
+  streamText,
+  type UIMessage,
+} from "ai";
 import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod";
 
@@ -51,21 +61,41 @@ export async function chatHandler(request: Request): Promise<Response> {
   const systemMessage = patientContext
     ? `${SYSTEM_PROMPT}\n\nCONTEXTO DEL PACIENTE SELECCIONADO:\n${patientContext}`
     : SYSTEM_PROMPT;
-  const { agent } = createMedicalAgent(db, {
-    instructions: systemMessage,
+
+  const medicalTools = createMedicalTools(db, {
     selectedPatientId: selectedPatientId ?? null,
     userId: session.user.id,
   });
 
-  return createAgentUIStreamResponse({
-    agent,
-    uiMessages: messages,
+  const allTools = { ...medicalTools, ...UI_TOOLS };
+
+  const result = streamText({
+    model: fireworks("accounts/fireworks/routers/kimi-k2p6-turbo"),
+    system: systemMessage,
+    messages: await convertToModelMessages(messages),
+    tools: allTools,
+    stopWhen: stepCountIs(10),
+    onFinish: ({ finishReason, steps, usage }) => {
+      console.info("[ai-chat] stream finished", {
+        finishReason,
+        steps: steps.length,
+        usage,
+      });
+    },
+    onStepFinish: ({ finishReason, stepNumber, toolCalls, toolResults }) => {
+      console.info("[ai-chat] step finished", {
+        finishReason,
+        stepNumber,
+        toolCalls: toolCalls.map((c) => c.toolName),
+        toolResults: toolResults.length,
+      });
+    },
+  });
+
+  return result.toUIMessageStreamResponse({
     onError: (error) => {
       console.error("[ai-chat] stream error", error);
       return formatStreamError(error);
-    },
-    onFinish: ({ isAborted }) => {
-      console.info("[ai-chat] ui stream finished", { isAborted });
     },
     headers: {
       "Cache-Control": "no-cache",

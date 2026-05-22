@@ -4,7 +4,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { env } from "@wellfit-emr/env/web";
 import { Button } from "@wellfit-emr/ui/components/button";
 import { Input } from "@wellfit-emr/ui/components/input";
-import { DefaultChatTransport, isToolUIPart } from "ai";
+import {
+  DefaultChatTransport,
+  isToolUIPart,
+  lastAssistantMessageIsCompleteWithToolCalls,
+} from "ai";
 import {
   Activity,
   Bot,
@@ -121,8 +125,10 @@ function ChatPage() {
     error,
     stop,
     clearError,
+    addToolOutput,
   } = useChat({
     transport,
+    sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
     onError: (chatError) => {
       console.error("[ai-chat] client stream error", chatError);
     },
@@ -273,9 +279,11 @@ function ChatPage() {
             <div className="mx-auto max-w-3xl space-y-6 px-4 py-6">
               {messages.map((message) => (
                 <MessageRow
+                  addToolOutput={addToolOutput}
                   isLoading={isLoading}
                   key={message.id}
                   message={message}
+                  selectedPatientId={selectedPatientId}
                 />
               ))}
 
@@ -363,9 +371,14 @@ function ChatPage() {
 function MessageRow({
   message,
   isLoading,
+  addToolOutput,
+  selectedPatientId,
 }: {
   message: { id: string; role: string; parts: unknown[] };
   isLoading: boolean;
+  // biome-ignore lint/suspicious/noExplicitAny: SDK type is complex, cast at call site
+  addToolOutput: (params: any) => void;
+  selectedPatientId: string | null;
 }) {
   const isUser = message.role === "user";
 
@@ -374,8 +387,10 @@ function MessageRow({
       <div className="flex justify-end gap-3">
         <div className="max-w-[75%] rounded-sm bg-primary px-4 py-2.5 text-primary-foreground shadow-sm">
           <MessageParts
+            addToolOutput={addToolOutput}
             isLoading={isLoading}
             message={message as Parameters<typeof MessageParts>[0]["message"]}
+            selectedPatientId={selectedPatientId}
           />
         </div>
         <div className="flex size-7 shrink-0 items-center justify-center rounded-sm bg-muted">
@@ -392,8 +407,10 @@ function MessageRow({
       </div>
       <div className="min-w-0 flex-1">
         <MessageParts
+          addToolOutput={addToolOutput}
           isLoading={isLoading}
           message={message as Parameters<typeof MessageParts>[0]["message"]}
+          selectedPatientId={selectedPatientId}
         />
       </div>
     </div>

@@ -112,6 +112,16 @@ _Ninguno. Todos los routers planificados están implementados._
 
 ### Cambios recientes (2026-05-21)
 
+- **Tools de UI interactivas en el chat** (`/chat`): El agente puede pausar y mostrar selectores interactivos en lugar de pedir datos por texto.
+  - **`pick_date`**: Selector de fecha nativo con valor por defecto. El agente lo usa cuando necesita una fecha específica (inicio de incapacidad, fecha de procedimiento, etc.).
+  - **`pick_practitioner`**: Lista de profesionales con búsqueda en tiempo real contra `facilities.listPractitioners`. El agente lo usa cuando necesita un prescriptor o responsable.
+  - **`pick_encounter`**: Lista de atenciones del paciente seleccionado. El agente lo usa cuando necesita vincular algo a una atención específica.
+  - **Arquitectura**: Refactorizado `chat.ts` de `ToolLoopAgent` + `createAgentUIStreamResponse` a `streamText` + `toUIMessageStreamResponse` con tools mixtas (server tools con `execute` + UI tools sin `execute`). El cliente usa `addToolOutput` + `sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls` para reanudar el agente automáticamente tras la selección.
+  - **UI**: Cards con fondo `bg-primary/5` y borde `border-primary/30`. Estado completado muestra el valor seleccionado inline. Estado pendiente muestra spinner.
+  - **Validación**: `bun run check-types` en verde, `bun x ultracite check` en verde.
+
+### Cambios recientes (2026-05-21)
+
 - **Overhaul del chat médico** (`/chat`): Rediseño completo de la interfaz del asistente clínico.
   - **Tool call cards colapsables**: Reemplazado el JSON crudo de tool calls por cards compactas estilo Claude/ChatGPT. Cada card muestra icono, nombre legible en español y estado animado. Al hacer clic se expande para ver los resultados. Cubre las 30+ herramientas del agente con metadatos en `TOOL_META`.
   - **Categorías de color**: Las cards usan color semántico según categoría: `read` (muted), `search` (sky), `write` (teal), `safety` (amber). Errores en rojo destructivo.

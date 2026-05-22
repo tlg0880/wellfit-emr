@@ -1,10 +1,14 @@
 import { code } from "@streamdown/code";
+import { useQuery } from "@tanstack/react-query";
+import { Button } from "@wellfit-emr/ui/components/button";
+import { Input } from "@wellfit-emr/ui/components/input";
 import type { UIMessage } from "ai";
 import { isToolUIPart } from "ai";
 import {
   Activity,
   AlertTriangle,
   BookOpen,
+  Calendar,
   ChevronDown,
   ChevronRight,
   ClipboardList,
@@ -23,13 +27,29 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { Streamdown } from "streamdown";
+import { orpc } from "@/utils/orpc";
+
+type AddToolOutput = (params: {
+  tool?: string;
+  toolCallId: string;
+  output?: unknown;
+  state?: "output-available" | "output-error";
+  errorText?: string;
+}) => void;
 
 interface MessagePartsProps {
+  addToolOutput: AddToolOutput;
   isLoading: boolean;
   message: UIMessage;
+  selectedPatientId: string | null;
 }
 
-export function MessageParts({ message, isLoading }: MessagePartsProps) {
+export function MessageParts({
+  message,
+  isLoading,
+  addToolOutput,
+  selectedPatientId,
+}: MessagePartsProps) {
   return (
     <>
       {message.parts.map((part, i) => {
@@ -52,12 +72,301 @@ export function MessageParts({ message, isLoading }: MessagePartsProps) {
             "toolName" in part
               ? (part.toolName as string)
               : part.type.replace("tool-", "");
+
+          // UI tools — render interactive components
+          if (
+            toolName === "pick_date" ||
+            toolName === "pick_practitioner" ||
+            toolName === "pick_encounter"
+          ) {
+            return (
+              <UIToolPart
+                addToolOutput={addToolOutput}
+                key={key}
+                part={part as UIToolPartShape}
+                selectedPatientId={selectedPatientId}
+                toolName={toolName}
+              />
+            );
+          }
+
           return <ToolPart key={key} part={part} toolName={toolName} />;
         }
 
         return null;
       })}
     </>
+  );
+}
+
+// ─── UI Tool Parts (interactive, client-side) ─────────────────────────────────
+
+function formatToolOutput(output: unknown): string {
+  if (output === null || output === undefined) {
+    return "";
+  }
+  if (typeof output !== "object") {
+    return String(output);
+  }
+  const obj = output as Record<string, unknown>;
+  // Pick the most human-readable field
+  const label =
+    obj.fullName ?? obj.reasonForVisit ?? obj.name ?? obj.title ?? null;
+  if (label) {
+    return String(label);
+  }
+  // Fallback: join primitive values
+  return Object.values(obj)
+    .filter((v) => v !== null && typeof v !== "object")
+    .join(" · ");
+}
+
+interface UIToolPartShape {
+  input?: {
+    label?: string;
+    defaultValue?: string | null;
+  };
+  output?: unknown;
+  state: string;
+  toolCallId: string;
+}
+
+function UIToolPart({
+  part,
+  toolName,
+  addToolOutput,
+  selectedPatientId,
+}: {
+  part: UIToolPartShape;
+  toolName: string;
+  addToolOutput: AddToolOutput;
+  selectedPatientId: string | null;
+}) {
+  const isDone =
+    part.state === "output-available" || part.state === "output-error";
+  const label = part.input?.label ?? toolName.replace(/_/g, " ");
+
+  if (isDone) {
+    return (
+      <div className="my-1.5 flex items-center gap-2 rounded-sm border border-border/60 bg-muted/30 px-2.5 py-1.5 text-muted-foreground text-xs">
+        <Calendar size={12} />
+        <span>{label}:</span>
+        <span className="font-medium text-foreground">
+          {formatToolOutput(part.output)}
+        </span>
+      </div>
+    );
+  }
+
+  if (part.state !== "input-available") {
+    return (
+      <div className="my-1.5 flex items-center gap-2 rounded-sm border border-border/60 bg-muted/30 px-2.5 py-1.5 text-muted-foreground text-xs">
+        <Loader2 className="animate-spin" size={12} />
+        <span>{label}</span>
+      </div>
+    );
+  }
+
+  if (toolName === "pick_date") {
+    return (
+      <PickDateUI
+        addToolOutput={addToolOutput}
+        defaultValue={part.input?.defaultValue ?? null}
+        label={label}
+        toolCallId={part.toolCallId}
+      />
+    );
+  }
+
+  if (toolName === "pick_practitioner") {
+    return (
+      <PickPractitionerUI
+        addToolOutput={addToolOutput}
+        label={label}
+        toolCallId={part.toolCallId}
+      />
+    );
+  }
+
+  if (toolName === "pick_encounter") {
+    return (
+      <PickEncounterUI
+        addToolOutput={addToolOutput}
+        label={label}
+        selectedPatientId={selectedPatientId}
+        toolCallId={part.toolCallId}
+      />
+    );
+  }
+
+  return null;
+}
+
+// ─── Pick Date ────────────────────────────────────────────────────────────────
+
+function PickDateUI({
+  label,
+  defaultValue,
+  toolCallId,
+  addToolOutput,
+}: {
+  label: string;
+  defaultValue: string | null;
+  toolCallId: string;
+  addToolOutput: AddToolOutput;
+}) {
+  const today = new Date().toISOString().split("T")[0];
+  const [value, setValue] = useState(defaultValue ?? today);
+
+  return (
+    <div className="my-2 rounded-sm border border-primary/30 bg-primary/5 p-3">
+      <div className="mb-2 flex items-center gap-2 font-medium text-xs">
+        <Calendar className="text-primary" size={13} />
+        {label}
+      </div>
+      <div className="flex items-center gap-2">
+        <Input
+          className="h-8 w-44 text-xs"
+          onChange={(e) => setValue(e.target.value)}
+          type="date"
+          value={value}
+        />
+        <Button
+          className="h-8 text-xs"
+          disabled={!value}
+          onClick={() => addToolOutput({ toolCallId, output: value })}
+          size="sm"
+          type="button"
+        >
+          Confirmar
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Pick Practitioner ────────────────────────────────────────────────────────
+
+function PickPractitionerUI({
+  label,
+  toolCallId,
+  addToolOutput,
+}: {
+  label: string;
+  toolCallId: string;
+  addToolOutput: AddToolOutput;
+}) {
+  const [search, setSearch] = useState("");
+  const { data, isLoading } = useQuery(
+    orpc.facilities.listPractitioners.queryOptions({
+      input: { limit: 20, offset: 0, search: search || undefined },
+    })
+  );
+
+  return (
+    <div className="my-2 rounded-sm border border-primary/30 bg-primary/5 p-3">
+      <div className="mb-2 flex items-center gap-2 font-medium text-xs">
+        <Users className="text-primary" size={13} />
+        {label}
+      </div>
+      <Input
+        className="mb-2 h-8 text-xs"
+        onChange={(e) => setSearch(e.target.value)}
+        placeholder="Buscar profesional..."
+        value={search}
+      />
+      <div className="max-h-40 space-y-1 overflow-auto">
+        {isLoading && (
+          <p className="text-muted-foreground text-xs">Cargando...</p>
+        )}
+        {data?.practitioners.map((p) => (
+          <button
+            className="flex w-full items-center justify-between rounded-sm border bg-background px-2 py-1.5 text-left text-xs transition-colors hover:bg-muted"
+            key={p.id}
+            onClick={() =>
+              addToolOutput({
+                toolCallId,
+                output: { id: p.id, fullName: p.fullName },
+              })
+            }
+            type="button"
+          >
+            <span className="font-medium">{p.fullName}</span>
+            <span className="text-muted-foreground">
+              {p.documentType} {p.documentNumber}
+            </span>
+          </button>
+        ))}
+        {data?.practitioners.length === 0 && (
+          <p className="text-muted-foreground text-xs">Sin resultados.</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Pick Encounter ───────────────────────────────────────────────────────────
+
+function PickEncounterUI({
+  label,
+  toolCallId,
+  addToolOutput,
+  selectedPatientId,
+}: {
+  label: string;
+  toolCallId: string;
+  addToolOutput: AddToolOutput;
+  selectedPatientId: string | null;
+}) {
+  const { data, isLoading } = useQuery({
+    ...orpc.encounters.list.queryOptions({
+      input: {
+        limit: 10,
+        offset: 0,
+        patientId: selectedPatientId ?? "",
+      },
+    }),
+    enabled: !!selectedPatientId,
+  });
+
+  return (
+    <div className="my-2 rounded-sm border border-primary/30 bg-primary/5 p-3">
+      <div className="mb-2 flex items-center gap-2 font-medium text-xs">
+        <ClipboardList className="text-primary" size={13} />
+        {label}
+      </div>
+      <div className="max-h-40 space-y-1 overflow-auto">
+        {isLoading && (
+          <p className="text-muted-foreground text-xs">Cargando...</p>
+        )}
+        {!selectedPatientId && (
+          <p className="text-muted-foreground text-xs">
+            Selecciona un paciente primero.
+          </p>
+        )}
+        {data?.encounters.map((e) => (
+          <button
+            className="flex w-full items-center justify-between rounded-sm border bg-background px-2 py-1.5 text-left text-xs transition-colors hover:bg-muted"
+            key={e.id}
+            onClick={() =>
+              addToolOutput({
+                toolCallId,
+                output: { id: e.id, reasonForVisit: e.reasonForVisit },
+              })
+            }
+            type="button"
+          >
+            <span className="font-medium">{e.reasonForVisit}</span>
+            <span className="text-muted-foreground">
+              {new Date(e.startedAt).toLocaleDateString("es-CO")} · {e.status}
+            </span>
+          </button>
+        ))}
+        {data?.encounters.length === 0 && (
+          <p className="text-muted-foreground text-xs">Sin atenciones.</p>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -473,6 +782,8 @@ function KeyValueRow({ label, value }: { label: string; value: unknown }) {
     displayValue = value.join(", ");
   } else if (value instanceof Date) {
     displayValue = value.toLocaleDateString("es-CO");
+  } else if (typeof value === "object" && value !== null) {
+    displayValue = formatToolOutput(value);
   } else {
     displayValue = String(value);
   }
