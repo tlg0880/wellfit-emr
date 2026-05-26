@@ -1,0 +1,4 @@
+interface:
+  display_name: "RIPS Generation & Validation"
+  short_description: "Implementa generación y validación RIPS-FEV"
+  default_prompt: "Use $rips-generation-validation to implement a compliant RIPS-FEV generation and validation workflow."
