@@ -250,7 +250,9 @@ function mapSexToRips(sex: string): string {
 }
 
 interface EncounterContext {
+  cupsConsulta: string;
   diagnoses: (typeof diagnosis.$inferSelect)[];
+  dxRel1: string | null;
   enc: typeof encounter.$inferSelect & {
     siteCode: string;
     serviceCode: string;
@@ -260,8 +262,10 @@ interface EncounterContext {
   medications: (typeof medicationOrder.$inferSelect)[];
   patDocNum: string;
   patDocType: string;
+  principalDx: (typeof diagnosis.$inferSelect) | undefined;
   procedures: (typeof procedureRecord.$inferSelect)[];
   providerCode: string;
+  relatedDx: (typeof diagnosis.$inferSelect)[];
   serviceRequests: (typeof serviceRequest.$inferSelect)[];
 }
 
@@ -282,14 +286,6 @@ function buildConsultas(
     return;
   }
   state.serviceConsecutive++;
-  const principalDx =
-    ctx.diagnoses.find(
-      (d) => d.rank === 1 || d.diagnosisType === "principal"
-    ) ?? ctx.diagnoses[0];
-  const relatedDx = ctx.diagnoses.filter((d) => d.id !== principalDx?.id);
-  const cupsConsulta =
-    ctx.procedures.find((p) => p.cupsCode.startsWith("89"))?.cupsCode ??
-    "890201";
   const value = 50_000;
   state.totalValue += value;
 
@@ -300,18 +296,18 @@ function buildConsultas(
     codPrestador: ctx.providerCode,
     fechaInicioAtencion: ctx.fechaInicio,
     numAutorizacion: null,
-    codConsulta: cupsConsulta,
+    codConsulta: ctx.cupsConsulta,
     modalidadGrupoServicioTecSal: ctx.enc.careModality ?? "01",
     grupoServicios: ctx.enc.modalidadAtencionCode ?? "01",
     codServicio: ctx.enc.serviceCode ?? "101",
     finalidadTecnologiaSalud: ctx.enc.finalidadConsultaCode ?? "10",
     causaMotivoAtencion: ctx.enc.causeExternalCode ?? null,
-    codDiagnosticoPrincipal: principalDx?.code ?? "Z000",
-    codDiagnosticoRelacionado1: relatedDx[0]?.code ?? null,
-    codDiagnosticoRelacionado2: relatedDx[1]?.code ?? null,
-    codDiagnosticoRelacionado3: relatedDx[2]?.code ?? null,
+    codDiagnosticoPrincipal: ctx.principalDx?.code ?? "Z000",
+    codDiagnosticoRelacionado1: ctx.relatedDx[0]?.code ?? null,
+    codDiagnosticoRelacionado2: ctx.relatedDx[1]?.code ?? null,
+    codDiagnosticoRelacionado3: ctx.relatedDx[2]?.code ?? null,
     tipoDiagnosticoPrincipal:
-      principalDx?.diagnosisType === "confirmed" ? "02" : "01",
+      ctx.principalDx?.diagnosisType === "confirmed" ? "02" : "01",
     tipoDocumentoIdentificacion: ctx.patDocType,
     numDocumentoIdentificacion: ctx.patDocNum,
     vrServicio: toMoneyString(value),
@@ -330,11 +326,6 @@ function buildUrgencias(
     return;
   }
   state.serviceConsecutive++;
-  const principalDx =
-    ctx.diagnoses.find(
-      (d) => d.rank === 1 || d.diagnosisType === "principal"
-    ) ?? ctx.diagnoses[0];
-  const relatedDx = ctx.diagnoses.filter((d) => d.id !== principalDx?.id);
   const value = 75_000;
   state.totalValue += value;
 
@@ -349,10 +340,10 @@ function buildUrgencias(
       : null,
     numAutorizacion: null,
     causaMotivoAtencion: ctx.enc.causeExternalCode ?? null,
-    codDiagnosticoPrincipal: principalDx?.code ?? "Z000",
-    codDiagnosticoRelacionado1: relatedDx[0]?.code ?? null,
-    codDiagnosticoRelacionado2: relatedDx[1]?.code ?? null,
-    codDiagnosticoRelacionado3: relatedDx[2]?.code ?? null,
+    codDiagnosticoPrincipal: ctx.principalDx?.code ?? "Z000",
+    codDiagnosticoRelacionado1: ctx.relatedDx[0]?.code ?? null,
+    codDiagnosticoRelacionado2: ctx.relatedDx[1]?.code ?? null,
+    codDiagnosticoRelacionado3: ctx.relatedDx[2]?.code ?? null,
     condicionDestinoUsuarioEgreso: ctx.enc.condicionDestinoCode ?? null,
     codDiagnosticoCausaMuerte: null,
     fechaEgresoObservacion: ctx.enc.endedAt
@@ -370,11 +361,6 @@ function buildHospitalizacion(
     return;
   }
   state.serviceConsecutive++;
-  const principalDx =
-    ctx.diagnoses.find(
-      (d) => d.rank === 1 || d.diagnosisType === "principal"
-    ) ?? ctx.diagnoses[0];
-  const relatedDx = ctx.diagnoses.filter((d) => d.id !== principalDx?.id);
   const value = 150_000;
   state.totalValue += value;
 
@@ -389,10 +375,10 @@ function buildHospitalizacion(
       : null,
     numAutorizacion: null,
     causaMotivoAtencion: ctx.enc.causeExternalCode ?? null,
-    codDiagnosticoPrincipal: principalDx?.code ?? "Z000",
-    codDiagnosticoRelacionado1: relatedDx[0]?.code ?? null,
-    codDiagnosticoRelacionado2: relatedDx[1]?.code ?? null,
-    codDiagnosticoRelacionado3: relatedDx[2]?.code ?? null,
+    codDiagnosticoPrincipal: ctx.principalDx?.code ?? "Z000",
+    codDiagnosticoRelacionado1: ctx.relatedDx[0]?.code ?? null,
+    codDiagnosticoRelacionado2: ctx.relatedDx[1]?.code ?? null,
+    codDiagnosticoRelacionado3: ctx.relatedDx[2]?.code ?? null,
     condicionDestinoUsuarioEgreso: ctx.enc.condicionDestinoCode ?? null,
     codDiagnosticoCausaMuerte: null,
     consecutivo: state.serviceConsecutive,
@@ -403,13 +389,6 @@ function buildProcedimientos(
   ctx: EncounterContext,
   state: ServiceBuilderState
 ): void {
-  const principalDx =
-    ctx.diagnoses.find(
-      (d) => d.rank === 1 || d.diagnosisType === "principal"
-    ) ?? ctx.diagnoses[0];
-  const dxRel1 =
-    ctx.diagnoses.filter((d) => d.id !== principalDx?.id)[0]?.code ?? null;
-
   for (const proc of ctx.procedures) {
     state.serviceConsecutive++;
     const value = 30_000;
@@ -433,8 +412,8 @@ function buildProcedimientos(
       finalidadTecnologiaSalud: "01",
       tipoDocumentoIdentificacion: ctx.patDocType,
       numDocumentoIdentificacion: ctx.patDocNum,
-      codDiagnosticoPrincipal: principalDx?.code ?? "Z000",
-      codDiagnosticoRelacionado: dxRel1,
+      codDiagnosticoPrincipal: ctx.principalDx?.code ?? "Z000",
+      codDiagnosticoRelacionado: ctx.dxRel1,
       codComplicacion: null,
       vrServicio: toMoneyString(value),
       conceptoRecaudo: null,
@@ -449,13 +428,6 @@ function buildMedicamentos(
   ctx: EncounterContext,
   state: ServiceBuilderState
 ): void {
-  const principalDx =
-    ctx.diagnoses.find(
-      (d) => d.rank === 1 || d.diagnosisType === "principal"
-    ) ?? ctx.diagnoses[0];
-  const dxRel1 =
-    ctx.diagnoses.filter((d) => d.id !== principalDx?.id)[0]?.code ?? null;
-
   for (const med of ctx.medications) {
     state.serviceConsecutive++;
     const value = 15_000;
@@ -467,8 +439,8 @@ function buildMedicamentos(
     state.services.medicamentos.push({
       codPrestador: ctx.providerCode,
       numAutorizacion: null,
-      codDiagnosticoPrincipal: principalDx?.code ?? "Z000",
-      codDiagnosticoRelacionado: dxRel1,
+      codDiagnosticoPrincipal: ctx.principalDx?.code ?? "Z000",
+      codDiagnosticoRelacionado: ctx.dxRel1,
       tipoMedicamento: "01",
       codTecnologiaSalud: med.atcCode ?? "000000",
       nomTecnologiaSalud: med.genericName,
@@ -494,13 +466,6 @@ function buildOtrosServicios(
   ctx: EncounterContext,
   state: ServiceBuilderState
 ): void {
-  const principalDx =
-    ctx.diagnoses.find(
-      (d) => d.rank === 1 || d.diagnosisType === "principal"
-    ) ?? ctx.diagnoses[0];
-  const dxRel1 =
-    ctx.diagnoses.filter((d) => d.id !== principalDx?.id)[0]?.code ?? null;
-
   for (const sr of ctx.serviceRequests) {
     state.serviceConsecutive++;
     const value = 25_000;
@@ -512,8 +477,8 @@ function buildOtrosServicios(
     state.services.otrosServicios.push({
       codPrestador: ctx.providerCode,
       numAutorizacion: null,
-      codDiagnosticoPrincipal: principalDx?.code ?? "Z000",
-      codDiagnosticoRelacionado: dxRel1,
+      codDiagnosticoPrincipal: ctx.principalDx?.code ?? "Z000",
+      codDiagnosticoRelacionado: ctx.dxRel1,
       tipoDocumentoIdentificacion: ctx.patDocType,
       numDocumentoIdentificacion: ctx.patDocNum,
       tipoOtrosServicios: "01",
@@ -734,16 +699,32 @@ function buildRipsUsuario(
 
   for (const enc of group.encounters) {
     includedEncounterIds.push(enc.id);
+    const diagnoses = bulk.diagnosesByEncounter.get(enc.id) ?? [];
+    const principalDx =
+      diagnoses.find(
+        (d) => d.rank === 1 || d.diagnosisType === "principal"
+      ) ?? diagnoses[0];
+    const relatedDx = diagnoses.filter((d) => d.id !== principalDx?.id);
+    const dxRel1 = relatedDx[0]?.code ?? null;
+    const procedures = bulk.proceduresByEncounter.get(enc.id) ?? [];
+    const cupsConsulta =
+      procedures.find((p) => p.cupsCode.startsWith("89"))?.cupsCode ??
+      "890201";
+
     const ctx: EncounterContext = {
       enc,
-      diagnoses: bulk.diagnosesByEncounter.get(enc.id) ?? [],
-      procedures: bulk.proceduresByEncounter.get(enc.id) ?? [],
+      diagnoses,
+      principalDx,
+      relatedDx,
+      dxRel1,
+      procedures,
       medications: bulk.medicationsByEncounter.get(enc.id) ?? [],
       serviceRequests: bulk.serviceRequestsByEncounter.get(enc.id) ?? [],
       providerCode: enc.orgRepsCode ?? enc.siteCode ?? organizationTaxId,
       fechaInicio: formatDateTime(new Date(enc.startedAt)),
       patDocType,
       patDocNum,
+      cupsConsulta,
     };
 
     buildConsultas(ctx, state);
