@@ -1,0 +1,18 @@
+{
+  "files": {
+    "src/schema/clinical.ts": {
+      "modifiedRanges": [
+        {
+          "start": 1181,
+          "end": 1206
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-26T08:19:29.016Z"
+    }
+  },
+  "turnCycles": 0,
+  "maxCycles": 3,
+  "lastUpdated": "2026-05-26T08:19:29.016Z",
+  "sessionId": "lens-mpmd27yo-5e8f03a4"
+}

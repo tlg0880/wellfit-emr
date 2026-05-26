@@ -838,14 +838,55 @@ export const ripsExport = sqliteTable(
     periodFrom: integer("period_from", { mode: "timestamp_ms" }).notNull(),
     periodTo: integer("period_to", { mode: "timestamp_ms" }).notNull(),
     status: text("status").notNull(),
+    operationType: text("operation_type").notNull().default("FEV_RIPS"),
+    organizationTaxId: text("organization_tax_id"),
+    invoiceNumber: text("invoice_number"),
+    noteType: text("note_type"),
+    noteNumber: text("note_number"),
+    numUsers: integer("num_users"),
+    totalValue: text("total_value"),
     generatedAt: requiredTimestamp("generated_at"),
     payloadJson: jsonText<JsonRecord>("payload_json"),
     validationResultJson: jsonText<JsonRecord>("validation_result_json"),
+    cuv: text("cuv"),
+    sentAt: timestamp("sent_at"),
+    muvResponseJson: jsonText<JsonRecord>("muv_response_json"),
   },
   (table) => [
     index("rips_export_generated_status_idx").on(
       table.generatedAt,
       table.status
+    ),
+    index("rips_export_operation_type_idx").on(table.operationType),
+    index("rips_export_cuv_idx").on(table.cuv),
+  ]
+);
+
+export const ripsExportEncounter = sqliteTable(
+  "rips_export_encounter",
+  {
+    id: text("id").primaryKey(),
+    ripsExportId: text("rips_export_id")
+      .notNull()
+      .references(() => ripsExport.id, { onDelete: "cascade" }),
+    encounterId: text("encounter_id")
+      .notNull()
+      .references(() => encounter.id),
+    patientId: text("patient_id")
+      .notNull()
+      .references(() => patient.id),
+    userConsecutive: integer("user_consecutive").notNull(),
+    serviceType: text("service_type").notNull(),
+    serviceConsecutive: integer("service_consecutive").notNull(),
+    includedAt: requiredTimestamp("included_at"),
+  },
+  (table) => [
+    index("ree_export_idx").on(table.ripsExportId),
+    index("ree_encounter_idx").on(table.encounterId),
+    index("ree_patient_idx").on(table.patientId),
+    uniqueIndex("ree_export_encounter_unique_idx").on(
+      table.ripsExportId,
+      table.encounterId
     ),
   ]
 );
@@ -1134,6 +1175,32 @@ export const patientDocumentRelations = relations(
     uploadedBy: one(user, {
       fields: [patientDocument.uploadedByUserId],
       references: [user.id],
+    }),
+  })
+);
+
+export const ripsExportRelations = relations(ripsExport, ({ one, many }) => ({
+  payer: one(payer, {
+    fields: [ripsExport.payerId],
+    references: [payer.id],
+  }),
+  encounters: many(ripsExportEncounter),
+}));
+
+export const ripsExportEncounterRelations = relations(
+  ripsExportEncounter,
+  ({ one }) => ({
+    ripsExport: one(ripsExport, {
+      fields: [ripsExportEncounter.ripsExportId],
+      references: [ripsExport.id],
+    }),
+    encounter: one(encounter, {
+      fields: [ripsExportEncounter.encounterId],
+      references: [encounter.id],
+    }),
+    patient: one(patient, {
+      fields: [ripsExportEncounter.patientId],
+      references: [patient.id],
     }),
   })
 );

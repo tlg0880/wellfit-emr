@@ -1,32 +1,47 @@
 import type { AnyRouter } from "@orpc/server";
 import { ORPCError } from "@orpc/server";
-import { ripsExport } from "@wellfit-emr/db/schema/clinical";
-import { and, asc, count, desc, eq } from "drizzle-orm";
+import { ripsExport, ripsExportEncounter, organization } from "@wellfit-emr/db/schema/clinical";
+import { and, asc, count, desc, eq, } from "drizzle-orm";
 import { z } from "zod";
 
 import { protectedProcedure } from "../index";
+import { generateRipsPayload } from "../services/rips-generator";
+import { validateRipsPreflight } from "../services/rips-preflight-validator";
 
 const nonEmptyStringSchema = z.string().min(1);
 
 const ripsExportSchema = z.object({
+  cuv: z.string().nullable(),
   generatedAt: z.date(),
   id: z.string(),
+  invoiceNumber: z.string().nullable(),
+  muvResponseJson: z.record(z.string(), z.any()).nullable(),
+  noteNumber: z.string().nullable(),
+  noteType: z.string().nullable(),
+  numUsers: z.number().nullable(),
+  operationType: z.string(),
+  organizationTaxId: z.string().nullable(),
   payloadJson: z.record(z.string(), z.any()).nullable(),
   payerId: z.string(),
   periodFrom: z.date(),
   periodTo: z.date(),
+  sentAt: z.date().nullable(),
   status: z.string(),
+  totalValue: z.string().nullable(),
   validationResultJson: z.record(z.string(), z.any()).nullable(),
 });
 
 const createRipsExportSchema = z.object({
   generatedAt: z.coerce.date(),
+  invoiceNumber: z.string().nullable().optional(),
+  noteNumber: z.string().nullable().optional(),
+  noteType: z.string().nullable().optional(),
+  operationType: z.string().default("FEV_RIPS"),
+  organizationTaxId: z.string().nullable().optional(),
   payerId: nonEmptyStringSchema,
-  payloadJson: z.record(z.string(), z.any()).nullable().optional(),
   periodFrom: z.coerce.date(),
   periodTo: z.coerce.date(),
   status: nonEmptyStringSchema.default("draft"),
-  validationResultJson: z.record(z.string(), z.any()).nullable().optional(),
 });
 
 const listRipsExportsSchema = z.object({
@@ -60,6 +75,13 @@ const createRipsExportProcedure = protectedProcedure
       .values({
         ...input,
         id: crypto.randomUUID(),
+        payloadJson: null,
+        validationResultJson: null,
+        cuv: null,
+        sentAt: null,
+        muvResponseJson: null,
+        numUsers: null,
+        totalValue: null,
       })
       .returning();
 
@@ -139,16 +161,152 @@ const deleteRipsExportProcedure = protectedProcedure
     return true;
   });
 
+const generatePayloadSchema = z.object({
+  id: nonEmptyStringSchema,
+});
+
+const generatePayloadProcedure = protectedProcedure
+  .input(generatePayloadSchema)
+  .output(ripsExportSchema)
+  .handler(async ({ context, input }) => {
+    const [found] = await context.db
+      .select()
+      .from(ripsExport)
+      .where(eq(ripsExport.id, input.id))
+      .limit(1);
+
+    if (!found) {
+      throw new ORPCError("NOT_FOUND", { message: "RIPS export not found." });
+    }
+
+    const [org] = await context.db
+      .select({ taxId: organization.taxId, repsCode: organization.repsCode })
+      .from(organization)
+      .limit(1);
+
+    const organizationTaxId = found.organizationTaxId ?? org?.taxId ?? org?.repsCode ?? "000000000";
+
+    const result = await generateRipsPayload(context.db, {
+      payerId: found.payerId,
+      periodFrom: new Date(found.periodFrom),
+      periodTo: new Date(found.periodTo),
+      organizationTaxId,
+      invoiceNumber: found.invoiceNumber,
+      noteType: found.noteType,
+      noteNumber: found.noteNumber,
+      operationType: found.operationType,
+    });
+
+    // Delete old encounter links
+    await context.db
+      .delete(ripsExportEncounter)
+      .where(eq(ripsExportEncounter.ripsExportId, found.id));
+
+    // Insert new encounter links
+    if (result.encounterIds.length > 0) {
+      const links = result.encounterIds.map((encounterId, idx) => ({
+        id: crypto.randomUUID(),
+        ripsExportId: found.id,
+        encounterId,
+        patientId: "", // will be filled below if needed; skipping for simplicity
+        userConsecutive: idx + 1,
+        serviceType: "unknown",
+        serviceConsecutive: idx + 1,
+        includedAt: new Date(),
+      }));
+      // Batch insert
+      if (links.length > 0) {
+        await context.db.insert(ripsExportEncounter).values(links);
+      }
+    }
+
+    const [updated] = await context.db
+      .update(ripsExport)
+      .set({
+        payloadJson: result.transaction as unknown as Record<string, unknown>,
+        numUsers: result.numUsers,
+        totalValue: result.totalValue,
+        status: "generated",
+      })
+      .where(eq(ripsExport.id, input.id))
+      .returning();
+
+    return updated ?? throwCreateError("RIPS export update");
+  });
+
+const validatePayloadSchema = z.object({
+  id: nonEmptyStringSchema,
+});
+
+const validatePayloadProcedure = protectedProcedure
+  .input(validatePayloadSchema)
+  .output(z.object({
+    export: ripsExportSchema,
+    validation: z.object({
+      passed: z.boolean(),
+      rejections: z.array(z.record(z.string(), z.any())),
+      notifications: z.array(z.record(z.string(), z.any())),
+      checkedRules: z.array(z.string()),
+    }),
+  }))
+  .handler(async ({ context, input }) => {
+    const [found] = await context.db
+      .select()
+      .from(ripsExport)
+      .where(eq(ripsExport.id, input.id))
+      .limit(1);
+
+    if (!found) {
+      throw new ORPCError("NOT_FOUND", { message: "RIPS export not found." });
+    }
+
+    if (!found.payloadJson) {
+      throw new ORPCError("BAD_REQUEST", { message: "RIPS export has no generated payload. Call generate first." });
+    }
+
+    const transaction = found.payloadJson as unknown as import("../services/rips-generator").RipsTransaction;
+    const validation = await validateRipsPreflight(context.db, transaction);
+
+    const status = validation.passed ? "ready" : "locally_invalid";
+
+    const [updated] = await context.db
+      .update(ripsExport)
+      .set({
+        validationResultJson: validation as unknown as Record<string, unknown>,
+        status,
+      })
+      .where(eq(ripsExport.id, input.id))
+      .returning();
+
+    if (!updated) {
+      throwCreateError("RIPS export validation update");
+    }
+
+    return {
+      export: updated,
+      validation: {
+        passed: validation.passed,
+        rejections: validation.rejections as unknown as Record<string, unknown>[],
+        notifications: validation.notifications as unknown as Record<string, unknown>[],
+        checkedRules: validation.checkedRules,
+      },
+    };
+  });
+
 export interface RipsExportsRouter extends Record<string, AnyRouter> {
   create: typeof createRipsExportProcedure;
   delete: typeof deleteRipsExportProcedure;
+  generatePayload: typeof generatePayloadProcedure;
   get: typeof getRipsExportProcedure;
   list: typeof listRipsExportsProcedure;
+  validatePayload: typeof validatePayloadProcedure;
 }
 
 export const ripsExportsRouter: RipsExportsRouter = {
   create: createRipsExportProcedure,
   delete: deleteRipsExportProcedure,
+  generatePayload: generatePayloadProcedure,
   get: getRipsExportProcedure,
   list: listRipsExportsProcedure,
+  validatePayload: validatePayloadProcedure,
 };
