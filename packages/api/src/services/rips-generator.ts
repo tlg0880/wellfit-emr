@@ -1,4 +1,3 @@
-import type { Db } from "../context";
 import {
   diagnosis,
   encounter,
@@ -7,196 +6,197 @@ import {
   patient,
   procedureRecord,
   serviceRequest,
-  site,
   serviceUnit,
+  site,
 } from "@wellfit-emr/db/schema/clinical";
 import { and, eq, gte, inArray, lte } from "drizzle-orm";
+import type { Db } from "../context";
 
 export interface RipsGenerationInput {
+  invoiceNumber?: string | null;
+  noteNumber?: string | null;
+  noteType?: string | null;
+  operationType?: string;
+  organizationTaxId: string;
   payerId: string;
   periodFrom: Date;
   periodTo: Date;
-  organizationTaxId: string;
-  invoiceNumber?: string | null;
-  noteType?: string | null;
-  noteNumber?: string | null;
-  operationType?: string;
 }
 
 export interface RipsTransaction {
   numDocumentoIdObligado: string;
   numFactura: string | null;
-  tipoNota: string | null;
   numNota: string | null;
+  tipoNota: string | null;
   usuarios: RipsUsuario[];
 }
 
 export interface RipsUsuario {
-  tipoDocumentoIdentificacion: string;
-  numDocumentoIdentificacion: string;
-  tipoUsuario: string;
-  fechaNacimiento: string;
-  codSexo: string;
-  codPaisResidencia: string;
   codMunicipioResidencia: string | null;
-  codZonaTerritorialResidencia: string | null;
-  incapacidad: string;
-  consecutivo: number;
   codPaisOrigen: string;
+  codPaisResidencia: string;
+  codSexo: string;
+  codZonaTerritorialResidencia: string | null;
+  consecutivo: number;
+  fechaNacimiento: string;
+  incapacidad: string;
+  numDocumentoIdentificacion: string;
   servicios: RipsServicios;
+  tipoDocumentoIdentificacion: string;
+  tipoUsuario: string;
 }
 
 export interface RipsServicios {
   consultas?: RipsConsulta[];
-  procedimientos?: RipsProcedimiento[];
-  urgencias?: RipsUrgencia[];
   hospitalizacion?: RipsHospitalizacion[];
-  recienNacidos?: RipsRecienNacido[];
   medicamentos?: RipsMedicamento[];
   otrosServicios?: RipsOtroServicio[];
+  procedimientos?: RipsProcedimiento[];
+  recienNacidos?: RipsRecienNacido[];
+  urgencias?: RipsUrgencia[];
 }
 
 export interface RipsConsulta {
-  codPrestador: string;
-  fechaInicioAtencion: string;
-  numAutorizacion: string | null;
-  codConsulta: string;
-  modalidadGrupoServicioTecSal: string;
-  grupoServicios: string;
-  codServicio: string;
-  finalidadTecnologiaSalud: string;
   causaMotivoAtencion: string | null;
+  codConsulta: string;
   codDiagnosticoPrincipal: string;
   codDiagnosticoRelacionado1: string | null;
   codDiagnosticoRelacionado2: string | null;
   codDiagnosticoRelacionado3: string | null;
+  codPrestador: string;
+  codServicio: string;
+  conceptoRecaudo: string | null;
+  consecutivo: number;
+  fechaInicioAtencion: string;
+  finalidadTecnologiaSalud: string;
+  grupoServicios: string;
+  modalidadGrupoServicioTecSal: string;
+  numAutorizacion: string | null;
+  numDocumentoIdentificacion: string;
+  numFEVPagoModerador: string | null;
   tipoDiagnosticoPrincipal: string;
   tipoDocumentoIdentificacion: string;
-  numDocumentoIdentificacion: string;
-  vrServicio: string;
-  conceptoRecaudo: string | null;
   valorPagoModerador: string | null;
-  numFEVPagoModerador: string | null;
-  consecutivo: number;
+  vrServicio: string;
 }
 
 export interface RipsProcedimiento {
-  codPrestador: string;
-  fechaInicioAtencion: string;
-  idMIPRES: string | null;
-  numAutorizacion: string | null;
-  codProcedimiento: string;
-  viaIngresoServicioSalud: string;
-  modalidadGrupoServicioTecSal: string;
-  grupoServicios: string;
-  codServicio: string;
-  finalidadTecnologiaSalud: string;
-  tipoDocumentoIdentificacion: string;
-  numDocumentoIdentificacion: string;
+  codComplicacion: string | null;
   codDiagnosticoPrincipal: string;
   codDiagnosticoRelacionado: string | null;
-  codComplicacion: string | null;
-  vrServicio: string;
+  codPrestador: string;
+  codProcedimiento: string;
+  codServicio: string;
   conceptoRecaudo: string | null;
-  valorPagoModerador: string | null;
-  numFEVPagoModerador: string | null;
   consecutivo: number;
+  fechaInicioAtencion: string;
+  finalidadTecnologiaSalud: string;
+  grupoServicios: string;
+  idMIPRES: string | null;
+  modalidadGrupoServicioTecSal: string;
+  numAutorizacion: string | null;
+  numDocumentoIdentificacion: string;
+  numFEVPagoModerador: string | null;
+  tipoDocumentoIdentificacion: string;
+  valorPagoModerador: string | null;
+  viaIngresoServicioSalud: string;
+  vrServicio: string;
 }
 
 export interface RipsUrgencia {
-  codPrestador: string;
-  fechaInicioAtencion: string;
-  fechaEgreso: string | null;
-  numAutorizacion: string | null;
   causaMotivoAtencion: string | null;
+  codDiagnosticoCausaMuerte: string | null;
   codDiagnosticoPrincipal: string;
   codDiagnosticoRelacionado1: string | null;
   codDiagnosticoRelacionado2: string | null;
   codDiagnosticoRelacionado3: string | null;
+  codPrestador: string;
   condicionDestinoUsuarioEgreso: string | null;
-  codDiagnosticoCausaMuerte: string | null;
-  fechaEgresoObservacion: string | null;
   consecutivo: number;
+  fechaEgreso: string | null;
+  fechaEgresoObservacion: string | null;
+  fechaInicioAtencion: string;
+  numAutorizacion: string | null;
 }
 
 export interface RipsHospitalizacion {
-  codPrestador: string;
-  fechaInicioAtencion: string;
-  fechaEgreso: string | null;
-  numAutorizacion: string | null;
   causaMotivoAtencion: string | null;
+  codDiagnosticoCausaMuerte: string | null;
   codDiagnosticoPrincipal: string;
   codDiagnosticoRelacionado1: string | null;
   codDiagnosticoRelacionado2: string | null;
   codDiagnosticoRelacionado3: string | null;
+  codPrestador: string;
   condicionDestinoUsuarioEgreso: string | null;
-  codDiagnosticoCausaMuerte: string | null;
   consecutivo: number;
+  fechaEgreso: string | null;
+  fechaInicioAtencion: string;
+  numAutorizacion: string | null;
 }
 
 export interface RipsRecienNacido {
-  codPrestador: string;
-  fechaNacimiento: string;
-  edadGestacional: number;
-  numeroConsultasCPN: number;
-  codSexoBiologico: string;
-  peso: number;
+  codDiagnosticoCausaMuerte: string | null;
   codDiagnosticoPrincipal: string;
   codDiagnosticoRelacionado1: string | null;
+  codPrestador: string;
+  codSexoBiologico: string;
   condicionDestinoUsuarioEgreso: string | null;
-  codDiagnosticoCausaMuerte: string | null;
   consecutivo: number;
+  edadGestacional: number;
+  fechaNacimiento: string;
+  numeroConsultasCPN: number;
+  peso: number;
 }
 
 export interface RipsMedicamento {
-  codPrestador: string;
-  numAutorizacion: string | null;
+  cantidadMedicamento: number;
   codDiagnosticoPrincipal: string;
   codDiagnosticoRelacionado: string | null;
-  tipoMedicamento: string;
+  codPrestador: string;
   codTecnologiaSalud: string;
-  nomTecnologiaSalud: string | null;
   concentracionMedicamento: string | null;
-  unidadMedida: string | null;
-  formaFarmaceutica: string | null;
-  unidadMinima: string | null;
-  cantidadMedicamento: number;
-  diasTratamiento: number;
-  tipoDocumentoIdentificacion: string;
-  numDocumentoIdentificacion: string;
-  vrUnitMedicamento: string;
-  vrServicio: string;
   conceptoRecaudo: string | null;
-  valorPagoModerador: string | null;
-  numFEVPagoModerador: string | null;
   consecutivo: number;
+  diasTratamiento: number;
+  formaFarmaceutica: string | null;
+  nomTecnologiaSalud: string | null;
+  numAutorizacion: string | null;
+  numDocumentoIdentificacion: string;
+  numFEVPagoModerador: string | null;
+  tipoDocumentoIdentificacion: string;
+  tipoMedicamento: string;
+  unidadMedida: string | null;
+  unidadMinima: string | null;
+  valorPagoModerador: string | null;
+  vrServicio: string;
+  vrUnitMedicamento: string;
 }
 
 export interface RipsOtroServicio {
-  codPrestador: string;
-  numAutorizacion: string | null;
+  cantidadOS: number;
   codDiagnosticoPrincipal: string;
   codDiagnosticoRelacionado: string | null;
-  tipoDocumentoIdentificacion: string;
-  numDocumentoIdentificacion: string;
-  tipoOtrosServicios: string;
+  codPrestador: string;
   codTecnologiaSalud: string;
-  nomTecnologiaSalud: string | null;
-  cantidadOS: number;
-  tipoDocumentoIdentificacionOP: string | null;
-  numDocumentoIdentificacionOP: string | null;
-  vrServicio: string;
   conceptoRecaudo: string | null;
-  valorPagoModerador: string | null;
-  numFEVPagoModerador: string | null;
   consecutivo: number;
+  nomTecnologiaSalud: string | null;
+  numAutorizacion: string | null;
+  numDocumentoIdentificacion: string;
+  numDocumentoIdentificacionOP: string | null;
+  numFEVPagoModerador: string | null;
+  tipoDocumentoIdentificacion: string;
+  tipoDocumentoIdentificacionOP: string | null;
+  tipoOtrosServicios: string;
+  valorPagoModerador: string | null;
+  vrServicio: string;
 }
 
 export interface GeneratedRipsResult {
-  transaction: RipsTransaction;
+  encounterIds: string[];
   numUsers: number;
   totalValue: string;
-  encounterIds: string[];
+  transaction: RipsTransaction;
 }
 
 function formatDateTime(date: Date): string {
@@ -240,45 +240,62 @@ function mapPatientDocTypeToRips(docType: string): string {
 }
 
 function mapSexToRips(sex: string): string {
-  if (sex === "male") { return "M"; }
-  if (sex === "female") { return "F"; }
+  if (sex === "male") {
+    return "M";
+  }
+  if (sex === "female") {
+    return "F";
+  }
   return "I";
 }
 
 interface EncounterContext {
+  diagnoses: (typeof diagnosis.$inferSelect)[];
   enc: typeof encounter.$inferSelect & {
     siteCode: string;
     serviceCode: string;
     orgRepsCode: string | null;
   };
-  diagnoses: (typeof diagnosis.$inferSelect)[];
-  procedures: (typeof procedureRecord.$inferSelect)[];
-  medications: (typeof medicationOrder.$inferSelect)[];
-  serviceRequests: (typeof serviceRequest.$inferSelect)[];
-  providerCode: string;
   fechaInicio: string;
-  patDocType: string;
+  medications: (typeof medicationOrder.$inferSelect)[];
   patDocNum: string;
+  patDocType: string;
+  procedures: (typeof procedureRecord.$inferSelect)[];
+  providerCode: string;
+  serviceRequests: (typeof serviceRequest.$inferSelect)[];
 }
 
 interface ServiceBuilderState {
-  services: RipsServicios;
   serviceConsecutive: number;
+  services: RipsServicios;
   totalValue: number;
 }
 
-function buildConsultas(ctx: EncounterContext, state: ServiceBuilderState): void {
-  if (ctx.enc.encounterClass !== "ambulatory" && ctx.enc.encounterClass !== "outpatient") {
+function buildConsultas(
+  ctx: EncounterContext,
+  state: ServiceBuilderState
+): void {
+  if (
+    ctx.enc.encounterClass !== "ambulatory" &&
+    ctx.enc.encounterClass !== "outpatient"
+  ) {
     return;
   }
   state.serviceConsecutive++;
-  const principalDx = ctx.diagnoses.find((d) => d.rank === 1 || d.diagnosisType === "principal") ?? ctx.diagnoses[0];
+  const principalDx =
+    ctx.diagnoses.find(
+      (d) => d.rank === 1 || d.diagnosisType === "principal"
+    ) ?? ctx.diagnoses[0];
   const relatedDx = ctx.diagnoses.filter((d) => d.id !== principalDx?.id);
-  const cupsConsulta = ctx.procedures.find((p) => p.cupsCode.startsWith("89"))?.cupsCode ?? "890201";
+  const cupsConsulta =
+    ctx.procedures.find((p) => p.cupsCode.startsWith("89"))?.cupsCode ??
+    "890201";
   const value = 50_000;
   state.totalValue += value;
 
-  if (!state.services.consultas) { state.services.consultas = []; }
+  if (!state.services.consultas) {
+    state.services.consultas = [];
+  }
   state.services.consultas.push({
     codPrestador: ctx.providerCode,
     fechaInicioAtencion: ctx.fechaInicio,
@@ -293,7 +310,8 @@ function buildConsultas(ctx: EncounterContext, state: ServiceBuilderState): void
     codDiagnosticoRelacionado1: relatedDx[0]?.code ?? null,
     codDiagnosticoRelacionado2: relatedDx[1]?.code ?? null,
     codDiagnosticoRelacionado3: relatedDx[2]?.code ?? null,
-    tipoDiagnosticoPrincipal: principalDx?.diagnosisType === "confirmed" ? "02" : "01",
+    tipoDiagnosticoPrincipal:
+      principalDx?.diagnosisType === "confirmed" ? "02" : "01",
     tipoDocumentoIdentificacion: ctx.patDocType,
     numDocumentoIdentificacion: ctx.patDocNum,
     vrServicio: toMoneyString(value),
@@ -304,19 +322,31 @@ function buildConsultas(ctx: EncounterContext, state: ServiceBuilderState): void
   });
 }
 
-function buildUrgencias(ctx: EncounterContext, state: ServiceBuilderState): void {
-  if (ctx.enc.encounterClass !== "emergency") { return; }
+function buildUrgencias(
+  ctx: EncounterContext,
+  state: ServiceBuilderState
+): void {
+  if (ctx.enc.encounterClass !== "emergency") {
+    return;
+  }
   state.serviceConsecutive++;
-  const principalDx = ctx.diagnoses.find((d) => d.rank === 1 || d.diagnosisType === "principal") ?? ctx.diagnoses[0];
+  const principalDx =
+    ctx.diagnoses.find(
+      (d) => d.rank === 1 || d.diagnosisType === "principal"
+    ) ?? ctx.diagnoses[0];
   const relatedDx = ctx.diagnoses.filter((d) => d.id !== principalDx?.id);
   const value = 75_000;
   state.totalValue += value;
 
-  if (!state.services.urgencias) { state.services.urgencias = []; }
+  if (!state.services.urgencias) {
+    state.services.urgencias = [];
+  }
   state.services.urgencias.push({
     codPrestador: ctx.providerCode,
     fechaInicioAtencion: ctx.fechaInicio,
-    fechaEgreso: ctx.enc.endedAt ? formatDateTime(new Date(ctx.enc.endedAt)) : null,
+    fechaEgreso: ctx.enc.endedAt
+      ? formatDateTime(new Date(ctx.enc.endedAt))
+      : null,
     numAutorizacion: null,
     causaMotivoAtencion: ctx.enc.causeExternalCode ?? null,
     codDiagnosticoPrincipal: principalDx?.code ?? "Z000",
@@ -325,24 +355,38 @@ function buildUrgencias(ctx: EncounterContext, state: ServiceBuilderState): void
     codDiagnosticoRelacionado3: relatedDx[2]?.code ?? null,
     condicionDestinoUsuarioEgreso: ctx.enc.condicionDestinoCode ?? null,
     codDiagnosticoCausaMuerte: null,
-    fechaEgresoObservacion: ctx.enc.endedAt ? formatDateTime(new Date(ctx.enc.endedAt)) : null,
+    fechaEgresoObservacion: ctx.enc.endedAt
+      ? formatDateTime(new Date(ctx.enc.endedAt))
+      : null,
     consecutivo: state.serviceConsecutive,
   });
 }
 
-function buildHospitalizacion(ctx: EncounterContext, state: ServiceBuilderState): void {
-  if (ctx.enc.encounterClass !== "inpatient") { return; }
+function buildHospitalizacion(
+  ctx: EncounterContext,
+  state: ServiceBuilderState
+): void {
+  if (ctx.enc.encounterClass !== "inpatient") {
+    return;
+  }
   state.serviceConsecutive++;
-  const principalDx = ctx.diagnoses.find((d) => d.rank === 1 || d.diagnosisType === "principal") ?? ctx.diagnoses[0];
+  const principalDx =
+    ctx.diagnoses.find(
+      (d) => d.rank === 1 || d.diagnosisType === "principal"
+    ) ?? ctx.diagnoses[0];
   const relatedDx = ctx.diagnoses.filter((d) => d.id !== principalDx?.id);
   const value = 150_000;
   state.totalValue += value;
 
-  if (!state.services.hospitalizacion) { state.services.hospitalizacion = []; }
+  if (!state.services.hospitalizacion) {
+    state.services.hospitalizacion = [];
+  }
   state.services.hospitalizacion.push({
     codPrestador: ctx.providerCode,
     fechaInicioAtencion: ctx.fechaInicio,
-    fechaEgreso: ctx.enc.endedAt ? formatDateTime(new Date(ctx.enc.endedAt)) : null,
+    fechaEgreso: ctx.enc.endedAt
+      ? formatDateTime(new Date(ctx.enc.endedAt))
+      : null,
     numAutorizacion: null,
     causaMotivoAtencion: ctx.enc.causeExternalCode ?? null,
     codDiagnosticoPrincipal: principalDx?.code ?? "Z000",
@@ -355,19 +399,30 @@ function buildHospitalizacion(ctx: EncounterContext, state: ServiceBuilderState)
   });
 }
 
-function buildProcedimientos(ctx: EncounterContext, state: ServiceBuilderState): void {
-  const principalDx = ctx.diagnoses.find((d) => d.rank === 1 || d.diagnosisType === "principal") ?? ctx.diagnoses[0];
-  const dxRel1 = ctx.diagnoses.filter((d) => d.id !== principalDx?.id)[0]?.code ?? null;
+function buildProcedimientos(
+  ctx: EncounterContext,
+  state: ServiceBuilderState
+): void {
+  const principalDx =
+    ctx.diagnoses.find(
+      (d) => d.rank === 1 || d.diagnosisType === "principal"
+    ) ?? ctx.diagnoses[0];
+  const dxRel1 =
+    ctx.diagnoses.filter((d) => d.id !== principalDx?.id)[0]?.code ?? null;
 
   for (const proc of ctx.procedures) {
     state.serviceConsecutive++;
     const value = 30_000;
     state.totalValue += value;
 
-    if (!state.services.procedimientos) { state.services.procedimientos = []; }
+    if (!state.services.procedimientos) {
+      state.services.procedimientos = [];
+    }
     state.services.procedimientos.push({
       codPrestador: ctx.providerCode,
-      fechaInicioAtencion: proc.performedAt ? formatDateTime(new Date(proc.performedAt)) : ctx.fechaInicio,
+      fechaInicioAtencion: proc.performedAt
+        ? formatDateTime(new Date(proc.performedAt))
+        : ctx.fechaInicio,
       idMIPRES: null,
       numAutorizacion: null,
       codProcedimiento: proc.cupsCode,
@@ -390,16 +445,25 @@ function buildProcedimientos(ctx: EncounterContext, state: ServiceBuilderState):
   }
 }
 
-function buildMedicamentos(ctx: EncounterContext, state: ServiceBuilderState): void {
-  const principalDx = ctx.diagnoses.find((d) => d.rank === 1 || d.diagnosisType === "principal") ?? ctx.diagnoses[0];
-  const dxRel1 = ctx.diagnoses.filter((d) => d.id !== principalDx?.id)[0]?.code ?? null;
+function buildMedicamentos(
+  ctx: EncounterContext,
+  state: ServiceBuilderState
+): void {
+  const principalDx =
+    ctx.diagnoses.find(
+      (d) => d.rank === 1 || d.diagnosisType === "principal"
+    ) ?? ctx.diagnoses[0];
+  const dxRel1 =
+    ctx.diagnoses.filter((d) => d.id !== principalDx?.id)[0]?.code ?? null;
 
   for (const med of ctx.medications) {
     state.serviceConsecutive++;
     const value = 15_000;
     state.totalValue += value;
 
-    if (!state.services.medicamentos) { state.services.medicamentos = []; }
+    if (!state.services.medicamentos) {
+      state.services.medicamentos = [];
+    }
     state.services.medicamentos.push({
       codPrestador: ctx.providerCode,
       numAutorizacion: null,
@@ -426,16 +490,25 @@ function buildMedicamentos(ctx: EncounterContext, state: ServiceBuilderState): v
   }
 }
 
-function buildOtrosServicios(ctx: EncounterContext, state: ServiceBuilderState): void {
-  const principalDx = ctx.diagnoses.find((d) => d.rank === 1 || d.diagnosisType === "principal") ?? ctx.diagnoses[0];
-  const dxRel1 = ctx.diagnoses.filter((d) => d.id !== principalDx?.id)[0]?.code ?? null;
+function buildOtrosServicios(
+  ctx: EncounterContext,
+  state: ServiceBuilderState
+): void {
+  const principalDx =
+    ctx.diagnoses.find(
+      (d) => d.rank === 1 || d.diagnosisType === "principal"
+    ) ?? ctx.diagnoses[0];
+  const dxRel1 =
+    ctx.diagnoses.filter((d) => d.id !== principalDx?.id)[0]?.code ?? null;
 
   for (const sr of ctx.serviceRequests) {
     state.serviceConsecutive++;
     const value = 25_000;
     state.totalValue += value;
 
-    if (!state.services.otrosServicios) { state.services.otrosServicios = []; }
+    if (!state.services.otrosServicios) {
+      state.services.otrosServicios = [];
+    }
     state.services.otrosServicios.push({
       codPrestador: ctx.providerCode,
       numAutorizacion: null,
@@ -542,21 +615,29 @@ export async function generateRipsPayload(
 function calculateTotalValue(usuarios: RipsUsuario[]): number {
   let total = 0;
   for (const u of usuarios) {
-    for (const c of u.servicios.consultas ?? []) { total += Number.parseFloat(c.vrServicio); }
-    for (const p of u.servicios.procedimientos ?? []) { total += Number.parseFloat(p.vrServicio); }
-    for (const m of u.servicios.medicamentos ?? []) { total += Number.parseFloat(m.vrServicio); }
-    for (const o of u.servicios.otrosServicios ?? []) { total += Number.parseFloat(o.vrServicio); }
+    for (const c of u.servicios.consultas ?? []) {
+      total += Number.parseFloat(c.vrServicio);
+    }
+    for (const p of u.servicios.procedimientos ?? []) {
+      total += Number.parseFloat(p.vrServicio);
+    }
+    for (const m of u.servicios.medicamentos ?? []) {
+      total += Number.parseFloat(m.vrServicio);
+    }
+    for (const o of u.servicios.otrosServicios ?? []) {
+      total += Number.parseFloat(o.vrServicio);
+    }
   }
   return total;
 }
 
 interface PatientGroup {
-  patient: typeof patient.$inferSelect;
   encounters: (typeof encounter.$inferSelect & {
     siteCode: string;
     serviceCode: string;
     orgRepsCode: string | null;
   })[];
+  patient: typeof patient.$inferSelect;
 }
 
 function groupEncountersByPatient(
@@ -588,22 +669,38 @@ function groupEncountersByPatient(
 }
 
 interface BulkClinicalData {
-  diagnosesByEncounter: Map<string, typeof diagnosis.$inferSelect[]>;
-  proceduresByEncounter: Map<string, typeof procedureRecord.$inferSelect[]>;
-  medicationsByEncounter: Map<string, typeof medicationOrder.$inferSelect[]>;
-  serviceRequestsByEncounter: Map<string, typeof serviceRequest.$inferSelect[]>;
+  diagnosesByEncounter: Map<string, (typeof diagnosis.$inferSelect)[]>;
+  medicationsByEncounter: Map<string, (typeof medicationOrder.$inferSelect)[]>;
+  proceduresByEncounter: Map<string, (typeof procedureRecord.$inferSelect)[]>;
+  serviceRequestsByEncounter: Map<
+    string,
+    (typeof serviceRequest.$inferSelect)[]
+  >;
 }
 
 async function fetchBulkClinicalData(
   db: Db,
   encounterIds: string[]
 ): Promise<BulkClinicalData> {
-  const [diagnosesRows, proceduresRows, medicationsRows, serviceRequestsRows] = await Promise.all([
-    db.select().from(diagnosis).where(inArray(diagnosis.encounterId, encounterIds)),
-    db.select().from(procedureRecord).where(inArray(procedureRecord.encounterId, encounterIds)),
-    db.select().from(medicationOrder).where(inArray(medicationOrder.encounterId, encounterIds)),
-    db.select().from(serviceRequest).where(inArray(serviceRequest.encounterId, encounterIds)),
-  ]);
+  const [diagnosesRows, proceduresRows, medicationsRows, serviceRequestsRows] =
+    await Promise.all([
+      db
+        .select()
+        .from(diagnosis)
+        .where(inArray(diagnosis.encounterId, encounterIds)),
+      db
+        .select()
+        .from(procedureRecord)
+        .where(inArray(procedureRecord.encounterId, encounterIds)),
+      db
+        .select()
+        .from(medicationOrder)
+        .where(inArray(medicationOrder.encounterId, encounterIds)),
+      db
+        .select()
+        .from(serviceRequest)
+        .where(inArray(serviceRequest.encounterId, encounterIds)),
+    ]);
 
   return {
     diagnosesByEncounter: groupBy(diagnosesRows, "encounterId"),
@@ -617,7 +714,11 @@ function buildRipsUsuario(
   group: PatientGroup,
   bulk: BulkClinicalData,
   organizationTaxId: string
-): { usuario: RipsUsuario; includedEncounterIds: string[]; state: ServiceBuilderState } {
+): {
+  usuario: RipsUsuario;
+  includedEncounterIds: string[];
+  state: ServiceBuilderState;
+} {
   const pat = group.patient;
   const patDocType = mapPatientDocTypeToRips(pat.primaryDocumentType);
   const patDocNum = pat.primaryDocumentNumber;
@@ -679,9 +780,13 @@ function groupBy<T extends Record<string, unknown>>(
   const map = new Map<string, T[]>();
   for (const item of arr) {
     const k = String(item[key]);
-    if (!map.has(k)) { map.set(k, []); }
+    if (!map.has(k)) {
+      map.set(k, []);
+    }
     const list = map.get(k);
-    if (list) { list.push(item); }
+    if (list) {
+      list.push(item);
+    }
   }
   return map;
 }

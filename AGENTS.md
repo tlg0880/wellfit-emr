@@ -93,7 +93,7 @@ const mutation = useMutation({ ...orpc.patients.create.mutationOptions(), onSucc
 - `incapacityCertificates` — create/list
 - `attachments` — binary_object (create) + attachment_link (create/list)
 - `auditEvents` — create/list con filtros
-- `ripsExports` — create/list
+- `ripsExports` — create/list/get/delete + `generatePayload` (genera JSON RIPS desde datos clínicos) + `validatePayload` (preflight validation con reglas RVG/RVC)
 - `ihceBundles` — create/list
 - `facilities` — organizations, sites, serviceUnits, practitioners. Los listados de sedes y unidades de servicio aplican filtros de búsqueda además del alcance por organización/sede.
 - `admin` — gestión de usuarios (Better Auth admin plugin)
@@ -109,6 +109,18 @@ const mutation = useMutation({ ...orpc.patients.create.mutationOptions(), onSucc
 ### Backend routers PENDIENTES
 
 _Ninguno. Todos los routers planificados están implementados._
+
+### Cambios recientes (2026-05-26)
+
+- **Generación y validación RIPS-FEV implementadas** (`/rips-exports` y `/rips-exports/$exportId`):
+  - **Backend — Generador RIPS**: Nuevo servicio `packages/api/src/services/rips-generator.ts` que consulta tablas clínicas (`encounter`, `diagnosis`, `procedureRecord`, `medicationOrder`, `serviceRequest`, `patient`, `practitioner`, `site`, `serviceUnit`) y genera JSON RIPS jerárquico (`transaccion -> usuarios[] -> servicios.{consultas,procedimientos,urgencias,hospitalizacion,recienNacidos,medicamentos,otrosServicios}`) con consecutivos únicos, mapeo de tipos de documento/sexo a códigos SISPRO, valores monetarios como strings decimales, y agrupación por paciente. Expone `RipsTransaction`, `RipsUsuario`, `RipsServicios` y tipos específicos por servicio.
+  - **Backend — Validador preflight**: Nuevo servicio `packages/api/src/services/rips-preflight-validator.ts` que implementa validación local en capas: estructura/sintaxis (RVG01), transacción (T01-T02), usuario (RVC01-RVC07: tipo documento, tipo usuario, sexo, país, municipio, zona, incapacidad), servicios (RVC20-RVC30: consultas CUPS/finalidad/causa, procedimientos CUPS/vía ingreso, medicamentos tipo/cantidad/días, otros servicios), y coherencia (RVG12 usuarios duplicados, RVG13 medicamentos duplicados). Usa catálogos SISPRO desde `ripsReferenceEntry` para validación de códigos. Retorna `PreflightValidationResult` con `rejections` y `notifications` separados. Reglas comprobadas: RVG01, RVG03, RVG07, RVG12, RVG13, RVC01-RVC07, RVC20-RVC30, T01-T02.
+  - **Backend — Router `ripsExports` extendido**: `packages/api/src/routers/rips-exports.ts` ahora incluye `generatePayload` (genera JSON, persiste en `payloadJson`, inserta `ripsExportEncounter` links, actualiza `numUsers`/`totalValue`/`status: generated`) y `validatePayload` (ejecuta preflight, persiste `validationResultJson`, actualiza `status` a `ready` o `locally_invalid`). Schema actualizado con campos nuevos: `operationType`, `organizationTaxId`, `invoiceNumber`, `noteType`, `noteNumber`, `numUsers`, `totalValue`, `cuv`, `sentAt`, `muvResponseJson`.
+  - **Base de datos — Tablas transaccionales RIPS**: Migration `0005_rips_transactional.sql` agrega columnas a `rips_export` y nueva tabla `rips_export_encounter` para rastrear qué encuentros fueron incluidos en cada exportación con consecutivos de usuario/servicio. Schema Drizzle actualizado en `clinical.ts` con relaciones.
+  - **Frontend — Visor de RIPS estructurado**: `apps/web/src/routes/_authenticated/rips-exports/$exportId.tsx` rediseñado con: (a) tarjeta de información general que muestra estado como badge semántico, operación, NIT obligado, usuarios/valor total; (b) visor estructurado del payload RIPS que renderiza transacción, usuarios con badges de documento/sexo/tipo, y servicios agrupados por tipo (consultas, procedimientos, medicamentos, urgencias, hospitalización, recién nacidos, otros) con tarjetas compactas mostrando prestador, consecutivo, inicio, diagnóstico, valor, CUPS/tecnología; (c) panel de validación preflight con badge de aprobado/rechazado, lista de rechazos en rojo (regla, path, campo, mensaje, valor, restricción esperada) y notificaciones en ámbar; (d) toggle entre visor estructurado y JSON crudo. Acciones de generar/validar en el header del detalle.
+  - **Frontend — Listado de exportaciones mejorado**: `apps/web/src/routes/_authenticated/rips-exports/index.tsx` actualizado con: (a) formulario de creación incluye campo `organizationTaxId`; (b) filtros de estado incluyen `generated`, `ready`, `locally_invalid`; (c) badges de estado semánticos para todos los estados; (d) botones de generar (Play) y validar (ShieldCheck) inline en cada fila de la tabla.
+  - **Tests**: `packages/api/src/services/rips-generator.test.ts` y `rips-preflight-validator.test.ts` con `bun:test`. Validación: `bun run check-types` en verde, `bun x ultracite check` en verde, tests pasan.
+  - **Benchmark**: Script `packages/api/src/benchmarks/rips-benchmark.ts` mide `rips_batch_gen_ms`. Con datos del seed (10 pacientes, 22 encuentros) genera ~10 usuarios y 1.7M COP en ~10ms.
 
 ### Cambios recientes (2026-05-26)
 
@@ -364,7 +376,6 @@ _Ninguno. Todos los routers planificados están implementados._
 
 ### Backend PENDIENTE (post-auditoría 2026-04-30)
 
-- **CRÍTICO**: Tablas transaccionales RIPS por tipo de servicio (consulta, procedimientos, medicamentos, urgencias, hospitalización, recién nacido, otros servicios) + generador FEV-RIPS estructurado
 - **CRÍTICO**: API FHIR R4 para interoperabilidad (Res. 866 de 2021)
 - **CRÍTICO**: Validación de interacciones medicamentosas (tabla local ATC o integración)
 - **ALTO**: Middleware de auth con roles/permisos (proteger admin, verificar banned)

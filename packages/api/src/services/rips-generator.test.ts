@@ -1,6 +1,6 @@
-import { describe, expect, it } from "vitest";
-import { generateRipsPayload } from "./rips-generator";
+import { describe, expect, it } from "bun:test";
 import { createTestContext } from "../test-utils";
+import { generateRipsPayload } from "./rips-generator";
 
 describe("rips generator", () => {
   it("generates empty RIPS for period with no encounters", async () => {

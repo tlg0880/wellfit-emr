@@ -1,23 +1,27 @@
+import { ripsReferenceEntry } from "@wellfit-emr/db/schema/rips-reference";
 import { and, eq } from "drizzle-orm";
 import type { Db } from "../context";
-import { ripsReferenceEntry } from "@wellfit-emr/db/schema/rips-reference";
-import type { RipsTransaction, RipsUsuario, RipsServicios } from "./rips-generator";
+import type {
+  RipsServicios,
+  RipsTransaction,
+  RipsUsuario,
+} from "./rips-generator";
 
 export interface ValidationFinding {
-  ruleCode: string;
-  severity: "RECHAZO" | "NOTIFICACION";
-  path: string;
+  expectedConstraint: string;
   field: string;
   message: string;
+  path: string;
+  ruleCode: string;
+  severity: "RECHAZO" | "NOTIFICACION";
   sourceValue: unknown;
-  expectedConstraint: string;
 }
 
 export interface PreflightValidationResult {
+  checkedRules: string[];
+  notifications: ValidationFinding[];
   passed: boolean;
   rejections: ValidationFinding[];
-  notifications: ValidationFinding[];
-  checkedRules: string[];
 }
 
 const CUPS_CONSULTA_PREFIXES = ["89", "87"];
@@ -93,7 +97,9 @@ export async function validateRipsPreflight(
 
   for (let uIdx = 0; uIdx < transaction.usuarios.length; uIdx++) {
     const usuario = transaction.usuarios[uIdx];
-    if (!usuario) { continue; }
+    if (!usuario) {
+      continue;
+    }
     await validateUsuario(db, result, usuario, uIdx);
     await validateServicios(db, result, usuario.servicios, uIdx);
   }
@@ -358,28 +364,74 @@ async function validateConsultas(
 ): Promise<void> {
   for (let i = 0; i < consultas.length; i++) {
     const c = consultas[i];
-    if (!c) { continue; }
+    if (!c) {
+      continue;
+    }
     const path = `${basePath}.consultas[${i}]`;
 
     if (!isConsultaCups(c.codConsulta)) {
-      addFinding(result, "RVC20", "NOTIFICACION", path, "codConsulta", "Codigo de consulta no parece ser CUPS de consulta", c.codConsulta, "CUPS consulta prefix 89/87");
+      addFinding(
+        result,
+        "RVC20",
+        "NOTIFICACION",
+        path,
+        "codConsulta",
+        "Codigo de consulta no parece ser CUPS de consulta",
+        c.codConsulta,
+        "CUPS consulta prefix 89/87"
+      );
     }
 
-    const finalidadValid = await catalogExists(db, "RIPSFinalidadConsultaVersion2", c.finalidadTecnologiaSalud);
+    const finalidadValid = await catalogExists(
+      db,
+      "RIPSFinalidadConsultaVersion2",
+      c.finalidadTecnologiaSalud
+    );
     if (!finalidadValid) {
-      addFinding(result, "RVC21", "RECHAZO", path, "finalidadTecnologiaSalud", "Finalidad no encontrada en catalogo SISPRO", c.finalidadTecnologiaSalud, "RIPSFinalidadConsultaVersion2 valid code");
+      addFinding(
+        result,
+        "RVC21",
+        "RECHAZO",
+        path,
+        "finalidadTecnologiaSalud",
+        "Finalidad no encontrada en catalogo SISPRO",
+        c.finalidadTecnologiaSalud,
+        "RIPSFinalidadConsultaVersion2 valid code"
+      );
     }
 
     if (c.causaMotivoAtencion) {
-      const causaValid = await catalogExists(db, "RIPSCausaExternaVersion2", c.causaMotivoAtencion);
+      const causaValid = await catalogExists(
+        db,
+        "RIPSCausaExternaVersion2",
+        c.causaMotivoAtencion
+      );
       if (!causaValid) {
-        addFinding(result, "RVC22", "NOTIFICACION", path, "causaMotivoAtencion", "Causa externa no encontrada en catalogo SISPRO", c.causaMotivoAtencion, "RIPSCausaExternaVersion2 valid code");
+        addFinding(
+          result,
+          "RVC22",
+          "NOTIFICACION",
+          path,
+          "causaMotivoAtencion",
+          "Causa externa no encontrada en catalogo SISPRO",
+          c.causaMotivoAtencion,
+          "RIPSCausaExternaVersion2 valid code"
+        );
       }
     }
 
     const value = Number.parseFloat(c.vrServicio);
     if (value <= 0) {
-      addFinding(result, "RVC30", "RECHAZO", path, "vrServicio", "Valor de servicio debe ser mayor a cero para modalidad de evento", c.vrServicio, "> 0");
+      addFinding(
+        result,
+        "RVC30",
+        "RECHAZO",
+        path,
+        "vrServicio",
+        "Valor de servicio debe ser mayor a cero para modalidad de evento",
+        c.vrServicio,
+        "> 0"
+      );
     }
   }
 }
@@ -392,22 +444,55 @@ async function validateProcedimientos(
 ): Promise<void> {
   for (let i = 0; i < procedimientos.length; i++) {
     const p = procedimientos[i];
-    if (!p) { continue; }
+    if (!p) {
+      continue;
+    }
     const path = `${basePath}.procedimientos[${i}]`;
 
     const cupsValid = await catalogExists(db, "CUPSRips", p.codProcedimiento);
     if (!cupsValid) {
-      addFinding(result, "RVC23", "RECHAZO", path, "codProcedimiento", "Codigo CUPS no encontrado en catalogo SISPRO", p.codProcedimiento, "CUPSRips valid code");
+      addFinding(
+        result,
+        "RVC23",
+        "RECHAZO",
+        path,
+        "codProcedimiento",
+        "Codigo CUPS no encontrado en catalogo SISPRO",
+        p.codProcedimiento,
+        "CUPSRips valid code"
+      );
     }
 
-    const viaValid = await catalogExists(db, "ViaIngresoUsuario", p.viaIngresoServicioSalud);
+    const viaValid = await catalogExists(
+      db,
+      "ViaIngresoUsuario",
+      p.viaIngresoServicioSalud
+    );
     if (!viaValid) {
-      addFinding(result, "RVC24", "NOTIFICACION", path, "viaIngresoServicioSalud", "Via de ingreso no encontrada en catalogo SISPRO", p.viaIngresoServicioSalud, "ViaIngresoUsuario valid code");
+      addFinding(
+        result,
+        "RVC24",
+        "NOTIFICACION",
+        path,
+        "viaIngresoServicioSalud",
+        "Via de ingreso no encontrada en catalogo SISPRO",
+        p.viaIngresoServicioSalud,
+        "ViaIngresoUsuario valid code"
+      );
     }
 
     const value = Number.parseFloat(p.vrServicio);
     if (value <= 0) {
-      addFinding(result, "RVC30", "RECHAZO", path, "vrServicio", "Valor de servicio debe ser mayor a cero para modalidad de evento", p.vrServicio, "> 0");
+      addFinding(
+        result,
+        "RVC30",
+        "RECHAZO",
+        path,
+        "vrServicio",
+        "Valor de servicio debe ser mayor a cero para modalidad de evento",
+        p.vrServicio,
+        "> 0"
+      );
     }
   }
 }
@@ -420,20 +505,53 @@ async function validateMedicamentos(
 ): Promise<void> {
   for (let i = 0; i < medicamentos.length; i++) {
     const m = medicamentos[i];
-    if (!m) { continue; }
+    if (!m) {
+      continue;
+    }
     const path = `${basePath}.medicamentos[${i}]`;
 
-    const tipoMedValid = await catalogExists(db, "TipoMedicamentoPOSVersion2", m.tipoMedicamento);
+    const tipoMedValid = await catalogExists(
+      db,
+      "TipoMedicamentoPOSVersion2",
+      m.tipoMedicamento
+    );
     if (!tipoMedValid) {
-      addFinding(result, "RVC25", "RECHAZO", path, "tipoMedicamento", "Tipo de medicamento no encontrado en catalogo SISPRO", m.tipoMedicamento, "TipoMedicamentoPOSVersion2 valid code");
+      addFinding(
+        result,
+        "RVC25",
+        "RECHAZO",
+        path,
+        "tipoMedicamento",
+        "Tipo de medicamento no encontrado en catalogo SISPRO",
+        m.tipoMedicamento,
+        "TipoMedicamentoPOSVersion2 valid code"
+      );
     }
 
     if (m.cantidadMedicamento <= 0) {
-      addFinding(result, "RVC26", "RECHAZO", path, "cantidadMedicamento", "Cantidad de medicamento debe ser mayor a cero", m.cantidadMedicamento, "> 0");
+      addFinding(
+        result,
+        "RVC26",
+        "RECHAZO",
+        path,
+        "cantidadMedicamento",
+        "Cantidad de medicamento debe ser mayor a cero",
+        m.cantidadMedicamento,
+        "> 0"
+      );
     }
 
     if (m.diasTratamiento <= 0) {
-      addFinding(result, "RVC27", "RECHAZO", path, "diasTratamiento", "Dias de tratamiento debe ser mayor a cero", m.diasTratamiento, "> 0");
+      addFinding(
+        result,
+        "RVC27",
+        "RECHAZO",
+        path,
+        "diasTratamiento",
+        "Dias de tratamiento debe ser mayor a cero",
+        m.diasTratamiento,
+        "> 0"
+      );
     }
   }
 }
@@ -446,12 +564,27 @@ async function validateOtrosServicios(
 ): Promise<void> {
   for (let i = 0; i < otros.length; i++) {
     const o = otros[i];
-    if (!o) { continue; }
+    if (!o) {
+      continue;
+    }
     const path = `${basePath}.otrosServicios[${i}]`;
 
-    const tipoOsValid = await catalogExists(db, "TipoOtrosServicios", o.tipoOtrosServicios);
+    const tipoOsValid = await catalogExists(
+      db,
+      "TipoOtrosServicios",
+      o.tipoOtrosServicios
+    );
     if (!tipoOsValid) {
-      addFinding(result, "RVC28", "NOTIFICACION", path, "tipoOtrosServicios", "Tipo de otros servicios no encontrado en catalogo SISPRO", o.tipoOtrosServicios, "TipoOtrosServicios valid code");
+      addFinding(
+        result,
+        "RVC28",
+        "NOTIFICACION",
+        path,
+        "tipoOtrosServicios",
+        "Tipo de otros servicios no encontrado en catalogo SISPRO",
+        o.tipoOtrosServicios,
+        "TipoOtrosServicios valid code"
+      );
     }
   }
 }
@@ -464,9 +597,24 @@ async function validateServicios(
 ): Promise<void> {
   const basePath = `usuarios[${uIdx}].servicios`;
   await validateConsultas(db, result, servicios.consultas ?? [], basePath);
-  await validateProcedimientos(db, result, servicios.procedimientos ?? [], basePath);
-  await validateMedicamentos(db, result, servicios.medicamentos ?? [], basePath);
-  await validateOtrosServicios(db, result, servicios.otrosServicios ?? [], basePath);
+  await validateProcedimientos(
+    db,
+    result,
+    servicios.procedimientos ?? [],
+    basePath
+  );
+  await validateMedicamentos(
+    db,
+    result,
+    servicios.medicamentos ?? [],
+    basePath
+  );
+  await validateOtrosServicios(
+    db,
+    result,
+    servicios.otrosServicios ?? [],
+    basePath
+  );
 }
 
 function validateCoherence(
@@ -477,7 +625,9 @@ function validateCoherence(
   const userKeys = new Set<string>();
   for (let i = 0; i < tx.usuarios.length; i++) {
     const u = tx.usuarios[i];
-    if (!u) { continue; }
+    if (!u) {
+      continue;
+    }
     const key = `${u.tipoDocumentoIdentificacion}-${u.numDocumentoIdentificacion}`;
     if (userKeys.has(key)) {
       addFinding(
@@ -497,12 +647,16 @@ function validateCoherence(
   // RVG13: duplicate medications for same user
   for (let uIdx = 0; uIdx < tx.usuarios.length; uIdx++) {
     const u = tx.usuarios[uIdx];
-    if (!u) { continue; }
+    if (!u) {
+      continue;
+    }
     const meds = u.servicios.medicamentos ?? [];
     const medKeys = new Set<string>();
     for (let mIdx = 0; mIdx < meds.length; mIdx++) {
       const m = meds[mIdx];
-      if (!m) { continue; }
+      if (!m) {
+        continue;
+      }
       const key = `${m.codTecnologiaSalud}-${m.concentracionMedicamento}-${m.formaFarmaceutica}`;
       if (medKeys.has(key)) {
         addFinding(

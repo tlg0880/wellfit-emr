@@ -1,7 +1,11 @@
 import type { AnyRouter } from "@orpc/server";
 import { ORPCError } from "@orpc/server";
-import { ripsExport, ripsExportEncounter, organization } from "@wellfit-emr/db/schema/clinical";
-import { and, asc, count, desc, eq, } from "drizzle-orm";
+import {
+  organization,
+  ripsExport,
+  ripsExportEncounter,
+} from "@wellfit-emr/db/schema/clinical";
+import { and, asc, count, desc, eq } from "drizzle-orm";
 import { z } from "zod";
 
 import { protectedProcedure } from "../index";
@@ -184,7 +188,8 @@ const generatePayloadProcedure = protectedProcedure
       .from(organization)
       .limit(1);
 
-    const organizationTaxId = found.organizationTaxId ?? org?.taxId ?? org?.repsCode ?? "000000000";
+    const organizationTaxId =
+      found.organizationTaxId ?? org?.taxId ?? org?.repsCode ?? "000000000";
 
     const result = await generateRipsPayload(context.db, {
       payerId: found.payerId,
@@ -240,15 +245,17 @@ const validatePayloadSchema = z.object({
 
 const validatePayloadProcedure = protectedProcedure
   .input(validatePayloadSchema)
-  .output(z.object({
-    export: ripsExportSchema,
-    validation: z.object({
-      passed: z.boolean(),
-      rejections: z.array(z.record(z.string(), z.any())),
-      notifications: z.array(z.record(z.string(), z.any())),
-      checkedRules: z.array(z.string()),
-    }),
-  }))
+  .output(
+    z.object({
+      export: ripsExportSchema,
+      validation: z.object({
+        passed: z.boolean(),
+        rejections: z.array(z.record(z.string(), z.any())),
+        notifications: z.array(z.record(z.string(), z.any())),
+        checkedRules: z.array(z.string()),
+      }),
+    })
+  )
   .handler(async ({ context, input }) => {
     const [found] = await context.db
       .select()
@@ -261,10 +268,13 @@ const validatePayloadProcedure = protectedProcedure
     }
 
     if (!found.payloadJson) {
-      throw new ORPCError("BAD_REQUEST", { message: "RIPS export has no generated payload. Call generate first." });
+      throw new ORPCError("BAD_REQUEST", {
+        message: "RIPS export has no generated payload. Call generate first.",
+      });
     }
 
-    const transaction = found.payloadJson as unknown as import("../services/rips-generator").RipsTransaction;
+    const transaction =
+      found.payloadJson as unknown as import("../services/rips-generator").RipsTransaction;
     const validation = await validateRipsPreflight(context.db, transaction);
 
     const status = validation.passed ? "ready" : "locally_invalid";
@@ -286,8 +296,14 @@ const validatePayloadProcedure = protectedProcedure
       export: updated,
       validation: {
         passed: validation.passed,
-        rejections: validation.rejections as unknown as Record<string, unknown>[],
-        notifications: validation.notifications as unknown as Record<string, unknown>[],
+        rejections: validation.rejections as unknown as Record<
+          string,
+          unknown
+        >[],
+        notifications: validation.notifications as unknown as Record<
+          string,
+          unknown
+        >[],
         checkedRules: validation.checkedRules,
       },
     };

@@ -17,7 +17,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@wellfit-emr/ui/components/select";
-import { Eye, FileOutput, Plus, Search, Trash2 } from "lucide-react";
+import {
+  Eye,
+  FileOutput,
+  Play,
+  Plus,
+  Search,
+  ShieldCheck,
+  Trash2,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -35,6 +43,7 @@ function CreateRipsExportForm({ onCancel }: { onCancel: () => void }) {
     periodFrom: new Date().toISOString().slice(0, 10),
     periodTo: new Date().toISOString().slice(0, 10),
     status: "draft",
+    organizationTaxId: "",
   });
 
   const [organizationSearch, setOrganizationSearch] = useState("");
@@ -71,6 +80,7 @@ function CreateRipsExportForm({ onCancel }: { onCancel: () => void }) {
       periodTo: new Date(form.periodTo),
       status: form.status,
       generatedAt: new Date(),
+      organizationTaxId: form.organizationTaxId || null,
     });
   }
 
@@ -120,6 +130,17 @@ function CreateRipsExportForm({ onCancel }: { onCancel: () => void }) {
               required
               type="date"
               value={form.periodTo}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>NIT obligado</Label>
+            <Input
+              onChange={(e) =>
+                setForm({ ...form, organizationTaxId: e.target.value })
+              }
+              placeholder="900123456"
+              type="text"
+              value={form.organizationTaxId}
             />
           </div>
           <div className="flex items-end gap-2 md:col-span-3">
@@ -179,6 +200,38 @@ function RipsExportsListPage() {
     },
   });
 
+  const generateMutation = useMutation({
+    ...orpc.ripsExports.generatePayload.mutationOptions(),
+    onSuccess: () => {
+      toast.success("Payload generado");
+      queryClient.invalidateQueries({
+        queryKey: orpc.ripsExports.list.key({ type: "query" }),
+      });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Error al generar payload");
+    },
+  });
+
+  const validateMutation = useMutation({
+    ...orpc.ripsExports.validatePayload.mutationOptions(),
+    onSuccess: (data) => {
+      if (data.validation.passed) {
+        toast.success("Validación aprobada");
+      } else {
+        toast.error(
+          `Validación rechazada: ${data.validation.rejections.length} rechazos`
+        );
+      }
+      queryClient.invalidateQueries({
+        queryKey: orpc.ripsExports.list.key({ type: "query" }),
+      });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Error al validar");
+    },
+  });
+
   const columns = [
     {
       header: "Pagador ID",
@@ -196,19 +249,23 @@ function RipsExportsListPage() {
     },
     {
       header: "Estado",
-      accessor: (row: NonNullable<typeof data>["items"][0]) => (
-        <span
-          className={`inline-flex border px-1.5 py-0.5 font-medium text-[10px] ${
-            row.status === "draft"
-              ? "border-amber-200 bg-amber-50 text-amber-700"
-              : row.status === "sent"
-                ? "border-blue-200 bg-blue-50 text-blue-700"
-                : "border-emerald-200 bg-emerald-50 text-emerald-700"
-          }`}
-        >
-          {row.status}
-        </span>
-      ),
+      accessor: (row: NonNullable<typeof data>["items"][0]) => {
+        const statusClasses: Record<string, string> = {
+          draft: "border-amber-200 bg-amber-50 text-amber-700",
+          generated: "border-sky-200 bg-sky-50 text-sky-700",
+          ready: "border-emerald-200 bg-emerald-50 text-emerald-700",
+          locally_invalid: "border-red-200 bg-red-50 text-red-700",
+          sent: "border-blue-200 bg-blue-50 text-blue-700",
+          validated: "border-emerald-200 bg-emerald-50 text-emerald-700",
+        };
+        return (
+          <span
+            className={`inline-flex border px-1.5 py-0.5 font-medium text-[10px] ${statusClasses[row.status] ?? "border-slate-200 bg-slate-50 text-slate-700"}`}
+          >
+            {row.status}
+          </span>
+        );
+      },
     },
     {
       header: "Generado",
@@ -219,6 +276,24 @@ function RipsExportsListPage() {
       header: "Acciones",
       accessor: (row: NonNullable<typeof data>["items"][0]) => (
         <div className="flex items-center gap-1">
+          <Button
+            aria-label="Generar payload"
+            disabled={generateMutation.isPending}
+            onClick={() => generateMutation.mutate({ id: row.id })}
+            size="icon-xs"
+            variant="ghost"
+          >
+            <Play size={12} />
+          </Button>
+          <Button
+            aria-label="Validar payload"
+            disabled={!row.payloadJson || validateMutation.isPending}
+            onClick={() => validateMutation.mutate({ id: row.id })}
+            size="icon-xs"
+            variant="ghost"
+          >
+            <ShieldCheck size={12} />
+          </Button>
           <Link
             aria-label="Ver exportación"
             className="inline-flex text-muted-foreground hover:text-foreground"
@@ -242,7 +317,7 @@ function RipsExportsListPage() {
           </Button>
         </div>
       ),
-      className: "w-20",
+      className: "w-32",
     },
   ];
 
@@ -279,6 +354,9 @@ function RipsExportsListPage() {
             <SelectContent>
               <SelectItem value="all">Todos los estados</SelectItem>
               <SelectItem value="draft">Borrador</SelectItem>
+              <SelectItem value="generated">Generado</SelectItem>
+              <SelectItem value="ready">Listo</SelectItem>
+              <SelectItem value="locally_invalid">Invalido local</SelectItem>
               <SelectItem value="sent">Enviado</SelectItem>
               <SelectItem value="validated">Validado</SelectItem>
             </SelectContent>

@@ -96,131 +96,146 @@ function RipsPayloadViewer({
         </CardContent>
       </Card>
 
-      {(tx.usuarios ?? []).map((u: { numDocumentoIdentificacion: string; tipoDocumentoIdentificacion: string; consecutivo: number; fechaNacimiento: string; codSexo: string; tipoUsuario: string; servicios: Record<string, unknown[]> }, idx: number) => (
-        <Card key={`${u.numDocumentoIdentificacion}-${idx}`}>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-sm">
-              <Users size={16} />
-              Usuario {u.consecutivo}: {u.tipoDocumentoIdentificacion}{" "}
-              {u.numDocumentoIdentificacion}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex flex-wrap gap-2 text-xs">
-              <Badge variant="outline">{u.fechaNacimiento}</Badge>
-              <Badge variant="outline">Sexo: {u.codSexo}</Badge>
-              <Badge variant="outline">Tipo: {u.tipoUsuario}</Badge>
-            </div>
+      {(tx.usuarios ?? []).map(
+        (
+          u: {
+            numDocumentoIdentificacion: string;
+            tipoDocumentoIdentificacion: string;
+            consecutivo: number;
+            fechaNacimiento: string;
+            codSexo: string;
+            tipoUsuario: string;
+            servicios: Record<string, unknown[]>;
+          },
+          idx: number
+        ) => (
+          <Card key={`${u.numDocumentoIdentificacion}-${idx}`}>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-sm">
+                <Users size={16} />
+                Usuario {u.consecutivo}: {u.tipoDocumentoIdentificacion}{" "}
+                {u.numDocumentoIdentificacion}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex flex-wrap gap-2 text-xs">
+                <Badge variant="outline">{u.fechaNacimiento}</Badge>
+                <Badge variant="outline">Sexo: {u.codSexo}</Badge>
+                <Badge variant="outline">Tipo: {u.tipoUsuario}</Badge>
+              </div>
 
-            {Object.entries(u.servicios).map(([serviceType, items]) => {
-              if (!Array.isArray(items) || items.length === 0) {
-                return null;
-              }
-              return (
-                <div
-                  className="rounded-md border border-border/60 bg-muted/30 p-2.5"
-                  key={serviceType}
-                >
-                  <h4 className="mb-2 flex items-center gap-1.5 font-semibold text-xs">
-                    {SERVICE_ICONS[serviceType]}
-                    {SERVICE_LABELS[serviceType] ?? serviceType}
-                    <Badge className="ml-auto" variant="secondary">
-                      {items.length}
-                    </Badge>
-                  </h4>
-                  <div className="space-y-1.5">
-                    {items.map((item, i) => {
-                      // biome-ignore lint/suspicious/noExplicitAny: service item shape varies by type
-                      const it = item as Record<string, any>;
-                      return (
-                        <div
-                          className="grid grid-cols-2 gap-x-3 gap-y-0.5 rounded-sm bg-background p-2 text-[10px]"
-                          key={i}
-                        >
-                          <div>
-                            <span className="text-muted-foreground">
-                              Prestador:
-                            </span>{" "}
-                            <span className="font-medium">
-                              {String(it.codPrestador ?? "—")}
-                            </span>
+              {Object.entries(u.servicios).map(([serviceType, items]) => {
+                if (!Array.isArray(items) || items.length === 0) {
+                  return null;
+                }
+                return (
+                  <div
+                    className="rounded-md border border-border/60 bg-muted/30 p-2.5"
+                    key={serviceType}
+                  >
+                    <h4 className="mb-2 flex items-center gap-1.5 font-semibold text-xs">
+                      {SERVICE_ICONS[serviceType]}
+                      {SERVICE_LABELS[serviceType] ?? serviceType}
+                      <Badge className="ml-auto" variant="secondary">
+                        {items.length}
+                      </Badge>
+                    </h4>
+                    <div className="space-y-1.5">
+                      {items.map((item, i) => {
+                        // biome-ignore lint/suspicious/noExplicitAny: service item shape varies by type
+                        const it = item as Record<string, any>;
+                        return (
+                          <div
+                            className="grid grid-cols-2 gap-x-3 gap-y-0.5 rounded-sm bg-background p-2 text-[10px]"
+                            key={i}
+                          >
+                            <div>
+                              <span className="text-muted-foreground">
+                                Prestador:
+                              </span>{" "}
+                              <span className="font-medium">
+                                {String(it.codPrestador ?? "—")}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">
+                                Consecutivo:
+                              </span>{" "}
+                              <span className="font-medium">
+                                {String(it.consecutivo ?? "—")}
+                              </span>
+                            </div>
+                            {it.fechaInicioAtencion && (
+                              <div>
+                                <span className="text-muted-foreground">
+                                  Inicio:
+                                </span>{" "}
+                                <span className="font-medium">
+                                  {String(it.fechaInicioAtencion)}
+                                </span>
+                              </div>
+                            )}
+                            {it.codDiagnosticoPrincipal && (
+                              <div>
+                                <span className="text-muted-foreground">
+                                  Dx:
+                                </span>{" "}
+                                <span className="font-medium">
+                                  {String(it.codDiagnosticoPrincipal)}
+                                </span>
+                              </div>
+                            )}
+                            {it.vrServicio && (
+                              <div>
+                                <span className="text-muted-foreground">
+                                  Valor:
+                                </span>{" "}
+                                <span className="font-medium">
+                                  ${String(it.vrServicio)}
+                                </span>
+                              </div>
+                            )}
+                            {it.codConsulta && (
+                              <div>
+                                <span className="text-muted-foreground">
+                                  CUPS:
+                                </span>{" "}
+                                <span className="font-medium">
+                                  {String(it.codConsulta)}
+                                </span>
+                              </div>
+                            )}
+                            {it.codProcedimiento && (
+                              <div>
+                                <span className="text-muted-foreground">
+                                  CUPS:
+                                </span>{" "}
+                                <span className="font-medium">
+                                  {String(it.codProcedimiento)}
+                                </span>
+                              </div>
+                            )}
+                            {it.codTecnologiaSalud && (
+                              <div>
+                                <span className="text-muted-foreground">
+                                  Tecnología:
+                                </span>{" "}
+                                <span className="font-medium">
+                                  {String(it.codTecnologiaSalud)}
+                                </span>
+                              </div>
+                            )}
                           </div>
-                          <div>
-                            <span className="text-muted-foreground">
-                              Consecutivo:
-                            </span>{" "}
-                            <span className="font-medium">
-                              {String(it.consecutivo ?? "—")}
-                            </span>
-                          </div>
-                          {it.fechaInicioAtencion && (
-                            <div>
-                              <span className="text-muted-foreground">
-                                Inicio:
-                              </span>{" "}
-                              <span className="font-medium">
-                                {String(it.fechaInicioAtencion)}
-                              </span>
-                            </div>
-                          )}
-                          {it.codDiagnosticoPrincipal && (
-                            <div>
-                              <span className="text-muted-foreground">Dx:</span>{" "}
-                              <span className="font-medium">
-                                {String(it.codDiagnosticoPrincipal)}
-                              </span>
-                            </div>
-                          )}
-                          {it.vrServicio && (
-                            <div>
-                              <span className="text-muted-foreground">
-                                Valor:
-                              </span>{" "}
-                              <span className="font-medium">
-                                ${String(it.vrServicio)}
-                              </span>
-                            </div>
-                          )}
-                          {it.codConsulta && (
-                            <div>
-                              <span className="text-muted-foreground">
-                                CUPS:
-                              </span>{" "}
-                              <span className="font-medium">
-                                {String(it.codConsulta)}
-                              </span>
-                            </div>
-                          )}
-                          {it.codProcedimiento && (
-                            <div>
-                              <span className="text-muted-foreground">
-                                CUPS:
-                              </span>{" "}
-                              <span className="font-medium">
-                                {String(it.codProcedimiento)}
-                              </span>
-                            </div>
-                          )}
-                          {it.codTecnologiaSalud && (
-                            <div>
-                              <span className="text-muted-foreground">
-                                Tecnología:
-                              </span>{" "}
-                              <span className="font-medium">
-                                {String(it.codTecnologiaSalud)}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </CardContent>
-        </Card>
-      ))}
+                );
+              })}
+            </CardContent>
+          </Card>
+        )
+      )}
     </div>
   );
 }
@@ -235,7 +250,10 @@ function ValidationPanel({
   }
   const passed = result.passed as boolean;
   const rejections = (result.rejections ?? []) as Record<string, unknown>[];
-  const notifications = (result.notifications ?? []) as Record<string, unknown>[];
+  const notifications = (result.notifications ?? []) as Record<
+    string,
+    unknown
+  >[];
   const checkedRules = (result.checkedRules ?? []) as string[];
 
   return (
