@@ -7,7 +7,6 @@ async function benchmark() {
   const start = performance.now();
 
   const result = await generateRipsPayload(db, {
-    payerId: "bench-payer",
     periodFrom: new Date("2026-02-01"),
     periodTo: new Date("2026-05-31"),
     organizationTaxId: "900123456",

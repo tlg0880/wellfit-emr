@@ -1,4 +1,6 @@
 import {
+  billingItem,
+  coverage,
   diagnosis,
   encounter,
   medicationOrder,
@@ -18,7 +20,7 @@ export interface RipsGenerationInput {
   noteType?: string | null;
   operationType?: string;
   organizationTaxId: string;
-  payerId: string;
+  payerId?: string;
   periodFrom: Date;
   periodTo: Date;
 }
@@ -250,6 +252,7 @@ function mapSexToRips(sex: string): string {
 }
 
 interface EncounterContext {
+  billingItems: (typeof billingItem.$inferSelect)[];
   cupsConsulta: string;
   diagnoses: (typeof diagnosis.$inferSelect)[];
   dxRel1: string | null;
@@ -262,7 +265,7 @@ interface EncounterContext {
   medications: (typeof medicationOrder.$inferSelect)[];
   patDocNum: string;
   patDocType: string;
-  principalDx: (typeof diagnosis.$inferSelect) | undefined;
+  principalDx: typeof diagnosis.$inferSelect | undefined;
   procedures: (typeof procedureRecord.$inferSelect)[];
   providerCode: string;
   relatedDx: (typeof diagnosis.$inferSelect)[];
@@ -273,6 +276,23 @@ interface ServiceBuilderState {
   serviceConsecutive: number;
   services: RipsServicios;
   totalValue: number;
+}
+
+function getBillingValue(
+  billingItems: (typeof billingItem.$inferSelect)[],
+  serviceType: string,
+  serviceCode?: string
+): number | null {
+  const item = billingItems.find(
+    (b) =>
+      b.serviceType === serviceType &&
+      (serviceCode === undefined || b.serviceCode === serviceCode)
+  );
+  if (!item) {
+    return null;
+  }
+  const val = Number(item.totalValue);
+  return Number.isNaN(val) ? null : val;
 }
 
 function buildConsultas(
@@ -286,7 +306,8 @@ function buildConsultas(
     return;
   }
   state.serviceConsecutive++;
-  const value = 50_000;
+  const value =
+    getBillingValue(ctx.billingItems, "consulta", ctx.cupsConsulta) ?? 50_000;
   state.totalValue += value;
 
   if (!state.services.consultas) {
@@ -326,7 +347,7 @@ function buildUrgencias(
     return;
   }
   state.serviceConsecutive++;
-  const value = 75_000;
+  const value = getBillingValue(ctx.billingItems, "urgencia") ?? 75_000;
   state.totalValue += value;
 
   if (!state.services.urgencias) {
@@ -361,7 +382,7 @@ function buildHospitalizacion(
     return;
   }
   state.serviceConsecutive++;
-  const value = 150_000;
+  const value = getBillingValue(ctx.billingItems, "hospitalizacion") ?? 150_000;
   state.totalValue += value;
 
   if (!state.services.hospitalizacion) {
@@ -391,7 +412,9 @@ function buildProcedimientos(
 ): void {
   for (const proc of ctx.procedures) {
     state.serviceConsecutive++;
-    const value = 30_000;
+    const value =
+      getBillingValue(ctx.billingItems, "procedimiento", proc.cupsCode) ??
+      30_000;
     state.totalValue += value;
 
     if (!state.services.procedimientos) {
@@ -430,7 +453,12 @@ function buildMedicamentos(
 ): void {
   for (const med of ctx.medications) {
     state.serviceConsecutive++;
-    const value = 15_000;
+    const value =
+      getBillingValue(
+        ctx.billingItems,
+        "medicamento",
+        med.atcCode ?? undefined
+      ) ?? 15_000;
     state.totalValue += value;
 
     if (!state.services.medicamentos) {
@@ -468,7 +496,9 @@ function buildOtrosServicios(
 ): void {
   for (const sr of ctx.serviceRequests) {
     state.serviceConsecutive++;
-    const value = 25_000;
+    const value =
+      getBillingValue(ctx.billingItems, "otro_servicio", sr.requestCode) ??
+      25_000;
     state.totalValue += value;
 
     if (!state.services.otrosServicios) {
@@ -502,6 +532,42 @@ export async function generateRipsPayload(
 ): Promise<GeneratedRipsResult> {
   const { periodFrom, periodTo, organizationTaxId } = input;
 
+  const baseFilters = [
+    gte(encounter.startedAt, periodFrom),
+    lte(encounter.startedAt, periodTo),
+    eq(encounter.status, "finished"),
+  ];
+
+  if (input.payerId) {
+    const coveredPatientIds = await db
+      .select({ patientId: coverage.patientId })
+      .from(coverage)
+      .where(
+        and(
+          eq(coverage.payerId, input.payerId),
+          lte(coverage.effectiveFrom, periodTo)
+        )
+      );
+
+    const patientIds = coveredPatientIds.map((c) => c.patientId);
+    if (patientIds.length === 0) {
+      return {
+        transaction: {
+          numDocumentoIdObligado: organizationTaxId,
+          numFactura: input.invoiceNumber ?? null,
+          tipoNota: input.noteType ?? null,
+          numNota: input.noteNumber ?? null,
+          usuarios: [],
+        },
+        numUsers: 0,
+        totalValue: "0.00",
+        encounterIds: [],
+      };
+    }
+
+    baseFilters.push(inArray(encounter.patientId, patientIds));
+  }
+
   const encounterRows = await db
     .select({
       encounter,
@@ -515,13 +581,7 @@ export async function generateRipsPayload(
     .innerJoin(site, eq(encounter.siteId, site.id))
     .innerJoin(serviceUnit, eq(encounter.serviceUnitId, serviceUnit.id))
     .innerJoin(organization, eq(site.organizationId, organization.id))
-    .where(
-      and(
-        gte(encounter.startedAt, periodFrom),
-        lte(encounter.startedAt, periodTo),
-        eq(encounter.status, "finished")
-      )
-    )
+    .where(and(...baseFilters))
     .orderBy(encounter.patientId, encounter.startedAt);
 
   if (encounterRows.length === 0) {
@@ -634,6 +694,7 @@ function groupEncountersByPatient(
 }
 
 interface BulkClinicalData {
+  billingItemsByEncounter: Map<string, (typeof billingItem.$inferSelect)[]>;
   diagnosesByEncounter: Map<string, (typeof diagnosis.$inferSelect)[]>;
   medicationsByEncounter: Map<string, (typeof medicationOrder.$inferSelect)[]>;
   proceduresByEncounter: Map<string, (typeof procedureRecord.$inferSelect)[]>;
@@ -647,27 +708,37 @@ async function fetchBulkClinicalData(
   db: Db,
   encounterIds: string[]
 ): Promise<BulkClinicalData> {
-  const [diagnosesRows, proceduresRows, medicationsRows, serviceRequestsRows] =
-    await Promise.all([
-      db
-        .select()
-        .from(diagnosis)
-        .where(inArray(diagnosis.encounterId, encounterIds)),
-      db
-        .select()
-        .from(procedureRecord)
-        .where(inArray(procedureRecord.encounterId, encounterIds)),
-      db
-        .select()
-        .from(medicationOrder)
-        .where(inArray(medicationOrder.encounterId, encounterIds)),
-      db
-        .select()
-        .from(serviceRequest)
-        .where(inArray(serviceRequest.encounterId, encounterIds)),
-    ]);
+  const [
+    diagnosesRows,
+    proceduresRows,
+    medicationsRows,
+    serviceRequestsRows,
+    billingItemsRows,
+  ] = await Promise.all([
+    db
+      .select()
+      .from(diagnosis)
+      .where(inArray(diagnosis.encounterId, encounterIds)),
+    db
+      .select()
+      .from(procedureRecord)
+      .where(inArray(procedureRecord.encounterId, encounterIds)),
+    db
+      .select()
+      .from(medicationOrder)
+      .where(inArray(medicationOrder.encounterId, encounterIds)),
+    db
+      .select()
+      .from(serviceRequest)
+      .where(inArray(serviceRequest.encounterId, encounterIds)),
+    db
+      .select()
+      .from(billingItem)
+      .where(inArray(billingItem.encounterId, encounterIds)),
+  ]);
 
   return {
+    billingItemsByEncounter: groupBy(billingItemsRows, "encounterId"),
     diagnosesByEncounter: groupBy(diagnosesRows, "encounterId"),
     proceduresByEncounter: groupBy(proceduresRows, "encounterId"),
     medicationsByEncounter: groupBy(medicationsRows, "encounterId"),
@@ -701,15 +772,13 @@ function buildRipsUsuario(
     includedEncounterIds.push(enc.id);
     const diagnoses = bulk.diagnosesByEncounter.get(enc.id) ?? [];
     const principalDx =
-      diagnoses.find(
-        (d) => d.rank === 1 || d.diagnosisType === "principal"
-      ) ?? diagnoses[0];
+      diagnoses.find((d) => d.rank === 1 || d.diagnosisType === "principal") ??
+      diagnoses[0];
     const relatedDx = diagnoses.filter((d) => d.id !== principalDx?.id);
     const dxRel1 = relatedDx[0]?.code ?? null;
     const procedures = bulk.proceduresByEncounter.get(enc.id) ?? [];
     const cupsConsulta =
-      procedures.find((p) => p.cupsCode.startsWith("89"))?.cupsCode ??
-      "890201";
+      procedures.find((p) => p.cupsCode.startsWith("89"))?.cupsCode ?? "890201";
 
     const ctx: EncounterContext = {
       enc,
@@ -720,6 +789,7 @@ function buildRipsUsuario(
       procedures,
       medications: bulk.medicationsByEncounter.get(enc.id) ?? [],
       serviceRequests: bulk.serviceRequestsByEncounter.get(enc.id) ?? [],
+      billingItems: bulk.billingItemsByEncounter.get(enc.id) ?? [],
       providerCode: enc.orgRepsCode ?? enc.siteCode ?? organizationTaxId,
       fechaInicio: formatDateTime(new Date(enc.startedAt)),
       patDocType,

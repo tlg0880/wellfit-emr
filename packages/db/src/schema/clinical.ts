@@ -891,6 +891,32 @@ export const ripsExportEncounter = sqliteTable(
   ]
 );
 
+export const billingItem = sqliteTable(
+  "billing_item",
+  {
+    id: text("id").primaryKey(),
+    encounterId: text("encounter_id")
+      .notNull()
+      .references(() => encounter.id, { onDelete: "cascade" }),
+    payerId: text("payer_id")
+      .notNull()
+      .references(() => payer.id),
+    serviceType: text("service_type").notNull(),
+    serviceCode: text("service_code").notNull(),
+    serviceId: text("service_id"),
+    description: text("description"),
+    quantity: integer("quantity").notNull().default(1),
+    unitValue: text("unit_value").notNull(),
+    totalValue: text("total_value").notNull(),
+    createdAt: requiredTimestamp("created_at"),
+  },
+  (table) => [
+    index("billing_item_encounter_idx").on(table.encounterId),
+    index("billing_item_payer_idx").on(table.payerId),
+    index("billing_item_service_idx").on(table.serviceType, table.serviceCode),
+  ]
+);
+
 export const ihceBundle = sqliteTable(
   "ihce_bundle",
   {
@@ -1110,6 +1136,7 @@ export const encounterRelations = relations(encounter, ({ many, one }) => ({
   diagnoses: many(diagnosis),
   observations: many(observation),
   medicationOrders: many(medicationOrder),
+  billingItems: many(billingItem),
 }));
 
 export const clinicalDocumentRelations = relations(

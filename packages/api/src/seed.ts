@@ -4,6 +4,7 @@ import {
   allergyIntolerance,
   appointment,
   attachmentLink,
+  billingItem,
   binaryObject,
   clinicalDocument,
   clinicalDocumentVersion,
@@ -1616,6 +1617,7 @@ interface SeedResult {
   allergiesCreated: number;
   appointmentsCreated: number;
   attachmentsCreated: number;
+  billingItemsCreated: number;
   clinicalDocumentsCreated: number;
   consentsCreated: number;
   contactsCreated: number;
@@ -2645,6 +2647,7 @@ function createEmptySeedResult(): SeedResult {
     observationsCreated: 0,
     patientsCreated: 0,
     proceduresCreated: 0,
+    billingItemsCreated: 0,
     ripsExportsCreated: 0,
     serviceRequestsCreated: 0,
   };
@@ -2672,6 +2675,105 @@ function addSeedStats(totals: SeedResult, stats: Partial<SeedResult>): void {
   totals.incapacitiesCreated += stats.incapacitiesCreated ?? 0;
   totals.attachmentsCreated += stats.attachmentsCreated ?? 0;
   totals.ihceBundlesCreated += stats.ihceBundlesCreated ?? 0;
+}
+
+async function seedBillingItems(): Promise<number> {
+  const finishedEncounters = await db
+    .select({ id: encounter.id, patientId: encounter.patientId })
+    .from(encounter)
+    .where(eq(encounter.status, "finished"));
+
+  if (finishedEncounters.length === 0) {
+    return 0;
+  }
+
+  let count = 0;
+
+  for (const enc of finishedEncounters) {
+    const [cov] = await db
+      .select({ payerId: coverage.payerId })
+      .from(coverage)
+      .where(eq(coverage.patientId, enc.patientId))
+      .limit(1);
+
+    if (!cov) {
+      continue;
+    }
+
+    const procedures = await db
+      .select()
+      .from(procedureRecord)
+      .where(eq(procedureRecord.encounterId, enc.id));
+
+    for (const proc of procedures) {
+      const value = proc.cupsCode.startsWith("89") ? "50000" : "30000";
+      await db.insert(billingItem).values({
+        id: crypto.randomUUID(),
+        encounterId: enc.id,
+        payerId: cov.payerId,
+        serviceType: proc.cupsCode.startsWith("89")
+          ? "consulta"
+          : "procedimiento",
+        serviceCode: proc.cupsCode,
+        serviceId: proc.id,
+        description: proc.description,
+        quantity: 1,
+        unitValue: value,
+        totalValue: value,
+        createdAt: new Date(),
+      });
+      count++;
+    }
+
+    const medications = await db
+      .select()
+      .from(medicationOrder)
+      .where(eq(medicationOrder.encounterId, enc.id));
+
+    for (const med of medications) {
+      const value = "15000";
+      await db.insert(billingItem).values({
+        id: crypto.randomUUID(),
+        encounterId: enc.id,
+        payerId: cov.payerId,
+        serviceType: "medicamento",
+        serviceCode: med.atcCode ?? "000000",
+        serviceId: med.id,
+        description: med.genericName,
+        quantity: Number(med.quantityTotal) || 1,
+        unitValue: value,
+        totalValue: String(Number(value) * (Number(med.quantityTotal) || 1)),
+        createdAt: new Date(),
+      });
+      count++;
+    }
+
+    const requests = await db
+      .select()
+      .from(serviceRequest)
+      .where(eq(serviceRequest.encounterId, enc.id));
+
+    for (const req of requests) {
+      const value = "25000";
+      await db.insert(billingItem).values({
+        id: crypto.randomUUID(),
+        encounterId: enc.id,
+        payerId: cov.payerId,
+        serviceType: "otro_servicio",
+        serviceCode: req.requestCode,
+        serviceId: req.id,
+        description: null,
+        quantity: 1,
+        unitValue: value,
+        totalValue: value,
+        createdAt: new Date(),
+      });
+      count++;
+    }
+  }
+
+  log("BILLING", `Created ${count} billing items`);
+  return count;
 }
 
 // ─── Main Seed Runner ───────────────────────────────────────────────────────
@@ -2727,6 +2829,9 @@ export async function runSeed(
     totals
   );
 
+  const billingItemsCreated = await seedBillingItems();
+  totals.billingItemsCreated = billingItemsCreated;
+
   // Summary
   log("DONE", "Seed completed successfully!");
   log("DONE", `Patients:      ${totals.patientsCreated}`);
@@ -2748,6 +2853,7 @@ export async function runSeed(
   log("DONE", `Attachments:   ${totals.attachmentsCreated}`);
   log("DONE", `IHCE bundles:  ${totals.ihceBundlesCreated}`);
   log("DONE", `RIPS exports:  ${totals.ripsExportsCreated}`);
+  log("DONE", `Billing items:   ${totals.billingItemsCreated}`);
   log("DONE", `Contacts:      ${totals.contactsCreated}`);
   log("DONE", `Coverage:      ${totals.coverageCreated}`);
 
