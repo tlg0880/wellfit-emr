@@ -8,8 +8,8 @@ async function benchmark() {
 
   const result = await generateRipsPayload(db, {
     payerId: "bench-payer",
-    periodFrom: new Date("2024-01-01"),
-    periodTo: new Date("2024-12-31"),
+    periodFrom: new Date("2026-02-01"),
+    periodTo: new Date("2026-05-31"),
     organizationTaxId: "900123456",
   });
 
