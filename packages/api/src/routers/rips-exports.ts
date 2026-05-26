@@ -1,11 +1,12 @@
 import type { AnyRouter } from "@orpc/server";
 import { ORPCError } from "@orpc/server";
 import {
+  encounter,
   organization,
   ripsExport,
   ripsExportEncounter,
 } from "@wellfit-emr/db/schema/clinical";
-import { and, asc, count, desc, eq } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 
 import { protectedProcedure } from "../index";
@@ -207,19 +208,28 @@ const generatePayloadProcedure = protectedProcedure
       .delete(ripsExportEncounter)
       .where(eq(ripsExportEncounter.ripsExportId, found.id));
 
-    // Insert new encounter links
+    // Insert new encounter links with real patient IDs
     if (result.encounterIds.length > 0) {
+      const encounterRows = await context.db
+        .select({ id: encounter.id, patientId: encounter.patientId })
+        .from(encounter)
+        .where(inArray(encounter.id, result.encounterIds));
+
+      const patientByEncounter = new Map(
+        encounterRows.map((e) => [e.id, e.patientId])
+      );
+
       const links = result.encounterIds.map((encounterId, idx) => ({
         id: crypto.randomUUID(),
         ripsExportId: found.id,
         encounterId,
-        patientId: "", // will be filled below if needed; skipping for simplicity
+        patientId: patientByEncounter.get(encounterId) ?? "",
         userConsecutive: idx + 1,
         serviceType: "unknown",
         serviceConsecutive: idx + 1,
         includedAt: new Date(),
       }));
-      // Batch insert
+
       if (links.length > 0) {
         await context.db.insert(ripsExportEncounter).values(links);
       }

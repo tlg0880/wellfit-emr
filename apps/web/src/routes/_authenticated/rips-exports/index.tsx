@@ -46,14 +46,14 @@ function CreateRipsExportForm({ onCancel }: { onCancel: () => void }) {
     organizationTaxId: "",
   });
 
-  const [organizationSearch, setOrganizationSearch] = useState("");
+  const [payerSearch, setPayerSearch] = useState("");
 
-  const { data: organizationsData, isLoading: organizationsLoading } = useQuery(
-    orpc.facilities.listOrganizations.queryOptions({
+  const { data: payersData, isLoading: payersLoading } = useQuery(
+    orpc.payers.list.queryOptions({
       input: {
         limit: 20,
         offset: 0,
-        search: organizationSearch || undefined,
+        search: payerSearch || undefined,
       },
     })
   );
@@ -85,7 +85,7 @@ function CreateRipsExportForm({ onCancel }: { onCancel: () => void }) {
   }
 
   return (
-    <Card className="mx-6">
+    <Card className="mx-6 overflow-visible">
       <CardHeader>
         <CardTitle>Nueva exportación RIPS</CardTitle>
       </CardHeader>
@@ -97,20 +97,20 @@ function CreateRipsExportForm({ onCancel }: { onCancel: () => void }) {
           <div className="space-y-1">
             <Label>Pagador *</Label>
             <SearchSelect
-              emptyMessage="Escribe para buscar organizaciones"
-              loading={organizationsLoading}
+              emptyMessage="Escribe para buscar pagador..."
+              loading={payersLoading}
               onChange={(v) => setForm((f) => ({ ...f, payerId: v }))}
-              onSearchChange={setOrganizationSearch}
+              onSearchChange={setPayerSearch}
               options={
-                organizationsData?.organizations.map((o) => ({
-                  value: o.id,
-                  label: o.name,
-                  description: o.taxId ?? undefined,
+                payersData?.items.map((p) => ({
+                  value: p.id,
+                  label: p.name,
+                  description: p.code ?? undefined,
                 })) ?? []
               }
-              placeholder="Buscar organización..."
+              placeholder="Buscar pagador..."
               required
-              search={organizationSearch}
+              search={payerSearch}
               value={form.payerId}
             />
           </div>

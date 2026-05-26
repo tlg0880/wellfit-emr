@@ -556,11 +556,11 @@ function RipsExportDetailPage() {
 
           {exportData.payloadJson && (
             <div className="lg:col-span-2">
-              <div className="mb-2 flex items-center gap-2">
+              <div className="mb-2 flex items-center justify-between gap-2">
                 <h3 className="font-semibold text-sm">Payload RIPS</h3>
                 <Button
                   onClick={() => setShowRawJson((s) => !s)}
-                  size="icon-xs"
+                  size="xs"
                   variant="ghost"
                 >
                   {showRawJson ? "Ver estructurado" : "Ver JSON"}

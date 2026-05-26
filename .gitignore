@@ -55,3 +55,7 @@ temp
 apps/web/.pi-lens/
 
 packages/env/.pi-lens
+
+packages/api/.pi-lens/cache/
+
+packages/api/.pi-lens/
