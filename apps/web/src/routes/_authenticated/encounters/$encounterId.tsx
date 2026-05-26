@@ -30,6 +30,7 @@ import {
   Mail,
   Paperclip,
   Pill,
+  ReceiptText,
   RefreshCw,
   Scissors,
   Stethoscope,
@@ -47,6 +48,7 @@ import { orpc, queryClient } from "@/utils/orpc";
 
 import { AllergiesTab } from "./-components/allergies-tab";
 import { AttachmentsTab } from "./-components/attachments-tab";
+import { BillingItemsTab } from "./-components/billing-items-tab";
 import { ClinicalDocumentsTab } from "./-components/clinical-documents-tab";
 import { ConsentsTab } from "./-components/consents-tab";
 import { DiagnosesTab } from "./-components/diagnoses-tab";
@@ -68,6 +70,7 @@ const TABS = [
   { id: "procedures", label: "Procedimientos", icon: Scissors },
   { id: "evolution", label: "Evolución", icon: FileText },
   { id: "participants", label: "Participantes", icon: Users },
+  { id: "billingItems", label: "Facturación", icon: ReceiptText },
   { id: "medicationOrders", label: "Medicamentos", icon: Pill },
   { id: "medicationAdministrations", label: "Administraciones", icon: Syringe },
   { id: "serviceRequests", label: "Órdenes", icon: FlaskConical },
@@ -460,6 +463,9 @@ function EncounterDetailPage() {
           </TabsPanel>
           <TabsPanel value="participants">
             <EncounterParticipantsTab encounterId={encounterId} />
+          </TabsPanel>
+          <TabsPanel value="billingItems">
+            <BillingItemsTab encounterId={encounterId} />
           </TabsPanel>
           <TabsPanel value="medicationOrders">
             <MedicationOrdersTab

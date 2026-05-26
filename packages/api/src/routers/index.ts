@@ -5,6 +5,7 @@ import { adminRouter } from "./admin";
 import { appointmentsRouter } from "./appointments";
 import { attachmentsRouter } from "./attachments";
 import { auditEventsRouter } from "./audit-events";
+import { billingItemsRouter } from "./billing-items";
 import { clinicalDocumentsRouter } from "./clinical-documents";
 import { clinicalRecordsRouter } from "./clinical-records";
 import { consentsRouter } from "./consents";
@@ -40,6 +41,7 @@ export interface AppRouter extends Record<string, AnyRouter> {
   appointments: typeof appointmentsRouter;
   attachments: typeof attachmentsRouter;
   auditEvents: typeof auditEventsRouter;
+  billingItems: typeof billingItemsRouter;
   clinicalDocuments: typeof clinicalDocumentsRouter;
   clinicalRecords: typeof clinicalRecordsRouter;
   consents: typeof consentsRouter;
@@ -71,6 +73,7 @@ export const appRouter: AppRouter = {
   appointments: appointmentsRouter,
   attachments: attachmentsRouter,
   auditEvents: auditEventsRouter,
+  billingItems: billingItemsRouter,
   clinicalDocuments: clinicalDocumentsRouter,
   clinicalRecords: clinicalRecordsRouter,
   consents: consentsRouter,

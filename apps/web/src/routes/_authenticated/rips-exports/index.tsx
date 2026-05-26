@@ -32,6 +32,11 @@ import { toast } from "sonner";
 import { DataTable } from "@/components/data-table";
 import { PageHeader } from "@/components/page-header";
 import { orpc, queryClient } from "@/utils/orpc";
+import {
+  extractRipsGenerationIssues,
+  RipsGenerationIssuesPanel,
+  showRipsGenerationIssuesToast,
+} from "./-components/generation-issues";
 
 export const Route = createFileRoute("/_authenticated/rips-exports/")({
   component: RipsExportsListPage,
@@ -43,6 +48,10 @@ function CreateRipsExportForm({ onCancel }: { onCancel: () => void }) {
     periodFrom: new Date().toISOString().slice(0, 10),
     periodTo: new Date().toISOString().slice(0, 10),
     status: "draft",
+    operationType: "FEV_RIPS",
+    invoiceNumber: "",
+    noteType: "",
+    noteNumber: "",
     organizationTaxId: "",
   });
 
@@ -81,6 +90,17 @@ function CreateRipsExportForm({ onCancel }: { onCancel: () => void }) {
       status: form.status,
       generatedAt: new Date(),
       organizationTaxId: form.organizationTaxId || null,
+      operationType: form.operationType as
+        | "FEV_RIPS"
+        | "NC_PARCIAL"
+        | "ND"
+        | "NOTA_AJUSTE_RIPS"
+        | "RIPS_SIN_FACTURA"
+        | "CAPITA_PERIODO"
+        | "CAPITA_FINAL",
+      invoiceNumber: form.invoiceNumber || null,
+      noteType: form.noteType || null,
+      noteNumber: form.noteNumber || null,
     });
   }
 
@@ -115,6 +135,45 @@ function CreateRipsExportForm({ onCancel }: { onCancel: () => void }) {
             />
           </div>
           <div className="space-y-1">
+            <Label>Operación *</Label>
+            <Select
+              onValueChange={(v) =>
+                setForm((f) => ({
+                  ...f,
+                  operationType: v as string,
+                  noteType:
+                    v === "RIPS_SIN_FACTURA"
+                      ? "RS"
+                      : v === "NC_PARCIAL"
+                        ? "NC"
+                        : v === "ND"
+                          ? "ND"
+                          : v === "NOTA_AJUSTE_RIPS"
+                            ? "NA"
+                            : f.noteType,
+                }))
+              }
+              value={form.operationType}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Tipo de operación" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="FEV_RIPS">FEV + RIPS</SelectItem>
+                <SelectItem value="NC_PARCIAL">NC parcial + RIPS</SelectItem>
+                <SelectItem value="ND">ND + RIPS</SelectItem>
+                <SelectItem value="NOTA_AJUSTE_RIPS">
+                  Nota ajuste RIPS
+                </SelectItem>
+                <SelectItem value="RIPS_SIN_FACTURA">
+                  RIPS sin factura
+                </SelectItem>
+                <SelectItem value="CAPITA_PERIODO">Cápita periodo</SelectItem>
+                <SelectItem value="CAPITA_FINAL">Cápita final</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
             <Label>Periodo desde *</Label>
             <Input
               onChange={(e) => setForm({ ...form, periodFrom: e.target.value })}
@@ -143,6 +202,50 @@ function CreateRipsExportForm({ onCancel }: { onCancel: () => void }) {
               value={form.organizationTaxId}
             />
           </div>
+          <div className="space-y-1">
+            <Label>Factura</Label>
+            <Input
+              disabled={form.operationType === "RIPS_SIN_FACTURA"}
+              onChange={(e) =>
+                setForm({ ...form, invoiceNumber: e.target.value })
+              }
+              placeholder="FEV-001"
+              required={
+                ![
+                  "RIPS_SIN_FACTURA",
+                  "NOTA_AJUSTE_RIPS",
+                  "CAPITA_FINAL",
+                ].includes(form.operationType)
+              }
+              type="text"
+              value={form.invoiceNumber}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Tipo nota</Label>
+            <Input
+              disabled={form.operationType === "RIPS_SIN_FACTURA"}
+              onChange={(e) => setForm({ ...form, noteType: e.target.value })}
+              placeholder="NC, ND o NA"
+              type="text"
+              value={form.noteType}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Número nota / consecutivo</Label>
+            <Input
+              onChange={(e) => setForm({ ...form, noteNumber: e.target.value })}
+              placeholder="NA-001 / RS-001"
+              required={[
+                "RIPS_SIN_FACTURA",
+                "NC_PARCIAL",
+                "ND",
+                "NOTA_AJUSTE_RIPS",
+              ].includes(form.operationType)}
+              type="text"
+              value={form.noteNumber}
+            />
+          </div>
           <div className="flex items-end gap-2 md:col-span-3">
             <Button
               onClick={onCancel}
@@ -168,6 +271,9 @@ function RipsExportsListPage() {
   const [offset, setOffset] = useState(0);
   const [limit] = useState(25);
   const [showForm, setShowForm] = useState(false);
+  const [generationIssues, setGenerationIssues] = useState<
+    ReturnType<typeof extractRipsGenerationIssues>
+  >([]);
 
   useEffect(() => {
     document.title = "RIPS | WellFit EMR";
@@ -202,6 +308,9 @@ function RipsExportsListPage() {
 
   const generateMutation = useMutation({
     ...orpc.ripsExports.generatePayload.mutationOptions(),
+    onMutate: () => {
+      setGenerationIssues([]);
+    },
     onSuccess: () => {
       toast.success("Payload generado");
       queryClient.invalidateQueries({
@@ -209,6 +318,12 @@ function RipsExportsListPage() {
       });
     },
     onError: (error: Error) => {
+      const issues = extractRipsGenerationIssues(error);
+      if (issues.length > 0) {
+        setGenerationIssues(issues);
+        showRipsGenerationIssuesToast(issues);
+        return;
+      }
       toast.error(error.message || "Error al generar payload");
     },
   });
@@ -339,6 +454,11 @@ function RipsExportsListPage() {
       {showForm && <CreateRipsExportForm onCancel={() => setShowForm(false)} />}
 
       <div className="px-6">
+        <RipsGenerationIssuesPanel
+          issues={generationIssues}
+          onDismiss={() => setGenerationIssues([])}
+        />
+
         <div className="mb-3 flex items-center gap-2">
           <Search className="text-muted-foreground" size={14} />
           <Select

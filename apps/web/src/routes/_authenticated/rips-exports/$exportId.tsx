@@ -30,6 +30,11 @@ import { toast } from "sonner";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { orpc, queryClient } from "@/utils/orpc";
+import {
+  extractRipsGenerationIssues,
+  RipsGenerationIssuesPanel,
+  showRipsGenerationIssuesToast,
+} from "./-components/generation-issues";
 
 export const Route = createFileRoute("/_authenticated/rips-exports/$exportId")({
   component: RipsExportDetailPage,
@@ -341,6 +346,9 @@ function RipsExportDetailPage() {
   const { exportId } = Route.useParams();
   const navigate = useNavigate();
   const [showRawJson, setShowRawJson] = useState(false);
+  const [generationIssues, setGenerationIssues] = useState<
+    ReturnType<typeof extractRipsGenerationIssues>
+  >([]);
 
   const deleteMutation = useMutation({
     ...orpc.ripsExports.delete.mutationOptions(),
@@ -358,6 +366,9 @@ function RipsExportDetailPage() {
 
   const generateMutation = useMutation({
     ...orpc.ripsExports.generatePayload.mutationOptions(),
+    onMutate: () => {
+      setGenerationIssues([]);
+    },
     onSuccess: () => {
       toast.success("Payload RIPS generado");
       queryClient.invalidateQueries({
@@ -365,6 +376,12 @@ function RipsExportDetailPage() {
       });
     },
     onError: (error: Error) => {
+      const issues = extractRipsGenerationIssues(error);
+      if (issues.length > 0) {
+        setGenerationIssues(issues);
+        showRipsGenerationIssuesToast(issues);
+        return;
+      }
       toast.error(error.message || "Error al generar payload");
     },
   });
@@ -470,112 +487,132 @@ function RipsExportDetailPage() {
           <Skeleton className="h-40 w-full" />
         </div>
       ) : exportData ? (
-        <div className="grid grid-cols-1 gap-4 px-6 lg:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Información general</CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-2 gap-3 text-xs">
-              {[
-                {
-                  label: "Estado",
-                  value: (
-                    <Badge
-                      className={
-                        exportData.status === "ready"
-                          ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100"
-                          : exportData.status === "locally_invalid"
-                            ? "bg-red-100 text-red-700 hover:bg-red-100"
-                            : exportData.status === "generated"
-                              ? "bg-sky-100 text-sky-700 hover:bg-sky-100"
-                              : "bg-slate-100 text-slate-700 hover:bg-slate-100"
-                      }
-                    >
-                      {exportData.status}
-                    </Badge>
-                  ),
-                },
-                {
-                  label: "Operación",
-                  value: exportData.operationType,
-                },
-                {
-                  label: "Pagador",
-                  value:
-                    payerData?.name ?? `${exportData.payerId.slice(0, 8)}…`,
-                },
-                {
-                  label: "NIT obligado",
-                  value: exportData.organizationTaxId ?? "—",
-                },
-                {
-                  label: "Periodo",
-                  value: `${new Date(exportData.periodFrom).toLocaleDateString("es-CO")} - ${new Date(exportData.periodTo).toLocaleDateString("es-CO")}`,
-                },
-                {
-                  label: "Usuarios / Valor total",
-                  value: `${exportData.numUsers ?? 0} usuarios · $${exportData.totalValue ?? "0.00"}`,
-                },
-                {
-                  label: "Generado",
-                  value: new Date(exportData.generatedAt).toLocaleString(
-                    "es-CO"
-                  ),
-                },
-                exportData.cuv
-                  ? {
-                      label: "CUV",
-                      value: (
-                        <span className="font-mono">{exportData.cuv}</span>
-                      ),
-                    }
-                  : null,
-              ]
-                .filter((i): i is NonNullable<typeof i> => !!i)
-                .map((item) => (
-                  <div key={item.label}>
-                    <p className="text-[10px] text-muted-foreground">
-                      {item.label}
-                    </p>
-                    <p className="mt-0.5 font-medium">{item.value}</p>
-                  </div>
-                ))}
-            </CardContent>
-          </Card>
+        <>
+          <div className="px-6">
+            <RipsGenerationIssuesPanel
+              issues={generationIssues}
+              onDismiss={() => setGenerationIssues([])}
+            />
+          </div>
 
-          {exportData.validationResultJson && (
+          <div className="grid grid-cols-1 gap-4 px-6 lg:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle>Validación preflight</CardTitle>
+                <CardTitle>Información general</CardTitle>
               </CardHeader>
-              <CardContent>
-                <ValidationPanel result={exportData.validationResultJson} />
+              <CardContent className="grid grid-cols-2 gap-3 text-xs">
+                {[
+                  {
+                    label: "Estado",
+                    value: (
+                      <Badge
+                        className={
+                          exportData.status === "ready"
+                            ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100"
+                            : exportData.status === "locally_invalid"
+                              ? "bg-red-100 text-red-700 hover:bg-red-100"
+                              : exportData.status === "generated"
+                                ? "bg-sky-100 text-sky-700 hover:bg-sky-100"
+                                : "bg-slate-100 text-slate-700 hover:bg-slate-100"
+                        }
+                      >
+                        {exportData.status}
+                      </Badge>
+                    ),
+                  },
+                  {
+                    label: "Operación",
+                    value: exportData.operationType,
+                  },
+                  {
+                    label: "Pagador",
+                    value:
+                      payerData?.name ?? `${exportData.payerId.slice(0, 8)}…`,
+                  },
+                  {
+                    label: "NIT obligado",
+                    value: exportData.organizationTaxId ?? "—",
+                  },
+                  {
+                    label: "Factura",
+                    value: exportData.invoiceNumber ?? "—",
+                  },
+                  {
+                    label: "Nota",
+                    value:
+                      exportData.noteType || exportData.noteNumber
+                        ? `${exportData.noteType ?? "—"} ${exportData.noteNumber ?? ""}`.trim()
+                        : "—",
+                  },
+                  {
+                    label: "Periodo",
+                    value: `${new Date(exportData.periodFrom).toLocaleDateString("es-CO")} - ${new Date(exportData.periodTo).toLocaleDateString("es-CO")}`,
+                  },
+                  {
+                    label: "Usuarios / Valor total",
+                    value: `${exportData.numUsers ?? 0} usuarios · $${exportData.totalValue ?? "0.00"}`,
+                  },
+                  {
+                    label: "Generado",
+                    value: new Date(exportData.generatedAt).toLocaleString(
+                      "es-CO"
+                    ),
+                  },
+                  exportData.cuv
+                    ? {
+                        label: "CUV",
+                        value: (
+                          <span className="font-mono">{exportData.cuv}</span>
+                        ),
+                      }
+                    : null,
+                ]
+                  .filter((i): i is NonNullable<typeof i> => !!i)
+                  .map((item) => (
+                    <div key={item.label}>
+                      <p className="text-[10px] text-muted-foreground">
+                        {item.label}
+                      </p>
+                      <p className="mt-0.5 font-medium">{item.value}</p>
+                    </div>
+                  ))}
               </CardContent>
             </Card>
-          )}
 
-          {exportData.payloadJson && (
-            <div className="lg:col-span-2">
-              <div className="mb-2 flex items-center justify-between gap-2">
-                <h3 className="font-semibold text-sm">Payload RIPS</h3>
-                <Button
-                  onClick={() => setShowRawJson((s) => !s)}
-                  size="xs"
-                  variant="ghost"
-                >
-                  {showRawJson ? "Ver estructurado" : "Ver JSON"}
-                </Button>
+            {exportData.validationResultJson && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Validación preflight</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ValidationPanel result={exportData.validationResultJson} />
+                </CardContent>
+              </Card>
+            )}
+
+            {exportData.payloadJson && (
+              <div className="lg:col-span-2">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <h3 className="font-semibold text-sm">Payload RIPS</h3>
+                  <Button
+                    onClick={() => setShowRawJson((s) => !s)}
+                    size="xs"
+                    variant="ghost"
+                  >
+                    {showRawJson ? "Ver estructurado" : "Ver JSON"}
+                  </Button>
+                </div>
+                {showRawJson ? (
+                  <pre className="max-h-[600px] overflow-auto rounded-md border bg-muted p-3 text-[10px]">
+                    {JSON.stringify(exportData.payloadJson, null, 2)}
+                  </pre>
+                ) : (
+                  <RipsPayloadViewer payload={exportData.payloadJson} />
+                )}
               </div>
-              {showRawJson ? (
-                <pre className="max-h-[600px] overflow-auto rounded-md border bg-muted p-3 text-[10px]">
-                  {JSON.stringify(exportData.payloadJson, null, 2)}
-                </pre>
-              ) : (
-                <RipsPayloadViewer payload={exportData.payloadJson} />
-              )}
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        </>
       ) : (
         <EmptyState
           description="No se encontró la exportación solicitada."

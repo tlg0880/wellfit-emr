@@ -116,6 +116,7 @@ export function ServiceRequestsTab({
         emptyTitle="Sin órdenes"
         isLoading={isLoading}
         keyExtractor={(row) => row.id}
+        rowIdExtractor={(row) => `rips-service-request-${row.id}`}
       />
     </div>
   );

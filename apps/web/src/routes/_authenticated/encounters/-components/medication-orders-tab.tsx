@@ -106,6 +106,7 @@ export function MedicationOrdersTab({
         emptyTitle="Sin prescripciones"
         isLoading={isLoading}
         keyExtractor={(row) => row.id}
+        rowIdExtractor={(row) => `rips-medication-order-${row.id}`}
       />
     </div>
   );

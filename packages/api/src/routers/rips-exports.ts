@@ -1,16 +1,18 @@
 import type { AnyRouter } from "@orpc/server";
 import { ORPCError } from "@orpc/server";
 import {
-  encounter,
   organization,
   ripsExport,
   ripsExportEncounter,
 } from "@wellfit-emr/db/schema/clinical";
-import { and, asc, count, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, count, desc, eq } from "drizzle-orm";
 import { z } from "zod";
 
 import { protectedProcedure } from "../index";
-import { generateRipsPayload } from "../services/rips-generator";
+import {
+  generateRipsPayload,
+  RipsGenerationError,
+} from "../services/rips-generator";
 import { validateRipsPreflight } from "../services/rips-preflight-validator";
 
 const nonEmptyStringSchema = z.string().min(1);
@@ -41,7 +43,17 @@ const createRipsExportSchema = z.object({
   invoiceNumber: z.string().nullable().optional(),
   noteNumber: z.string().nullable().optional(),
   noteType: z.string().nullable().optional(),
-  operationType: z.string().default("FEV_RIPS"),
+  operationType: z
+    .enum([
+      "FEV_RIPS",
+      "NC_PARCIAL",
+      "ND",
+      "NOTA_AJUSTE_RIPS",
+      "RIPS_SIN_FACTURA",
+      "CAPITA_PERIODO",
+      "CAPITA_FINAL",
+    ])
+    .default("FEV_RIPS"),
   organizationTaxId: z.string().nullable().optional(),
   payerId: nonEmptyStringSchema,
   periodFrom: z.coerce.date(),
@@ -192,16 +204,27 @@ const generatePayloadProcedure = protectedProcedure
     const organizationTaxId =
       found.organizationTaxId ?? org?.taxId ?? org?.repsCode ?? "000000000";
 
-    const result = await generateRipsPayload(context.db, {
-      payerId: found.payerId,
-      periodFrom: new Date(found.periodFrom),
-      periodTo: new Date(found.periodTo),
-      organizationTaxId,
-      invoiceNumber: found.invoiceNumber,
-      noteType: found.noteType,
-      noteNumber: found.noteNumber,
-      operationType: found.operationType,
-    });
+    let result: Awaited<ReturnType<typeof generateRipsPayload>>;
+    try {
+      result = await generateRipsPayload(context.db, {
+        payerId: found.payerId,
+        periodFrom: new Date(found.periodFrom),
+        periodTo: new Date(found.periodTo),
+        organizationTaxId,
+        invoiceNumber: found.invoiceNumber,
+        noteType: found.noteType,
+        noteNumber: found.noteNumber,
+        operationType: found.operationType,
+      });
+    } catch (error) {
+      if (error instanceof RipsGenerationError) {
+        throw new ORPCError("BAD_REQUEST", {
+          message: error.message,
+          data: { issues: error.issues },
+        });
+      }
+      throw error;
+    }
 
     // Delete old encounter links
     await context.db
@@ -209,36 +232,26 @@ const generatePayloadProcedure = protectedProcedure
       .where(eq(ripsExportEncounter.ripsExportId, found.id));
 
     // Insert new encounter links with real patient IDs
-    if (result.encounterIds.length > 0) {
-      const encounterRows = await context.db
-        .select({ id: encounter.id, patientId: encounter.patientId })
-        .from(encounter)
-        .where(inArray(encounter.id, result.encounterIds));
-
-      const patientByEncounter = new Map(
-        encounterRows.map((e) => [e.id, e.patientId])
-      );
-
-      const links = result.encounterIds.map((encounterId, idx) => ({
+    if (result.serviceLinks.length > 0) {
+      const links = result.serviceLinks.map((link) => ({
         id: crypto.randomUUID(),
         ripsExportId: found.id,
-        encounterId,
-        patientId: patientByEncounter.get(encounterId) ?? "",
-        userConsecutive: idx + 1,
-        serviceType: "unknown",
-        serviceConsecutive: idx + 1,
+        encounterId: link.encounterId,
+        patientId: link.patientId,
+        userConsecutive: link.userConsecutive,
+        serviceType: link.serviceType,
+        serviceConsecutive: link.serviceConsecutive,
         includedAt: new Date(),
       }));
 
-      if (links.length > 0) {
-        await context.db.insert(ripsExportEncounter).values(links);
-      }
+      await context.db.insert(ripsExportEncounter).values(links);
     }
 
     const [updated] = await context.db
       .update(ripsExport)
       .set({
         payloadJson: result.transaction as unknown as Record<string, unknown>,
+        validationResultJson: null,
         numUsers: result.numUsers,
         totalValue: result.totalValue,
         status: "generated",

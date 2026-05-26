@@ -7,6 +7,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
 } from "lucide-react";
+import { useEffect } from "react";
 
 import { EmptyState } from "./empty-state";
 
@@ -31,6 +32,7 @@ interface DataTableProps<T> {
     total: number;
     onPageChange: (offset: number) => void;
   };
+  rowIdExtractor?: (row: T) => string | undefined;
 }
 
 export function DataTable<T>({
@@ -42,7 +44,26 @@ export function DataTable<T>({
   emptyDescription,
   onRowClick,
   pagination,
+  rowIdExtractor,
 }: DataTableProps<T>) {
+  useEffect(() => {
+    if (isLoading || typeof window === "undefined") {
+      return;
+    }
+
+    const targetId = window.location.hash.slice(1);
+    if (!targetId) {
+      return;
+    }
+
+    window.requestAnimationFrame(() => {
+      document.getElementById(targetId)?.scrollIntoView({
+        block: "center",
+        behavior: "smooth",
+      });
+    });
+  }, [isLoading]);
+
   if (!isLoading && data.length === 0) {
     return <EmptyState description={emptyDescription} title={emptyTitle} />;
   }
@@ -99,11 +120,13 @@ export function DataTable<T>({
                   <tr
                     className={cn(
                       "transition-all duration-150",
+                      "scroll-mt-24 target:bg-red-50 target:ring-2 target:ring-red-300 target:ring-inset",
                       rowIndex % 2 === 0 ? "bg-background" : "bg-muted/40",
                       onRowClick
                         ? "cursor-pointer hover:bg-primary/10 hover:shadow-md hover:ring-1 hover:ring-primary/20 hover:ring-inset"
                         : "hover:bg-muted/50 hover:shadow-sm hover:ring-1 hover:ring-muted-foreground/10 hover:ring-inset"
                     )}
+                    id={rowIdExtractor?.(row)}
                     key={keyExtractor(row)}
                     onClick={
                       onRowClick

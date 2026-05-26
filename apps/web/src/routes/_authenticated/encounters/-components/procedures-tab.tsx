@@ -388,6 +388,7 @@ export function ProceduresTab({
         emptyTitle="Sin procedimientos"
         isLoading={isLoading}
         keyExtractor={(row) => row.id}
+        rowIdExtractor={(row) => `rips-procedure-${row.id}`}
       />
     </div>
   );

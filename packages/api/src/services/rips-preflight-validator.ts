@@ -161,8 +161,8 @@ function validateTransaction(
   result: PreflightValidationResult,
   tx: RipsTransaction
 ): void {
-  // T01: NIT validation placeholder (would check against provider catalog)
-  if (tx.numFactura === null && tx.tipoNota !== "RS") {
+  // T01: factura requerida salvo operaciones normativas sin FEV asociada.
+  if (tx.numFactura === null && !["NA", "RS"].includes(tx.tipoNota ?? "")) {
     addFinding(
       result,
       "T01",
@@ -171,7 +171,7 @@ function validateTransaction(
       "numFactura",
       "numFactura es requerido para operaciones con factura",
       tx.numFactura,
-      "non-null cuando tipoNota != RS"
+      "non-null cuando tipoNota no es NA ni RS"
     );
   }
 
@@ -356,6 +356,166 @@ async function validateUsuario(
   }
 }
 
+async function validateCommonServiceCodes(
+  db: Db,
+  result: PreflightValidationResult,
+  path: string,
+  service: {
+    codDiagnosticoPrincipal: string;
+    codPrestador: string;
+    codServicio: string;
+    grupoServicios: string;
+    modalidadGrupoServicioTecSal: string;
+    tipoDocumentoIdentificacion: string;
+  }
+): Promise<void> {
+  if (!service.codPrestador || service.codPrestador.length < 4) {
+    addFinding(
+      result,
+      "RVC29",
+      "RECHAZO",
+      path,
+      "codPrestador",
+      "Codigo de prestador requerido para el servicio",
+      service.codPrestador,
+      "codigo habilitacion/REPS valido"
+    );
+  }
+
+  const [modalidadValid, grupoValid, servicioValid, cieValid, docTypeValid] =
+    await Promise.all([
+      catalogExists(
+        db,
+        "ModalidadAtencion",
+        service.modalidadGrupoServicioTecSal
+      ),
+      catalogExists(db, "GrupoServicios", service.grupoServicios),
+      catalogExists(db, "Servicios", service.codServicio),
+      catalogExists(db, "CIE10", service.codDiagnosticoPrincipal),
+      catalogExists(db, "TipoIdPISIS", service.tipoDocumentoIdentificacion),
+    ]);
+
+  if (!modalidadValid) {
+    addFinding(
+      result,
+      "RVC29",
+      "RECHAZO",
+      path,
+      "modalidadGrupoServicioTecSal",
+      "Modalidad de atencion no encontrada en catalogo SISPRO",
+      service.modalidadGrupoServicioTecSal,
+      "ModalidadAtencion valid code"
+    );
+  }
+
+  if (!grupoValid) {
+    addFinding(
+      result,
+      "RVC29",
+      "RECHAZO",
+      path,
+      "grupoServicios",
+      "Grupo de servicios no encontrado en catalogo SISPRO",
+      service.grupoServicios,
+      "GrupoServicios valid code"
+    );
+  }
+
+  if (!servicioValid) {
+    addFinding(
+      result,
+      "RVC29",
+      "RECHAZO",
+      path,
+      "codServicio",
+      "Codigo de servicio no encontrado en catalogo SISPRO",
+      service.codServicio,
+      "Servicios valid code"
+    );
+  }
+
+  if (!cieValid) {
+    addFinding(
+      result,
+      "RVC29",
+      "RECHAZO",
+      path,
+      "codDiagnosticoPrincipal",
+      "Diagnostico principal no encontrado en CIE10",
+      service.codDiagnosticoPrincipal,
+      "CIE10 valid code"
+    );
+  }
+
+  if (!docTypeValid) {
+    addFinding(
+      result,
+      "RVC29",
+      "RECHAZO",
+      path,
+      "tipoDocumentoIdentificacion",
+      "Tipo de documento del profesional no encontrado en catalogo SISPRO",
+      service.tipoDocumentoIdentificacion,
+      "TipoIdPISIS valid code"
+    );
+  }
+}
+
+async function validateProviderDiagnosisAndProfessional(
+  db: Db,
+  result: PreflightValidationResult,
+  path: string,
+  service: {
+    codDiagnosticoPrincipal: string;
+    codPrestador: string;
+    tipoDocumentoIdentificacion: string;
+  }
+): Promise<void> {
+  if (!service.codPrestador || service.codPrestador.length < 4) {
+    addFinding(
+      result,
+      "RVC29",
+      "RECHAZO",
+      path,
+      "codPrestador",
+      "Codigo de prestador requerido para el servicio",
+      service.codPrestador,
+      "codigo habilitacion/REPS valido"
+    );
+  }
+
+  const [cieValid, docTypeValid] = await Promise.all([
+    catalogExists(db, "CIE10", service.codDiagnosticoPrincipal),
+    catalogExists(db, "TipoIdPISIS", service.tipoDocumentoIdentificacion),
+  ]);
+
+  if (!cieValid) {
+    addFinding(
+      result,
+      "RVC29",
+      "RECHAZO",
+      path,
+      "codDiagnosticoPrincipal",
+      "Diagnostico principal no encontrado en CIE10",
+      service.codDiagnosticoPrincipal,
+      "CIE10 valid code"
+    );
+  }
+
+  if (!docTypeValid) {
+    addFinding(
+      result,
+      "RVC29",
+      "RECHAZO",
+      path,
+      "tipoDocumentoIdentificacion",
+      "Tipo de documento del profesional no encontrado en catalogo SISPRO",
+      service.tipoDocumentoIdentificacion,
+      "TipoIdPISIS valid code"
+    );
+  }
+}
+
 async function validateConsultas(
   db: Db,
   result: PreflightValidationResult,
@@ -381,6 +541,29 @@ async function validateConsultas(
         "CUPS consulta prefix 89/87"
       );
     }
+
+    const cupsValid = await catalogExists(db, "CUPSRips", c.codConsulta);
+    if (!cupsValid) {
+      addFinding(
+        result,
+        "RVC20",
+        "RECHAZO",
+        path,
+        "codConsulta",
+        "Codigo CUPS de consulta no encontrado en catalogo SISPRO",
+        c.codConsulta,
+        "CUPSRips valid code"
+      );
+    }
+
+    await validateCommonServiceCodes(db, result, path, {
+      codPrestador: c.codPrestador,
+      modalidadGrupoServicioTecSal: c.modalidadGrupoServicioTecSal,
+      grupoServicios: c.grupoServicios,
+      codServicio: c.codServicio,
+      codDiagnosticoPrincipal: c.codDiagnosticoPrincipal,
+      tipoDocumentoIdentificacion: c.tipoDocumentoIdentificacion,
+    });
 
     const finalidadValid = await catalogExists(
       db,
@@ -463,6 +646,15 @@ async function validateProcedimientos(
       );
     }
 
+    await validateCommonServiceCodes(db, result, path, {
+      codPrestador: p.codPrestador,
+      modalidadGrupoServicioTecSal: p.modalidadGrupoServicioTecSal,
+      grupoServicios: p.grupoServicios,
+      codServicio: p.codServicio,
+      codDiagnosticoPrincipal: p.codDiagnosticoPrincipal,
+      tipoDocumentoIdentificacion: p.tipoDocumentoIdentificacion,
+    });
+
     const viaValid = await catalogExists(
       db,
       "ViaIngresoUsuario",
@@ -528,6 +720,12 @@ async function validateMedicamentos(
       );
     }
 
+    await validateProviderDiagnosisAndProfessional(db, result, path, {
+      codDiagnosticoPrincipal: m.codDiagnosticoPrincipal,
+      codPrestador: m.codPrestador,
+      tipoDocumentoIdentificacion: m.tipoDocumentoIdentificacion,
+    });
+
     if (m.cantidadMedicamento <= 0) {
       addFinding(
         result,
@@ -586,6 +784,12 @@ async function validateOtrosServicios(
         "TipoOtrosServicios valid code"
       );
     }
+
+    await validateProviderDiagnosisAndProfessional(db, result, path, {
+      codDiagnosticoPrincipal: o.codDiagnosticoPrincipal,
+      codPrestador: o.codPrestador,
+      tipoDocumentoIdentificacion: o.tipoDocumentoIdentificacion,
+    });
   }
 }
 

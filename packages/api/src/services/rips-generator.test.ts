@@ -1,20 +1,29 @@
 import { describe, expect, it } from "bun:test";
-import { createTestContext } from "../test-utils";
-import { generateRipsPayload } from "./rips-generator";
+import type { Db } from "../context";
+import { generateRipsPayload, RipsGenerationError } from "./rips-generator";
 
 describe("rips generator", () => {
-  it("generates empty RIPS for period with no encounters", async () => {
-    const ctx = await createTestContext();
-    const result = await generateRipsPayload(ctx.db, {
-      payerId: "test-payer",
-      periodFrom: new Date("2000-01-01"),
-      periodTo: new Date("2000-01-31"),
-      organizationTaxId: "900123456",
-    });
+  it("blocks FEV generation without invoice number before reading DB", async () => {
+    await expect(
+      generateRipsPayload({} as Db, {
+        payerId: "test-payer",
+        periodFrom: new Date("2026-01-01"),
+        periodTo: new Date("2026-01-31"),
+        organizationTaxId: "900123456",
+        operationType: "FEV_RIPS",
+      })
+    ).rejects.toBeInstanceOf(RipsGenerationError);
+  });
 
-    expect(result.numUsers).toBe(0);
-    expect(result.totalValue).toBe("0.00");
-    expect(result.transaction.usuarios).toHaveLength(0);
-    expect(result.transaction.numDocumentoIdObligado).toBe("900123456");
+  it("blocks RIPS sin factura without local consecutive before reading DB", async () => {
+    await expect(
+      generateRipsPayload({} as Db, {
+        payerId: "test-payer",
+        periodFrom: new Date("2026-01-01"),
+        periodTo: new Date("2026-01-31"),
+        organizationTaxId: "900123456",
+        operationType: "RIPS_SIN_FACTURA",
+      })
+    ).rejects.toBeInstanceOf(RipsGenerationError);
   });
 });

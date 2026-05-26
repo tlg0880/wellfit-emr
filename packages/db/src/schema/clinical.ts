@@ -884,9 +884,11 @@ export const ripsExportEncounter = sqliteTable(
     index("ree_export_idx").on(table.ripsExportId),
     index("ree_encounter_idx").on(table.encounterId),
     index("ree_patient_idx").on(table.patientId),
-    uniqueIndex("ree_export_encounter_unique_idx").on(
+    uniqueIndex("ree_export_encounter_service_unique_idx").on(
       table.ripsExportId,
-      table.encounterId
+      table.encounterId,
+      table.serviceType,
+      table.serviceConsecutive
     ),
   ]
 );
