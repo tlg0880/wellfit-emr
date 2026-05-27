@@ -18,26 +18,41 @@ import {
   FlaskConical,
   Pill,
   Play,
+  Pencil,
   ShieldCheck,
   Stethoscope,
   Trash2,
   Users,
   XCircle,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { z } from "zod";
 
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { orpc, queryClient } from "@/utils/orpc";
 import {
   extractRipsGenerationIssues,
+  handleRipsGenerateSuccess,
   RipsGenerationIssuesPanel,
   showRipsGenerationIssuesToast,
 } from "./-components/generation-issues";
+import {
+  RipsExportForm,
+  ripsExportToFormValues,
+} from "./-components/rips-export-form";
+
+const ripsExportDetailSearchSchema = z.object({
+  edit: z.boolean().optional(),
+});
 
 export const Route = createFileRoute("/_authenticated/rips-exports/$exportId")({
   component: RipsExportDetailPage,
+  validateSearch: (search) =>
+    ripsExportDetailSearchSchema.parse({
+      edit: search.edit === true || search.edit === "true" ? true : undefined,
+    }),
 });
 
 const SERVICE_ICONS: Record<string, React.ReactNode> = {
@@ -344,11 +359,19 @@ function ValidationPanel({
 
 function RipsExportDetailPage() {
   const { exportId } = Route.useParams();
+  const { edit: openEditFromSearch } = Route.useSearch();
   const navigate = useNavigate();
   const [showRawJson, setShowRawJson] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(openEditFromSearch ?? false);
   const [generationIssues, setGenerationIssues] = useState<
     ReturnType<typeof extractRipsGenerationIssues>
   >([]);
+
+  useEffect(() => {
+    if (openEditFromSearch) {
+      setShowEditForm(true);
+    }
+  }, [openEditFromSearch]);
 
   const deleteMutation = useMutation({
     ...orpc.ripsExports.delete.mutationOptions(),
@@ -369,10 +392,13 @@ function RipsExportDetailPage() {
     onMutate: () => {
       setGenerationIssues([]);
     },
-    onSuccess: () => {
-      toast.success("Payload RIPS generado");
+    onSuccess: (data) => {
+      handleRipsGenerateSuccess(data.numUsers);
       queryClient.invalidateQueries({
         queryKey: orpc.ripsExports.list.key({ type: "query" }),
+      });
+      queryClient.invalidateQueries({
+        queryKey: orpc.ripsExports.get.key({ input: { id: exportId } }),
       });
     },
     onError: (error: Error) => {
@@ -399,6 +425,9 @@ function RipsExportDetailPage() {
       queryClient.invalidateQueries({
         queryKey: orpc.ripsExports.list.key({ type: "query" }),
       });
+      queryClient.invalidateQueries({
+        queryKey: orpc.ripsExports.get.key({ input: { id: exportId } }),
+      });
     },
     onError: (error: Error) => {
       toast.error(error.message || "Error al validar payload");
@@ -415,6 +444,25 @@ function RipsExportDetailPage() {
     }),
     enabled: !!exportData?.payerId,
   });
+
+  const editFormValues = useMemo(
+    () => (exportData ? ripsExportToFormValues(exportData) : undefined),
+    [exportData]
+  );
+
+  const canEdit = exportData?.status !== "sent";
+
+  const closeEditForm = () => {
+    setShowEditForm(false);
+    if (openEditFromSearch) {
+      navigate({
+        to: "/rips-exports/$exportId",
+        params: { exportId },
+        search: {},
+        replace: true,
+      });
+    }
+  };
 
   const title = isLoading
     ? "Cargando..."
@@ -435,6 +483,17 @@ function RipsExportDetailPage() {
         actions={
           exportData ? (
             <div className="flex items-center gap-2">
+              {canEdit ? (
+                <Button
+                  disabled={showEditForm}
+                  onClick={() => setShowEditForm(true)}
+                  size="sm"
+                  variant="outline"
+                >
+                  <Pencil size={14} />
+                  <span className="ml-1.5">Editar</span>
+                </Button>
+              ) : null}
               <Button
                 disabled={generateMutation.isPending}
                 onClick={() => generateMutation.mutate({ id: exportId })}
@@ -494,6 +553,20 @@ function RipsExportDetailPage() {
               onDismiss={() => setGenerationIssues([])}
             />
           </div>
+
+          {showEditForm && editFormValues ? (
+            <div className="px-6">
+              <RipsExportForm
+                exportId={exportId}
+                initialValues={editFormValues}
+                key={exportId}
+                mode="edit"
+                onCancel={closeEditForm}
+                onSuccess={closeEditForm}
+                title="Editar exportación RIPS"
+              />
+            </div>
+          ) : null}
 
           <div className="grid grid-cols-1 gap-4 px-6 lg:grid-cols-2">
             <Card>

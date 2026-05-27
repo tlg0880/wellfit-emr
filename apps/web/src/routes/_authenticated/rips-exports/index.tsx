@@ -2,15 +2,6 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Button } from "@wellfit-emr/ui/components/button";
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@wellfit-emr/ui/components/card";
-import { Input } from "@wellfit-emr/ui/components/input";
-import { Label } from "@wellfit-emr/ui/components/label";
-import { SearchSelect } from "@wellfit-emr/ui/components/search-select";
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -20,6 +11,7 @@ import {
 import {
   Eye,
   FileOutput,
+  Pencil,
   Play,
   Plus,
   Search,
@@ -34,236 +26,15 @@ import { PageHeader } from "@/components/page-header";
 import { orpc, queryClient } from "@/utils/orpc";
 import {
   extractRipsGenerationIssues,
+  handleRipsGenerateSuccess,
   RipsGenerationIssuesPanel,
   showRipsGenerationIssuesToast,
 } from "./-components/generation-issues";
+import { RipsExportForm } from "./-components/rips-export-form";
 
 export const Route = createFileRoute("/_authenticated/rips-exports/")({
   component: RipsExportsListPage,
 });
-
-function CreateRipsExportForm({ onCancel }: { onCancel: () => void }) {
-  const [form, setForm] = useState({
-    payerId: "",
-    periodFrom: new Date().toISOString().slice(0, 10),
-    periodTo: new Date().toISOString().slice(0, 10),
-    status: "draft",
-    operationType: "FEV_RIPS",
-    invoiceNumber: "",
-    noteType: "",
-    noteNumber: "",
-    organizationTaxId: "",
-  });
-
-  const [payerSearch, setPayerSearch] = useState("");
-
-  const { data: payersData, isLoading: payersLoading } = useQuery(
-    orpc.payers.list.queryOptions({
-      input: {
-        limit: 20,
-        offset: 0,
-        search: payerSearch || undefined,
-      },
-    })
-  );
-
-  const create = useMutation({
-    ...orpc.ripsExports.create.mutationOptions(),
-    onSuccess: () => {
-      toast.success("Exportación RIPS creada");
-      queryClient.invalidateQueries({
-        queryKey: orpc.ripsExports.list.key({ type: "query" }),
-      });
-      onCancel();
-    },
-    onError: (error: Error) => {
-      toast.error(error.message || "Error al crear exportación");
-    },
-  });
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    create.mutate({
-      payerId: form.payerId,
-      periodFrom: new Date(form.periodFrom),
-      periodTo: new Date(form.periodTo),
-      status: form.status,
-      generatedAt: new Date(),
-      organizationTaxId: form.organizationTaxId || null,
-      operationType: form.operationType as
-        | "FEV_RIPS"
-        | "NC_PARCIAL"
-        | "ND"
-        | "NOTA_AJUSTE_RIPS"
-        | "RIPS_SIN_FACTURA"
-        | "CAPITA_PERIODO"
-        | "CAPITA_FINAL",
-      invoiceNumber: form.invoiceNumber || null,
-      noteType: form.noteType || null,
-      noteNumber: form.noteNumber || null,
-    });
-  }
-
-  return (
-    <Card className="mx-6 overflow-visible">
-      <CardHeader>
-        <CardTitle>Nueva exportación RIPS</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form
-          className="grid grid-cols-1 gap-3 md:grid-cols-3"
-          onSubmit={handleSubmit}
-        >
-          <div className="space-y-1">
-            <Label>Pagador *</Label>
-            <SearchSelect
-              emptyMessage="Escribe para buscar pagador..."
-              loading={payersLoading}
-              onChange={(v) => setForm((f) => ({ ...f, payerId: v }))}
-              onSearchChange={setPayerSearch}
-              options={
-                payersData?.items.map((p) => ({
-                  value: p.id,
-                  label: p.name,
-                  description: p.code ?? undefined,
-                })) ?? []
-              }
-              placeholder="Buscar pagador..."
-              required
-              search={payerSearch}
-              value={form.payerId}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label>Operación *</Label>
-            <Select
-              onValueChange={(v) =>
-                setForm((f) => ({
-                  ...f,
-                  operationType: v as string,
-                  noteType:
-                    v === "RIPS_SIN_FACTURA"
-                      ? "RS"
-                      : v === "NC_PARCIAL"
-                        ? "NC"
-                        : v === "ND"
-                          ? "ND"
-                          : v === "NOTA_AJUSTE_RIPS"
-                            ? "NA"
-                            : f.noteType,
-                }))
-              }
-              value={form.operationType}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Tipo de operación" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="FEV_RIPS">FEV + RIPS</SelectItem>
-                <SelectItem value="NC_PARCIAL">NC parcial + RIPS</SelectItem>
-                <SelectItem value="ND">ND + RIPS</SelectItem>
-                <SelectItem value="NOTA_AJUSTE_RIPS">
-                  Nota ajuste RIPS
-                </SelectItem>
-                <SelectItem value="RIPS_SIN_FACTURA">
-                  RIPS sin factura
-                </SelectItem>
-                <SelectItem value="CAPITA_PERIODO">Cápita periodo</SelectItem>
-                <SelectItem value="CAPITA_FINAL">Cápita final</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1">
-            <Label>Periodo desde *</Label>
-            <Input
-              onChange={(e) => setForm({ ...form, periodFrom: e.target.value })}
-              required
-              type="date"
-              value={form.periodFrom}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label>Periodo hasta *</Label>
-            <Input
-              onChange={(e) => setForm({ ...form, periodTo: e.target.value })}
-              required
-              type="date"
-              value={form.periodTo}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label>NIT obligado</Label>
-            <Input
-              onChange={(e) =>
-                setForm({ ...form, organizationTaxId: e.target.value })
-              }
-              placeholder="900123456"
-              type="text"
-              value={form.organizationTaxId}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label>Factura</Label>
-            <Input
-              disabled={form.operationType === "RIPS_SIN_FACTURA"}
-              onChange={(e) =>
-                setForm({ ...form, invoiceNumber: e.target.value })
-              }
-              placeholder="FEV-001"
-              required={
-                ![
-                  "RIPS_SIN_FACTURA",
-                  "NOTA_AJUSTE_RIPS",
-                  "CAPITA_FINAL",
-                ].includes(form.operationType)
-              }
-              type="text"
-              value={form.invoiceNumber}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label>Tipo nota</Label>
-            <Input
-              disabled={form.operationType === "RIPS_SIN_FACTURA"}
-              onChange={(e) => setForm({ ...form, noteType: e.target.value })}
-              placeholder="NC, ND o NA"
-              type="text"
-              value={form.noteType}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label>Número nota / consecutivo</Label>
-            <Input
-              onChange={(e) => setForm({ ...form, noteNumber: e.target.value })}
-              placeholder="NA-001 / RS-001"
-              required={[
-                "RIPS_SIN_FACTURA",
-                "NC_PARCIAL",
-                "ND",
-                "NOTA_AJUSTE_RIPS",
-              ].includes(form.operationType)}
-              type="text"
-              value={form.noteNumber}
-            />
-          </div>
-          <div className="flex items-end gap-2 md:col-span-3">
-            <Button
-              onClick={onCancel}
-              size="sm"
-              type="button"
-              variant="outline"
-            >
-              Cancelar
-            </Button>
-            <Button disabled={create.isPending} size="sm" type="submit">
-              {create.isPending ? "Guardando..." : "Crear exportación"}
-            </Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
-  );
-}
 
 function RipsExportsListPage() {
   const navigate = useNavigate();
@@ -311,8 +82,8 @@ function RipsExportsListPage() {
     onMutate: () => {
       setGenerationIssues([]);
     },
-    onSuccess: () => {
-      toast.success("Payload generado");
+    onSuccess: (data) => {
+      handleRipsGenerateSuccess(data.numUsers);
       queryClient.invalidateQueries({
         queryKey: orpc.ripsExports.list.key({ type: "query" }),
       });
@@ -410,6 +181,15 @@ function RipsExportsListPage() {
             <ShieldCheck size={12} />
           </Button>
           <Link
+            aria-label="Editar exportación"
+            className="inline-flex text-muted-foreground hover:text-foreground"
+            params={{ exportId: row.id }}
+            search={{ edit: true }}
+            to="/rips-exports/$exportId"
+          >
+            <Pencil size={14} />
+          </Link>
+          <Link
             aria-label="Ver exportación"
             className="inline-flex text-muted-foreground hover:text-foreground"
             params={{ exportId: row.id }}
@@ -432,7 +212,7 @@ function RipsExportsListPage() {
           </Button>
         </div>
       ),
-      className: "w-32",
+      className: "w-36",
     },
   ];
 
@@ -451,7 +231,15 @@ function RipsExportsListPage() {
         title="Exportaciones RIPS"
       />
 
-      {showForm && <CreateRipsExportForm onCancel={() => setShowForm(false)} />}
+      {showForm ? (
+        <div className="mx-6">
+          <RipsExportForm
+            mode="create"
+            onCancel={() => setShowForm(false)}
+            title="Nueva exportación RIPS"
+          />
+        </div>
+      ) : null}
 
       <div className="px-6">
         <RipsGenerationIssuesPanel

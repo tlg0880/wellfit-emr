@@ -8,6 +8,7 @@ interface RipsExportsClient {
   ripsExports: {
     create(input: unknown): Promise<unknown>;
     list(input: unknown): Promise<unknown>;
+    update(input: unknown): Promise<unknown>;
   };
 }
 
@@ -28,12 +29,22 @@ const session = {
 const ripsExportRecord = {
   generatedAt: new Date("2026-04-23T00:00:00.000Z"),
   id: "rips-id",
+  invoiceNumber: null,
+  muvResponseJson: null,
+  noteNumber: null,
+  noteType: null,
+  numUsers: null,
+  operationType: "FEV_RIPS",
+  organizationTaxId: null,
   payloadJson: null,
   payerId: "payer-id",
   periodFrom: new Date("2026-04-01T00:00:00.000Z"),
-  periodTo: new Date("2026-04-30T00:00:00.000Z"),
+  periodTo: new Date("2026-04-30T23:59:59.999Z"),
+  sentAt: null,
   status: "draft",
+  totalValue: null,
   validationResultJson: null,
+  cuv: null,
 };
 
 function createMockContext(db: MockDb): Context {
@@ -111,5 +122,49 @@ describe("ripsExportsRouter", () => {
       offset: 0,
       total: 1,
     });
+  });
+
+  test("updates a RIPS export and invalidates generated payload", async () => {
+    const existing = {
+      ...ripsExportRecord,
+      payloadJson: { usuarios: [] },
+      status: "generated",
+    };
+    const updated = {
+      ...existing,
+      noteNumber: "RS-2",
+      payloadJson: null,
+      status: "draft",
+    };
+
+    const limit = mock(async () => [existing]);
+    const where = mock(() => ({ limit }));
+    const from = mock(() => ({ where }));
+    const select = mock(() => ({ from }));
+
+    const deleteWhere = mock(async () => undefined);
+    const deleteFn = mock(() => ({ where: deleteWhere }));
+
+    const returning = mock(async () => [updated]);
+    const updateWhere = mock(() => ({ returning }));
+    const set = mock(() => ({ where: updateWhere }));
+    const update = mock(() => ({ set }));
+
+    const db = {
+      delete: deleteFn,
+      insert: mock(),
+      select,
+      update,
+    };
+    const client = createRipsExportsClient(db);
+
+    const result = await client.ripsExports.update({
+      id: "rips-id",
+      noteNumber: "RS-2",
+    });
+
+    expect(result).toEqual(updated);
+    expect(deleteFn).toHaveBeenCalled();
+    expect(update).toHaveBeenCalled();
   });
 });

@@ -13,6 +13,7 @@ import {
   generateRipsPayload,
   RipsGenerationError,
 } from "../services/rips-generator";
+import { normalizeRipsPeriodBounds } from "../services/rips-period";
 import { validateRipsPreflight } from "../services/rips-preflight-validator";
 
 const nonEmptyStringSchema = z.string().min(1);
@@ -87,10 +88,17 @@ const createRipsExportProcedure = protectedProcedure
   .input(createRipsExportSchema)
   .output(ripsExportSchema)
   .handler(async ({ context, input }) => {
+    const { periodFrom, periodTo } = normalizeRipsPeriodBounds(
+      input.periodFrom,
+      input.periodTo
+    );
+
     const [created] = await context.db
       .insert(ripsExport)
       .values({
         ...input,
+        periodFrom,
+        periodTo,
         id: crypto.randomUUID(),
         payloadJson: null,
         validationResultJson: null,
@@ -162,6 +170,132 @@ const getRipsExportProcedure = protectedProcedure
     return found;
   });
 
+const updateRipsExportSchema = z.object({
+  id: nonEmptyStringSchema,
+  invoiceNumber: z.string().nullable().optional(),
+  noteNumber: z.string().nullable().optional(),
+  noteType: z.string().nullable().optional(),
+  operationType: createRipsExportSchema.shape.operationType.optional(),
+  organizationTaxId: z.string().nullable().optional(),
+  payerId: nonEmptyStringSchema.optional(),
+  periodFrom: z.coerce.date().optional(),
+  periodTo: z.coerce.date().optional(),
+});
+
+function exportGenerationInputsChanged(
+  existing: typeof ripsExport.$inferSelect,
+  next: {
+    invoiceNumber: string | null;
+    noteNumber: string | null;
+    noteType: string | null;
+    operationType: string;
+    organizationTaxId: string | null;
+    payerId: string;
+    periodFrom: Date;
+    periodTo: Date;
+  }
+): boolean {
+  const existingPeriod = normalizeRipsPeriodBounds(
+    new Date(existing.periodFrom),
+    new Date(existing.periodTo)
+  );
+  const nextPeriod = normalizeRipsPeriodBounds(
+    next.periodFrom,
+    next.periodTo
+  );
+
+  return (
+    existing.payerId !== next.payerId ||
+    existing.operationType !== next.operationType ||
+    (existing.organizationTaxId ?? null) !== next.organizationTaxId ||
+    (existing.invoiceNumber ?? null) !== next.invoiceNumber ||
+    (existing.noteType ?? null) !== next.noteType ||
+    (existing.noteNumber ?? null) !== next.noteNumber ||
+    existingPeriod.periodFrom.getTime() !== nextPeriod.periodFrom.getTime() ||
+    existingPeriod.periodTo.getTime() !== nextPeriod.periodTo.getTime()
+  );
+}
+
+const updateRipsExportProcedure = protectedProcedure
+  .input(updateRipsExportSchema)
+  .output(ripsExportSchema)
+  .handler(async ({ context, input }) => {
+    const [existing] = await context.db
+      .select()
+      .from(ripsExport)
+      .where(eq(ripsExport.id, input.id))
+      .limit(1);
+
+    if (!existing) {
+      throw new ORPCError("NOT_FOUND", { message: "RIPS export not found." });
+    }
+
+    if (existing.status === "sent") {
+      throw new ORPCError("BAD_REQUEST", {
+        message:
+          "No se puede editar una exportación ya enviada. Cree una nueva exportación.",
+      });
+    }
+
+    const periodFrom = input.periodFrom ?? new Date(existing.periodFrom);
+    const periodTo = input.periodTo ?? new Date(existing.periodTo);
+    const normalizedPeriod = normalizeRipsPeriodBounds(periodFrom, periodTo);
+
+    const nextValues = {
+      invoiceNumber:
+        input.invoiceNumber !== undefined
+          ? input.invoiceNumber
+          : existing.invoiceNumber,
+      noteNumber:
+        input.noteNumber !== undefined
+          ? input.noteNumber
+          : existing.noteNumber,
+      noteType:
+        input.noteType !== undefined ? input.noteType : existing.noteType,
+      operationType: input.operationType ?? existing.operationType,
+      organizationTaxId:
+        input.organizationTaxId !== undefined
+          ? input.organizationTaxId
+          : existing.organizationTaxId,
+      payerId: input.payerId ?? existing.payerId,
+      periodFrom: normalizedPeriod.periodFrom,
+      periodTo: normalizedPeriod.periodTo,
+    };
+
+    const shouldInvalidatePayload = exportGenerationInputsChanged(
+      existing,
+      nextValues
+    );
+
+    if (shouldInvalidatePayload) {
+      await context.db
+        .delete(ripsExportEncounter)
+        .where(eq(ripsExportEncounter.ripsExportId, existing.id));
+    }
+
+    const [updated] = await context.db
+      .update(ripsExport)
+      .set({
+        ...nextValues,
+        ...(shouldInvalidatePayload
+          ? {
+              cuv: null,
+              muvResponseJson: null,
+              numUsers: null,
+              payloadJson: null,
+              sentAt: null,
+              status: "draft",
+              totalValue: null,
+              validationResultJson: null,
+            }
+          : {}),
+      })
+      .where(eq(ripsExport.id, input.id))
+      .returning();
+
+    return updated ?? throwCreateError("RIPS export update");
+  });
+
 const deleteRipsExportProcedure = protectedProcedure
   .input(getByIdSchema)
   .output(z.boolean())
@@ -204,12 +338,17 @@ const generatePayloadProcedure = protectedProcedure
     const organizationTaxId =
       found.organizationTaxId ?? org?.taxId ?? org?.repsCode ?? "000000000";
 
+    const { periodFrom, periodTo } = normalizeRipsPeriodBounds(
+      new Date(found.periodFrom),
+      new Date(found.periodTo)
+    );
+
     let result: Awaited<ReturnType<typeof generateRipsPayload>>;
     try {
       result = await generateRipsPayload(context.db, {
         payerId: found.payerId,
-        periodFrom: new Date(found.periodFrom),
-        periodTo: new Date(found.periodTo),
+        periodFrom,
+        periodTo,
         organizationTaxId,
         invoiceNumber: found.invoiceNumber,
         noteType: found.noteType,
@@ -254,6 +393,8 @@ const generatePayloadProcedure = protectedProcedure
         validationResultJson: null,
         numUsers: result.numUsers,
         totalValue: result.totalValue,
+        periodFrom,
+        periodTo,
         status: "generated",
       })
       .where(eq(ripsExport.id, input.id))
@@ -338,6 +479,7 @@ export interface RipsExportsRouter extends Record<string, AnyRouter> {
   generatePayload: typeof generatePayloadProcedure;
   get: typeof getRipsExportProcedure;
   list: typeof listRipsExportsProcedure;
+  update: typeof updateRipsExportProcedure;
   validatePayload: typeof validatePayloadProcedure;
 }
 
@@ -347,5 +489,6 @@ export const ripsExportsRouter: RipsExportsRouter = {
   generatePayload: generatePayloadProcedure,
   get: getRipsExportProcedure,
   list: listRipsExportsProcedure,
+  update: updateRipsExportProcedure,
   validatePayload: validatePayloadProcedure,
 };

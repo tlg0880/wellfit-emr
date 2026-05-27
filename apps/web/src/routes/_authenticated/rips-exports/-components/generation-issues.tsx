@@ -198,6 +198,22 @@ function BillingActionLink({ issue }: { issue: RipsGenerationIssue }) {
   );
 }
 
+export function showRipsEmptyGenerationToast(): void {
+  toast.warning("RIPS generado sin usuarios", {
+    description:
+      "No hay atenciones finalizadas en el periodo con el pagador seleccionado, o faltan items de facturacion y datos clinicos. Amplia el periodo, finaliza atenciones y revisa cobertura y la pestana Facturacion.",
+    duration: 10_000,
+  });
+}
+
+export function handleRipsGenerateSuccess(numUsers: number | null | undefined) {
+  if ((numUsers ?? 0) === 0) {
+    showRipsEmptyGenerationToast();
+    return;
+  }
+  toast.success("Payload RIPS generado");
+}
+
 export function showRipsGenerationIssuesToast(
   issues: RipsGenerationIssue[]
 ): void {

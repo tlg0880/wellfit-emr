@@ -15,6 +15,7 @@ import {
 } from "@wellfit-emr/db/schema/clinical";
 import { and, eq, gte, inArray, isNull, lte, or } from "drizzle-orm";
 import type { Db } from "../context";
+import { normalizeRipsPeriodBounds } from "./rips-period";
 
 const MONEY_PATTERN = /^-?\d+(?:\.\d{1,2})?$/;
 
@@ -735,7 +736,11 @@ export async function generateRipsPayload(
   db: Db,
   input: RipsGenerationInput
 ): Promise<GeneratedRipsResult> {
-  const { periodFrom, periodTo, organizationTaxId } = input;
+  const { organizationTaxId } = input;
+  const { periodFrom, periodTo } = normalizeRipsPeriodBounds(
+    input.periodFrom,
+    input.periodTo
+  );
   const issues: RipsGenerationIssue[] = [];
 
   if (requiresInvoice(input) && !input.invoiceNumber) {
