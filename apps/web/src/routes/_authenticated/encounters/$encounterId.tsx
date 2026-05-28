@@ -127,10 +127,6 @@ function EncounterDetailPage() {
   });
   const navigate = useNavigate({ from: "/encounters/$encounterId" });
   const search = Route.useSearch();
-  const activeTab =
-    search.tab && TABS.some((t) => t.id === search.tab)
-      ? search.tab
-      : DEFAULT_TAB;
 
   const {
     data: encounter,
@@ -183,6 +179,14 @@ function EncounterDetailPage() {
     navigate({ search: (prev) => ({ ...prev, tab: tabId }) });
   }
 
+  const isDocumentary = encounter?.encounterType === "documentary";
+  const visibleTabs = isDocumentary
+    ? TABS.filter((tab) => tab.id !== "billingItems")
+    : TABS;
+  const activeTab =
+    search.tab && visibleTabs.some((tab) => tab.id === search.tab)
+      ? search.tab
+      : DEFAULT_TAB;
   const statusLabel =
     encounter?.status === "in-progress"
       ? "En progreso"
@@ -235,7 +239,13 @@ function EncounterDetailPage() {
           ) : null
         }
         backTo="/encounters"
-        description={encounterLoading ? "..." : `Estado: ${statusLabel}`}
+        description={
+          encounterLoading
+            ? "..."
+            : isDocumentary
+              ? `Actualización documental · Estado: ${statusLabel}`
+              : `Estado: ${statusLabel}`
+        }
         icon={Stethoscope}
         iconBgClass="bg-teal-100 text-teal-600"
         title={
@@ -269,6 +279,19 @@ function EncounterDetailPage() {
         </div>
       )}
 
+      {isDocumentary && (
+        <div className="px-6">
+          <Card className="border-sky-200 bg-sky-50/80 dark:border-sky-900 dark:bg-sky-950/40">
+            <CardContent className="py-3 text-sky-900 text-sm dark:text-sky-200">
+              <strong>Encuentro documental:</strong> use este registro para
+              antecedentes, actualización de datos, dolencias, medicamentos
+              históricos y contexto familiar. Lo asociado aquí no alimenta
+              facturación, RIPS ni bundles IHCE/RDA.
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 gap-4 px-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader>
@@ -281,6 +304,12 @@ function EncounterDetailPage() {
               ))
             ) : encounter ? (
               [
+                {
+                  label: "Tipo",
+                  value: isDocumentary
+                    ? "Documental / no facturable"
+                    : "Clínica",
+                },
                 {
                   label: "Clase de atención",
                   value: encounter.encounterClass,
@@ -429,7 +458,7 @@ function EncounterDetailPage() {
           value={activeTab}
         >
           <TabsList className="mb-3 w-full justify-start">
-            {TABS.map((tab) => (
+            {visibleTabs.map((tab) => (
               <TabsTab key={tab.id} value={tab.id}>
                 <tab.icon size={14} />
                 {tab.label}
@@ -464,9 +493,11 @@ function EncounterDetailPage() {
           <TabsPanel value="participants">
             <EncounterParticipantsTab encounterId={encounterId} />
           </TabsPanel>
-          <TabsPanel value="billingItems">
-            <BillingItemsTab encounterId={encounterId} />
-          </TabsPanel>
+          {!isDocumentary && (
+            <TabsPanel value="billingItems">
+              <BillingItemsTab encounterId={encounterId} />
+            </TabsPanel>
+          )}
           <TabsPanel value="medicationOrders">
             <MedicationOrdersTab
               encounterId={encounterId}

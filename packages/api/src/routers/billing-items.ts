@@ -1,6 +1,6 @@
 import type { AnyRouter } from "@orpc/server";
 import { ORPCError } from "@orpc/server";
-import { billingItem, payer } from "@wellfit-emr/db/schema/clinical";
+import { billingItem, encounter, payer } from "@wellfit-emr/db/schema/clinical";
 import { and, asc, count, eq } from "drizzle-orm";
 import { z } from "zod";
 
@@ -92,6 +92,25 @@ const createBillingItemProcedure = protectedProcedure
   .input(createBillingItemSchema)
   .output(billingItemSchema)
   .handler(async ({ context, input }) => {
+    const [foundEncounter] = await context.db
+      .select({ encounterType: encounter.encounterType })
+      .from(encounter)
+      .where(eq(encounter.id, input.encounterId))
+      .limit(1);
+
+    if (!foundEncounter) {
+      throw new ORPCError("NOT_FOUND", {
+        message: "Encounter not found.",
+      });
+    }
+
+    if (foundEncounter.encounterType === "documentary") {
+      throw new ORPCError("BAD_REQUEST", {
+        message:
+          "Los encuentros documentales no pueden tener items de facturacion.",
+      });
+    }
+
     const [created] = await context.db
       .insert(billingItem)
       .values({
@@ -126,6 +145,25 @@ const updateBillingItemProcedure = protectedProcedure
   .output(billingItemSchema)
   .handler(async ({ context, input }) => {
     const { id, ...values } = input;
+    const [foundEncounter] = await context.db
+      .select({ encounterType: encounter.encounterType })
+      .from(encounter)
+      .where(eq(encounter.id, values.encounterId))
+      .limit(1);
+
+    if (!foundEncounter) {
+      throw new ORPCError("NOT_FOUND", {
+        message: "Encounter not found.",
+      });
+    }
+
+    if (foundEncounter.encounterType === "documentary") {
+      throw new ORPCError("BAD_REQUEST", {
+        message:
+          "Los encuentros documentales no pueden tener items de facturacion.",
+      });
+    }
+
     const [updated] = await context.db
       .update(billingItem)
       .set({

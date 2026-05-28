@@ -199,10 +199,7 @@ function exportGenerationInputsChanged(
     new Date(existing.periodFrom),
     new Date(existing.periodTo)
   );
-  const nextPeriod = normalizeRipsPeriodBounds(
-    next.periodFrom,
-    next.periodTo
-  );
+  const nextPeriod = normalizeRipsPeriodBounds(next.periodFrom, next.periodTo);
 
   return (
     existing.payerId !== next.payerId ||
@@ -243,20 +240,18 @@ const updateRipsExportProcedure = protectedProcedure
 
     const nextValues = {
       invoiceNumber:
-        input.invoiceNumber !== undefined
-          ? input.invoiceNumber
-          : existing.invoiceNumber,
+        input.invoiceNumber === undefined
+          ? existing.invoiceNumber
+          : input.invoiceNumber,
       noteNumber:
-        input.noteNumber !== undefined
-          ? input.noteNumber
-          : existing.noteNumber,
+        input.noteNumber === undefined ? existing.noteNumber : input.noteNumber,
       noteType:
-        input.noteType !== undefined ? input.noteType : existing.noteType,
+        input.noteType === undefined ? existing.noteType : input.noteType,
       operationType: input.operationType ?? existing.operationType,
       organizationTaxId:
-        input.organizationTaxId !== undefined
-          ? input.organizationTaxId
-          : existing.organizationTaxId,
+        input.organizationTaxId === undefined
+          ? existing.organizationTaxId
+          : input.organizationTaxId,
       payerId: input.payerId ?? existing.payerId,
       periodFrom: normalizedPeriod.periodFrom,
       periodTo: normalizedPeriod.periodTo,

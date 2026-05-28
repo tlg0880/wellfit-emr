@@ -1,6 +1,6 @@
 import type { AnyRouter } from "@orpc/server";
 import { ORPCError } from "@orpc/server";
-import { ihceBundle } from "@wellfit-emr/db/schema/clinical";
+import { encounter, ihceBundle } from "@wellfit-emr/db/schema/clinical";
 import { and, asc, count, desc, eq } from "drizzle-orm";
 import { z } from "zod";
 
@@ -59,6 +59,24 @@ const createIhceBundleProcedure = protectedProcedure
   .input(createIhceBundleSchema)
   .output(ihceBundleSchema)
   .handler(async ({ context, input }) => {
+    const [foundEncounter] = await context.db
+      .select({ encounterType: encounter.encounterType })
+      .from(encounter)
+      .where(eq(encounter.id, input.encounterId))
+      .limit(1);
+
+    if (!foundEncounter) {
+      throw new ORPCError("NOT_FOUND", {
+        message: "Encounter not found.",
+      });
+    }
+
+    if (foundEncounter.encounterType === "documentary") {
+      throw new ORPCError("BAD_REQUEST", {
+        message: "Los encuentros documentales no generan bundles IHCE/RDA.",
+      });
+    }
+
     const [created] = await context.db
       .insert(ihceBundle)
       .values({

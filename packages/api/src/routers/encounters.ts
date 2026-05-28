@@ -12,6 +12,7 @@ import {
 
 const nonEmptyStringSchema = z.string().min(1);
 const optionalNullableStringSchema = z.string().min(1).nullable().optional();
+const encounterTypeSchema = z.enum(["clinical", "documentary"]);
 
 const encounterSchema = z.object({
   admissionSource: z.string().nullable(),
@@ -20,6 +21,7 @@ const encounterSchema = z.object({
   condicionDestinoCode: z.string().nullable(),
   createdAt: z.date(),
   encounterClass: z.string(),
+  encounterType: encounterTypeSchema,
   endedAt: z.date().nullable(),
   finalidadConsultaCode: z.string().nullable(),
   id: z.string(),
@@ -40,6 +42,7 @@ const createEncounterSchema = z.object({
   causeExternalCode: optionalNullableStringSchema,
   condicionDestinoCode: optionalNullableStringSchema,
   encounterClass: nonEmptyStringSchema,
+  encounterType: encounterTypeSchema.default("clinical"),
   finalidadConsultaCode: optionalNullableStringSchema,
   modalidadAtencionCode: optionalNullableStringSchema,
   patientId: nonEmptyStringSchema,
@@ -63,6 +66,7 @@ const getEncounterSchema = z.object({
 const listEncountersSchema = z.object({
   limit: z.number().int().min(1).max(100).default(25),
   offset: z.number().int().min(0).default(0),
+  encounterType: encounterTypeSchema.optional(),
   patientId: z.string().min(1).optional(),
   search: z.string().min(1).optional(),
   siteId: z.string().min(1).optional(),
@@ -158,7 +162,9 @@ const createEncounterProcedure = protectedProcedure
   .input(createEncounterSchema)
   .output(encounterSchema)
   .handler(async ({ context, input }) => {
-    await validateEncounterRipsFields(context.db, input);
+    if (input.encounterType === "clinical") {
+      await validateEncounterRipsFields(context.db, input);
+    }
 
     const [createdEncounter] = await context.db
       .insert(encounter)
@@ -201,6 +207,9 @@ const listEncountersProcedure = protectedProcedure
   .output(listEncountersResponseSchema)
   .handler(async ({ context, input }) => {
     const filters = [
+      input.encounterType
+        ? eq(encounter.encounterType, input.encounterType)
+        : undefined,
       input.patientId ? eq(encounter.patientId, input.patientId) : undefined,
       input.siteId ? eq(encounter.siteId, input.siteId) : undefined,
       input.status ? eq(encounter.status, input.status) : undefined,
@@ -247,7 +256,23 @@ const updateEncounterProcedure = protectedProcedure
       });
     }
 
-    await validateEncounterRipsFields(context.db, data);
+    const [existingEncounter] = await context.db
+      .select({ encounterType: encounter.encounterType })
+      .from(encounter)
+      .where(eq(encounter.id, id))
+      .limit(1);
+
+    if (!existingEncounter) {
+      throw new ORPCError("NOT_FOUND", {
+        message: "Encounter not found.",
+      });
+    }
+
+    const nextEncounterType =
+      data.encounterType ?? existingEncounter.encounterType;
+    if (nextEncounterType === "clinical") {
+      await validateEncounterRipsFields(context.db, data);
+    }
 
     const [updatedEncounter] = await context.db
       .update(encounter)

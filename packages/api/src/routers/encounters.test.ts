@@ -32,6 +32,7 @@ const encounterRecord = {
   condicionDestinoCode: null,
   createdAt: new Date("2026-04-23T00:00:00.000Z"),
   encounterClass: "ambulatory",
+  encounterType: "clinical",
   endedAt: null,
   finalidadConsultaCode: null,
   id: "encounter-id",
@@ -100,6 +101,7 @@ describe("encountersRouter", () => {
     expect(insertedValue).toMatchObject({
       careModality: "presential",
       encounterClass: "ambulatory",
+      encounterType: "clinical",
       patientId: "patient-id",
       reasonForVisit: "Consulta de control",
       serviceUnitId: "service-unit-id",
@@ -108,6 +110,39 @@ describe("encountersRouter", () => {
       status: "in-progress",
     });
     expect(typeof insertedValue?.id).toBe("string");
+  });
+
+  test("creates a documentary encounter without RIPS catalog validation", async () => {
+    const documentaryEncounter = {
+      ...encounterRecord,
+      careModality: "documentary",
+      encounterClass: "documentary",
+      encounterType: "documentary",
+      reasonForVisit: "Actualización de datos del paciente",
+    };
+    const returning = mock(async () => [documentaryEncounter]);
+    const values = mock(() => ({ returning }));
+    const insert = mock(() => ({ values }));
+    const select = mock();
+    const client = createEncountersClient({
+      insert,
+      select,
+      update: mock(),
+    });
+
+    const result = await client.encounters.create({
+      careModality: "documentary",
+      encounterClass: "documentary",
+      encounterType: "documentary",
+      patientId: "patient-id",
+      reasonForVisit: "Actualización de datos del paciente",
+      serviceUnitId: "service-unit-id",
+      siteId: "site-id",
+      startedAt: "2026-04-23T15:00:00.000Z",
+    });
+
+    expect(result).toEqual(documentaryEncounter);
+    expect(select).not.toHaveBeenCalled();
   });
 
   test("returns NOT_FOUND when an encounter does not exist", async () => {

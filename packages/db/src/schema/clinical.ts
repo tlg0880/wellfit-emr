@@ -336,6 +336,11 @@ export const encounter = sqliteTable(
     serviceUnitId: text("service_unit_id")
       .notNull()
       .references(() => serviceUnit.id),
+    encounterType: text("encounter_type", {
+      enum: ["clinical", "documentary"],
+    })
+      .notNull()
+      .default("clinical"),
     encounterClass: text("encounter_class").notNull(),
     careModality: text("care_modality").notNull(),
     admissionSource: text("admission_source"),
@@ -354,6 +359,7 @@ export const encounter = sqliteTable(
   (table) => [
     index("encounter_patient_started_idx").on(table.patientId, table.startedAt),
     index("encounter_site_started_idx").on(table.siteId, table.startedAt),
+    index("encounter_type_idx").on(table.encounterType),
     index("encounter_cause_external_idx").on(table.causeExternalCode),
     index("encounter_finalidad_idx").on(table.finalidadConsultaCode),
   ]

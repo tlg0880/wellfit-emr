@@ -254,9 +254,7 @@ export function RipsExportForm({
           <div className="space-y-1">
             <Label>Periodo desde *</Label>
             <Input
-              onChange={(e) =>
-                setForm({ ...form, periodFrom: e.target.value })
-              }
+              onChange={(e) => setForm({ ...form, periodFrom: e.target.value })}
               required
               type="date"
               value={form.periodFrom}

@@ -39,8 +39,6 @@ describe("rips-period", () => {
     expect(normalized.periodFrom.toISOString()).toBe(
       "2026-05-26T00:00:00.000Z"
     );
-    expect(normalized.periodTo.toISOString()).toBe(
-      "2026-05-26T23:59:59.999Z"
-    );
+    expect(normalized.periodTo.toISOString()).toBe("2026-05-26T23:59:59.999Z");
   });
 });

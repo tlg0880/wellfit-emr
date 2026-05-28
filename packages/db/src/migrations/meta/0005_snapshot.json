@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "1ac31fb9-e063-495a-9763-a2422f86bb95",
-  "prevId": "d47187ee-7a58-4c9c-923b-2f5657b73d7b",
+  "id": "a3aa1c7f-2fdf-4295-8b29-4629e7efb015",
+  "prevId": "1ac31fb9-e063-495a-9763-a2422f86bb95",
   "tables": {
     "account": {
       "name": "account",
@@ -2019,6 +2019,14 @@
           "notNull": true,
           "autoincrement": false
         },
+        "encounter_type": {
+          "name": "encounter_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'clinical'"
+        },
         "encounter_class": {
           "name": "encounter_class",
           "type": "text",
@@ -2129,6 +2137,11 @@
         "encounter_site_started_idx": {
           "name": "encounter_site_started_idx",
           "columns": ["site_id", "started_at"],
+          "isUnique": false
+        },
+        "encounter_type_idx": {
+          "name": "encounter_type_idx",
+          "columns": ["encounter_type"],
           "isUnique": false
         },
         "encounter_cause_external_idx": {

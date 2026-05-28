@@ -2242,6 +2242,14 @@ function PatientCreateActions({ patientId }: { patientId: string }) {
           />
           <DropdownMenuItem
             render={
+              <Link search={{ documentary: true, patientId }} to="/encounters">
+                <ClipboardList size={14} />
+                Actualización documental
+              </Link>
+            }
+          />
+          <DropdownMenuItem
+            render={
               <Link search={{ patientId }} to="/appointments">
                 <Calendar size={14} />
                 Cita

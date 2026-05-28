@@ -776,6 +776,7 @@ export async function generateRipsPayload(
     gte(encounter.startedAt, periodFrom),
     lte(encounter.startedAt, periodTo),
     eq(encounter.status, "finished"),
+    eq(encounter.encounterType, "clinical"),
   ];
 
   if (input.payerId) {

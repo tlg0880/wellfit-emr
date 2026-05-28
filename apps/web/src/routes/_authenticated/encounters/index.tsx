@@ -43,8 +43,14 @@ import { PageHeader } from "@/components/page-header";
 import { orpc, queryClient } from "@/utils/orpc";
 
 const searchSchema = z.object({
+  documentary: z.boolean().optional(),
   patientId: z.string().optional(),
 });
+
+const DOCUMENTARY_ENCOUNTER_TYPE = "documentary";
+const CLINICAL_ENCOUNTER_TYPE = "clinical";
+const DOCUMENTARY_DEFAULT_REASON =
+  "Adición o actualización de datos del paciente";
 
 export const Route = createFileRoute("/_authenticated/encounters/")({
   component: EncountersPage,
@@ -63,6 +69,7 @@ const encounterSchema = z.object({
   siteId: z.string().min(1, "Sede es obligatoria"),
   serviceUnitId: z.string().min(1, "Unidad de servicio es obligatoria"),
   encounterClass: z.string().min(1, "Clase de atención es obligatoria"),
+  encounterType: z.enum([CLINICAL_ENCOUNTER_TYPE, DOCUMENTARY_ENCOUNTER_TYPE]),
   careModality: z.string().min(1, "Modalidad es obligatoria"),
   reasonForVisit: z.string().min(1, "Motivo de consulta es obligatorio"),
   startedAt: z.string().min(1, "Fecha de inicio es obligatoria"),
@@ -99,6 +106,7 @@ interface EncounterRow {
   condicionDestinoCode: string | null;
   createdAt: Date | string;
   encounterClass: string;
+  encounterType: "clinical" | "documentary";
   endedAt: Date | string | null;
   finalidadConsultaCode: string | null;
   id: string;
@@ -118,11 +126,13 @@ function EncounterForm({
   defaultPatientId,
   editingId,
   initialValues,
+  requestedEncounterType = CLINICAL_ENCOUNTER_TYPE,
 }: {
   onCancel: () => void;
   defaultPatientId?: string;
   editingId?: string;
   initialValues?: EncounterRow;
+  requestedEncounterType?: "clinical" | "documentary";
 }) {
   const queryClient = useQueryClient();
 
@@ -132,6 +142,9 @@ function EncounterForm({
   const [admissionSearch, setAdmissionSearch] = useState("");
   const [causeSearch, setCauseSearch] = useState("");
   const [finalidadSearch, setFinalidadSearch] = useState("");
+  const isDocumentary =
+    (initialValues?.encounterType ?? requestedEncounterType) ===
+    DOCUMENTARY_ENCOUNTER_TYPE;
 
   const { data: patientsData } = useQuery(
     orpc.patients.list.queryOptions({
@@ -283,9 +296,14 @@ function EncounterForm({
       patientId: initialValues?.patientId ?? defaultPatientId ?? "",
       siteId: initialValues?.siteId ?? "",
       serviceUnitId: initialValues?.serviceUnitId ?? "",
-      encounterClass: initialValues?.encounterClass ?? "",
-      careModality: initialValues?.careModality ?? "",
-      reasonForVisit: initialValues?.reasonForVisit ?? "",
+      encounterClass:
+        initialValues?.encounterClass ?? (isDocumentary ? "documentary" : ""),
+      encounterType: initialValues?.encounterType ?? requestedEncounterType,
+      careModality:
+        initialValues?.careModality ?? (isDocumentary ? "documentary" : ""),
+      reasonForVisit:
+        initialValues?.reasonForVisit ??
+        (isDocumentary ? DOCUMENTARY_DEFAULT_REASON : ""),
       startedAt: initialValues?.startedAt
         ? new Date(initialValues.startedAt).toISOString().slice(0, 16)
         : new Date().toISOString().slice(0, 16),
@@ -302,6 +320,7 @@ function EncounterForm({
           siteId: value.siteId,
           serviceUnitId: value.serviceUnitId,
           encounterClass: value.encounterClass,
+          encounterType: value.encounterType,
           careModality: value.careModality,
           reasonForVisit: value.reasonForVisit,
           startedAt: new Date(value.startedAt),
@@ -316,6 +335,7 @@ function EncounterForm({
           siteId: value.siteId,
           serviceUnitId: value.serviceUnitId,
           encounterClass: value.encounterClass,
+          encounterType: value.encounterType,
           careModality: value.careModality,
           reasonForVisit: value.reasonForVisit,
           startedAt: new Date(value.startedAt),
@@ -353,7 +373,11 @@ function EncounterForm({
     <Card className="mx-6">
       <CardHeader>
         <CardTitle>
-          {editingId ? "Editar atención" : "Nueva atención"}
+          {editingId
+            ? "Editar atención"
+            : isDocumentary
+              ? "Nueva actualización documental"
+              : "Nueva atención"}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -364,6 +388,14 @@ function EncounterForm({
             form.handleSubmit();
           }}
         >
+          {isDocumentary && (
+            <div className="mb-4 rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-sky-900 text-xs dark:border-sky-900 dark:bg-sky-950 dark:text-sky-200">
+              Use este encuentro para registrar datos iniciales o actualizar
+              antecedentes del paciente. Sus medicamentos, procedimientos y
+              datos asociados quedan como historial documental y no alimentan
+              facturación, RIPS ni IHCE/RDA.
+            </div>
+          )}
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <form.Field name="patientId">
               {(field) => (
@@ -462,79 +494,99 @@ function EncounterForm({
               )}
             </form.Field>
 
-            <form.Field name="encounterClass">
+            <form.Field name="encounterType">
               {(field) => (
-                <div className={fieldGrid}>
-                  <Label htmlFor={field.name}>
-                    Clase de atención (grupo servicios) *
-                  </Label>
-                  <SearchSelect
-                    emptyMessage="Escribe para buscar grupo"
-                    id={field.name}
-                    loading={groupLoading}
-                    name={field.name}
-                    onBlur={field.handleBlur}
-                    onChange={(v) => field.handleChange(v)}
-                    onSearchChange={setGroupSearch}
-                    options={
-                      groupData?.entries.map((e) => ({
-                        value: e.code,
-                        label: e.name,
-                        description: e.code,
-                      })) ?? []
-                    }
-                    placeholder="Buscar grupo de servicios..."
-                    search={groupSearch}
-                    value={field.state.value}
-                  />
-                  {field.state.meta.errors.map((error) => (
-                    <p className="text-destructive text-xs" key={String(error)}>
-                      {String(error)}
-                    </p>
-                  ))}
-                </div>
+                <input
+                  name={field.name}
+                  type="hidden"
+                  value={field.state.value}
+                />
               )}
             </form.Field>
 
-            <form.Field name="careModality">
-              {(field) => (
-                <div className={fieldGrid}>
-                  <Label htmlFor={field.name}>Modalidad de atención *</Label>
-                  <SearchSelect
-                    emptyMessage="Escribe para buscar modalidad"
-                    id={field.name}
-                    loading={modalityLoading}
-                    name={field.name}
-                    onBlur={field.handleBlur}
-                    onChange={(v) => {
-                      field.handleChange(v);
-                      const currentModalidad = form.getFieldValue(
-                        "modalidadAtencionCode"
-                      );
-                      if (!currentModalidad) {
-                        form.setFieldValue("modalidadAtencionCode", v);
+            {!isDocumentary && (
+              <form.Field name="encounterClass">
+                {(field) => (
+                  <div className={fieldGrid}>
+                    <Label htmlFor={field.name}>
+                      Clase de atención (grupo servicios) *
+                    </Label>
+                    <SearchSelect
+                      emptyMessage="Escribe para buscar grupo"
+                      id={field.name}
+                      loading={groupLoading}
+                      name={field.name}
+                      onBlur={field.handleBlur}
+                      onChange={(v) => field.handleChange(v)}
+                      onSearchChange={setGroupSearch}
+                      options={
+                        groupData?.entries.map((e) => ({
+                          value: e.code,
+                          label: e.name,
+                          description: e.code,
+                        })) ?? []
                       }
-                    }}
-                    onSearchChange={setModalitySearch}
-                    options={
-                      modalityData?.entries.map((e) => ({
-                        value: e.code,
-                        label: e.name,
-                        description: e.code,
-                      })) ?? []
-                    }
-                    placeholder="Buscar modalidad..."
-                    search={modalitySearch}
-                    value={field.state.value}
-                  />
-                  {field.state.meta.errors.map((error) => (
-                    <p className="text-destructive text-xs" key={String(error)}>
-                      {String(error)}
-                    </p>
-                  ))}
-                </div>
-              )}
-            </form.Field>
+                      placeholder="Buscar grupo de servicios..."
+                      search={groupSearch}
+                      value={field.state.value}
+                    />
+                    {field.state.meta.errors.map((error) => (
+                      <p
+                        className="text-destructive text-xs"
+                        key={String(error)}
+                      >
+                        {String(error)}
+                      </p>
+                    ))}
+                  </div>
+                )}
+              </form.Field>
+            )}
+
+            {!isDocumentary && (
+              <form.Field name="careModality">
+                {(field) => (
+                  <div className={fieldGrid}>
+                    <Label htmlFor={field.name}>Modalidad de atención *</Label>
+                    <SearchSelect
+                      emptyMessage="Escribe para buscar modalidad"
+                      id={field.name}
+                      loading={modalityLoading}
+                      name={field.name}
+                      onBlur={field.handleBlur}
+                      onChange={(v) => {
+                        field.handleChange(v);
+                        const currentModalidad = form.getFieldValue(
+                          "modalidadAtencionCode"
+                        );
+                        if (!currentModalidad) {
+                          form.setFieldValue("modalidadAtencionCode", v);
+                        }
+                      }}
+                      onSearchChange={setModalitySearch}
+                      options={
+                        modalityData?.entries.map((e) => ({
+                          value: e.code,
+                          label: e.name,
+                          description: e.code,
+                        })) ?? []
+                      }
+                      placeholder="Buscar modalidad..."
+                      search={modalitySearch}
+                      value={field.state.value}
+                    />
+                    {field.state.meta.errors.map((error) => (
+                      <p
+                        className="text-destructive text-xs"
+                        key={String(error)}
+                      >
+                        {String(error)}
+                      </p>
+                    ))}
+                  </div>
+                )}
+              </form.Field>
+            )}
 
             <form.Field name="reasonForVisit">
               {(field) => (
@@ -580,123 +632,135 @@ function EncounterForm({
               )}
             </form.Field>
 
-            <form.Field name="admissionSource">
-              {(field) => (
-                <div className={fieldGrid}>
-                  <Label htmlFor={field.name}>Vía de ingreso (RIPS)</Label>
-                  <SearchSelect
-                    clearable
-                    emptyMessage="Escribe para buscar"
-                    id={field.name}
-                    loading={admissionLoading}
-                    name={field.name}
-                    onBlur={field.handleBlur}
-                    onChange={(v) => field.handleChange(v)}
-                    onSearchChange={setAdmissionSearch}
-                    options={
-                      admissionData?.entries.map((e) => ({
-                        value: e.code,
-                        label: e.name,
-                        description: e.code,
-                      })) ?? []
-                    }
-                    placeholder="Buscar vía de ingreso..."
-                    search={admissionSearch}
-                    value={field.state.value}
-                  />
-                </div>
-              )}
-            </form.Field>
-
-            <form.Field name="causeExternalCode">
-              {(field) => (
-                <div className={fieldGrid}>
-                  <Label htmlFor={field.name}>Causa externa (RIPS)</Label>
-                  <SearchSelect
-                    clearable
-                    emptyMessage="Escribe para buscar"
-                    id={field.name}
-                    loading={causeLoading}
-                    name={field.name}
-                    onBlur={field.handleBlur}
-                    onChange={(v) => field.handleChange(v)}
-                    onSearchChange={setCauseSearch}
-                    options={
-                      causeData?.entries.map((e) => ({
-                        value: e.code,
-                        label: e.name,
-                        description: e.code,
-                      })) ?? []
-                    }
-                    placeholder="Buscar causa externa..."
-                    search={causeSearch}
-                    value={field.state.value}
-                  />
-                </div>
-              )}
-            </form.Field>
-
-            <form.Field name="finalidadConsultaCode">
-              {(field) => (
-                <div className={fieldGrid}>
-                  <Label htmlFor={field.name}>Finalidad consulta (RIPS)</Label>
-                  <SearchSelect
-                    clearable
-                    emptyMessage="Escribe para buscar"
-                    id={field.name}
-                    loading={finalidadLoading}
-                    name={field.name}
-                    onBlur={field.handleBlur}
-                    onChange={(v) => field.handleChange(v)}
-                    onSearchChange={setFinalidadSearch}
-                    options={
-                      finalidadData?.entries.map((e) => ({
-                        value: e.code,
-                        label: e.name,
-                        description: e.code,
-                      })) ?? []
-                    }
-                    placeholder="Buscar finalidad..."
-                    search={finalidadSearch}
-                    value={field.state.value}
-                  />
-                </div>
-              )}
-            </form.Field>
-
-            <form.Field name="modalidadAtencionCode">
-              {(field) => (
-                <div className={fieldGrid}>
-                  <Label htmlFor={field.name}>Modalidad atención (RIPS)</Label>
-                  <SearchSelect
-                    clearable
-                    emptyMessage="Escribe para buscar modalidad"
-                    id={field.name}
-                    loading={modalityLoading}
-                    name={field.name}
-                    onBlur={field.handleBlur}
-                    onChange={(v) => {
-                      field.handleChange(v);
-                      const currentCare = form.getFieldValue("careModality");
-                      if (!currentCare) {
-                        form.setFieldValue("careModality", v);
+            {!isDocumentary && (
+              <form.Field name="admissionSource">
+                {(field) => (
+                  <div className={fieldGrid}>
+                    <Label htmlFor={field.name}>Vía de ingreso (RIPS)</Label>
+                    <SearchSelect
+                      clearable
+                      emptyMessage="Escribe para buscar"
+                      id={field.name}
+                      loading={admissionLoading}
+                      name={field.name}
+                      onBlur={field.handleBlur}
+                      onChange={(v) => field.handleChange(v)}
+                      onSearchChange={setAdmissionSearch}
+                      options={
+                        admissionData?.entries.map((e) => ({
+                          value: e.code,
+                          label: e.name,
+                          description: e.code,
+                        })) ?? []
                       }
-                    }}
-                    onSearchChange={setModalitySearch}
-                    options={
-                      modalityData?.entries.map((e) => ({
-                        value: e.code,
-                        label: e.name,
-                        description: e.code,
-                      })) ?? []
-                    }
-                    placeholder="Buscar modalidad RIPS..."
-                    search={modalitySearch}
-                    value={field.state.value}
-                  />
-                </div>
-              )}
-            </form.Field>
+                      placeholder="Buscar vía de ingreso..."
+                      search={admissionSearch}
+                      value={field.state.value}
+                    />
+                  </div>
+                )}
+              </form.Field>
+            )}
+
+            {!isDocumentary && (
+              <form.Field name="causeExternalCode">
+                {(field) => (
+                  <div className={fieldGrid}>
+                    <Label htmlFor={field.name}>Causa externa (RIPS)</Label>
+                    <SearchSelect
+                      clearable
+                      emptyMessage="Escribe para buscar"
+                      id={field.name}
+                      loading={causeLoading}
+                      name={field.name}
+                      onBlur={field.handleBlur}
+                      onChange={(v) => field.handleChange(v)}
+                      onSearchChange={setCauseSearch}
+                      options={
+                        causeData?.entries.map((e) => ({
+                          value: e.code,
+                          label: e.name,
+                          description: e.code,
+                        })) ?? []
+                      }
+                      placeholder="Buscar causa externa..."
+                      search={causeSearch}
+                      value={field.state.value}
+                    />
+                  </div>
+                )}
+              </form.Field>
+            )}
+
+            {!isDocumentary && (
+              <form.Field name="finalidadConsultaCode">
+                {(field) => (
+                  <div className={fieldGrid}>
+                    <Label htmlFor={field.name}>
+                      Finalidad consulta (RIPS)
+                    </Label>
+                    <SearchSelect
+                      clearable
+                      emptyMessage="Escribe para buscar"
+                      id={field.name}
+                      loading={finalidadLoading}
+                      name={field.name}
+                      onBlur={field.handleBlur}
+                      onChange={(v) => field.handleChange(v)}
+                      onSearchChange={setFinalidadSearch}
+                      options={
+                        finalidadData?.entries.map((e) => ({
+                          value: e.code,
+                          label: e.name,
+                          description: e.code,
+                        })) ?? []
+                      }
+                      placeholder="Buscar finalidad..."
+                      search={finalidadSearch}
+                      value={field.state.value}
+                    />
+                  </div>
+                )}
+              </form.Field>
+            )}
+
+            {!isDocumentary && (
+              <form.Field name="modalidadAtencionCode">
+                {(field) => (
+                  <div className={fieldGrid}>
+                    <Label htmlFor={field.name}>
+                      Modalidad atención (RIPS)
+                    </Label>
+                    <SearchSelect
+                      clearable
+                      emptyMessage="Escribe para buscar modalidad"
+                      id={field.name}
+                      loading={modalityLoading}
+                      name={field.name}
+                      onBlur={field.handleBlur}
+                      onChange={(v) => {
+                        field.handleChange(v);
+                        const currentCare = form.getFieldValue("careModality");
+                        if (!currentCare) {
+                          form.setFieldValue("careModality", v);
+                        }
+                      }}
+                      onSearchChange={setModalitySearch}
+                      options={
+                        modalityData?.entries.map((e) => ({
+                          value: e.code,
+                          label: e.name,
+                          description: e.code,
+                        })) ?? []
+                      }
+                      placeholder="Buscar modalidad RIPS..."
+                      search={modalitySearch}
+                      value={field.state.value}
+                    />
+                  </div>
+                )}
+              </form.Field>
+            )}
           </div>
 
           <div className="mt-4 flex justify-end gap-2">
@@ -744,7 +808,9 @@ function EncounterForm({
 
 function EncountersPage() {
   const navigate = useNavigate();
-  const { patientId } = useSearch({ from: "/_authenticated/encounters/" });
+  const { documentary, patientId } = useSearch({
+    from: "/_authenticated/encounters/",
+  });
   const [offset, setOffset] = useState(0);
   const [limit] = useState(25);
   const [search, setSearch] = useState("");
@@ -784,6 +850,8 @@ function EncountersPage() {
         offset,
         search: querySearch || undefined,
         status: status || undefined,
+        encounterType: documentary ? DOCUMENTARY_ENCOUNTER_TYPE : undefined,
+        patientId: patientId || undefined,
         siteId: siteId || undefined,
       },
     })
@@ -815,7 +883,14 @@ function EncountersPage() {
     {
       header: "Motivo de consulta",
       accessor: (row: NonNullable<typeof data>["encounters"][0]) => (
-        <span className="font-medium">{row.reasonForVisit}</span>
+        <div className="space-y-1">
+          <span className="font-medium">{row.reasonForVisit}</span>
+          {row.encounterType === DOCUMENTARY_ENCOUNTER_TYPE && (
+            <span className="block w-fit rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 font-medium text-[10px] text-sky-700 dark:border-sky-900 dark:bg-sky-950 dark:text-sky-300">
+              Documental · no facturable
+            </span>
+          )}
+        </div>
       ),
     },
     {
@@ -936,7 +1011,11 @@ function EncountersPage() {
             {showForm ? "Cancelar" : "Nueva atención"}
           </Button>
         }
-        description="Gestión de atenciones clínicas y registro de consultas"
+        description={
+          documentary
+            ? "Actualizaciones documentales sin impacto en facturación, RIPS ni IHCE/RDA"
+            : "Gestión de atenciones clínicas y registro de consultas"
+        }
         icon={ClipboardList}
         iconBgClass="bg-teal-50 text-teal-600"
         title="Atenciones"
@@ -947,8 +1026,13 @@ function EncountersPage() {
           defaultPatientId={patientId}
           editingId={editingEncounter?.id}
           initialValues={editingEncounter ?? undefined}
-          key={editingEncounter?.id || "new"}
+          key={
+            editingEncounter?.id || (documentary ? "new-documentary" : "new")
+          }
           onCancel={handleCancelForm}
+          requestedEncounterType={
+            documentary ? DOCUMENTARY_ENCOUNTER_TYPE : CLINICAL_ENCOUNTER_TYPE
+          }
         />
       )}
 
