@@ -86,7 +86,7 @@ export function DataTable<T>({
   return (
     <div className="flex flex-col gap-3">
       <div className="overflow-auto rounded-sm border border-border bg-card shadow-md">
-        <table className="w-full text-xs">
+        <table aria-label="Tabla de datos" className="w-full text-xs">
           <thead className="bg-gradient-to-b from-primary/[0.15] to-muted/90">
             <tr className="border-border border-b">
               {columns.map((col, columnIndex) => (
@@ -118,6 +118,7 @@ export function DataTable<T>({
                 ))
               : data.map((row, rowIndex) => (
                   <tr
+                    aria-rowindex={rowIndex + 1}
                     className={cn(
                       "transition-all duration-150",
                       "scroll-mt-24 target:bg-red-50 target:ring-2 target:ring-red-300 target:ring-inset",
@@ -143,6 +144,18 @@ export function DataTable<T>({
                           }
                         : undefined
                     }
+                    onKeyDown={
+                      onRowClick
+                        ? (e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              onRowClick(row);
+                            }
+                          }
+                        : undefined
+                    }
+                    role={onRowClick ? "link" : undefined}
+                    tabIndex={onRowClick ? 0 : undefined}
                   >
                     {columns.map((col, columnIndex) => (
                       <td
