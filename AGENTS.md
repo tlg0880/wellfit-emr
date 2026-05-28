@@ -114,6 +114,7 @@ _Ninguno. Todos los routers planificados están implementados._
 
 - **Encuentros documentales / actualización de datos de paciente**: agregado `encounter.encounter_type` (`clinical` por defecto, `documentary` para actualización documental) con migración Drizzle `0005_slim_jack_power.sql`. La UI de detalle de paciente incluye acción `Crear nuevo → Actualización documental`, que abre `/encounters?patientId=...&documentary=true` con formulario especializado, banner explicativo y valores no-RIPS internos. Estos encuentros sirven para capturar datos iniciales/actualizaciones (antecedentes, dolencias, medicamentos históricos, contexto familiar, procedimientos documentales) sin impacto administrativo.
 - **Exclusión administrativa/regulatoria de encuentros documentales**: `rips-generator` filtra únicamente encuentros `clinical`, y los routers de `billingItems` e `ihceBundles` rechazan creación contra encuentros `documentary`, evitando que medicamentos/procedimientos asociados alimenten facturación, RIPS o IHCE/RDA. El detalle de encuentro muestra banner `Documental / no facturable` y oculta la pestaña de facturación para este tipo.
+- **Fix UX formulario documental**: el formulario de nueva actualización documental mantiene estado reactivo propio para sede/unidad de servicio, muestra nombres legibles en los selectores en lugar de UUIDs y habilita/carga correctamente las unidades al seleccionar sede.
 
 ### Cambios recientes (2026-05-26)
 

@@ -142,6 +142,12 @@ function EncounterForm({
   const [admissionSearch, setAdmissionSearch] = useState("");
   const [causeSearch, setCauseSearch] = useState("");
   const [finalidadSearch, setFinalidadSearch] = useState("");
+  const [selectedSiteId, setSelectedSiteId] = useState(
+    initialValues?.siteId ?? ""
+  );
+  const [selectedServiceUnitId, setSelectedServiceUnitId] = useState(
+    initialValues?.serviceUnitId ?? ""
+  );
   const isDocumentary =
     (initialValues?.encounterType ?? requestedEncounterType) ===
     DOCUMENTARY_ENCOUNTER_TYPE;
@@ -354,7 +360,9 @@ function EncounterForm({
     },
   });
 
-  const selectedSiteId = form.getFieldValue("siteId");
+  const selectedSiteName = sitesData?.sites.find(
+    (site) => site.id === selectedSiteId
+  )?.name;
 
   const { data: serviceUnitsData } = useQuery({
     ...orpc.facilities.listServiceUnits.queryOptions({
@@ -367,6 +375,9 @@ function EncounterForm({
     enabled: !!selectedSiteId,
   });
 
+  const selectedServiceUnitName = serviceUnitsData?.serviceUnits.find(
+    (unit) => unit.id === selectedServiceUnitId
+  )?.name;
   const fieldGrid = "space-y-1";
 
   return (
@@ -428,13 +439,18 @@ function EncounterForm({
                   <Label htmlFor={field.name}>Sede *</Label>
                   <Select
                     onValueChange={(v) => {
-                      field.handleChange(v as string);
+                      const nextSiteId = v as string;
+                      field.handleChange(nextSiteId);
+                      setSelectedSiteId(nextSiteId);
+                      setSelectedServiceUnitId("");
                       form.setFieldValue("serviceUnitId", "");
                     }}
                     value={field.state.value}
                   >
                     <SelectTrigger id={field.name}>
-                      <SelectValue placeholder="Seleccione sede" />
+                      <SelectValue placeholder="Seleccione sede">
+                        {selectedSiteName}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       {sitesData?.sites.map(
@@ -461,7 +477,11 @@ function EncounterForm({
                   <Label htmlFor={field.name}>Unidad de servicio *</Label>
                   <Select
                     disabled={!(selectedSiteId && serviceUnitsData)}
-                    onValueChange={(v) => field.handleChange(v as string)}
+                    onValueChange={(v) => {
+                      const nextServiceUnitId = v as string;
+                      setSelectedServiceUnitId(nextServiceUnitId);
+                      field.handleChange(nextServiceUnitId);
+                    }}
                     value={field.state.value}
                   >
                     <SelectTrigger id={field.name}>
@@ -473,7 +493,9 @@ function EncounterForm({
                               : "Seleccione unidad"
                             : "Seleccione sede primero"
                         }
-                      />
+                      >
+                        {selectedServiceUnitName}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       {serviceUnitsData?.serviceUnits.map(
