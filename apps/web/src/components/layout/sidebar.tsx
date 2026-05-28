@@ -2,12 +2,12 @@ import { Link, useLocation } from "@tanstack/react-router";
 import { cn } from "@wellfit-emr/ui/lib/utils";
 import {
   Archive,
-  Building2,
   Calendar,
   ChevronLeft,
   ChevronRight,
   ClipboardList,
   Copy,
+  CreditCard,
   Eye,
   FileOutput,
   FileText,
@@ -15,8 +15,11 @@ import {
   Gavel,
   HeartPulse,
   Home,
+  Landmark,
   Mail,
+  MapPin,
   MessageSquare,
+  Network,
   Paperclip,
   Pill,
   ScrollText,
@@ -25,6 +28,7 @@ import {
   ShieldCheck,
   Stethoscope,
   Unlock,
+  UserCog,
   Users,
 } from "lucide-react";
 import { useState } from "react";
@@ -104,32 +108,32 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     label: "Configuración",
     items: [
       {
-        icon: Building2,
+        icon: Landmark,
         label: "Institución",
         to: "/facilities/organizations",
       },
       {
-        icon: Building2,
+        icon: CreditCard,
         label: "Pagadores",
         to: "/facilities/payers",
       },
       {
-        icon: Building2,
+        icon: MapPin,
         label: "Sedes",
         to: "/facilities/sites",
       },
       {
-        icon: Building2,
+        icon: Network,
         label: "Unidades de servicio",
         to: "/facilities/service-units",
       },
       {
-        icon: Users,
+        icon: Stethoscope,
         label: "Profesionales",
         to: "/facilities/practitioners",
       },
       {
-        icon: Users,
+        icon: UserCog,
         label: "Roles",
         to: "/facilities/practitioner-roles",
       },
@@ -147,6 +151,7 @@ export function Sidebar() {
 
   return (
     <aside
+      aria-label="Navegación principal"
       className={cn(
         "flex flex-col border-sidebar-border border-r bg-sidebar shadow-md transition-all duration-200 ease-out",
         collapsed ? "w-16" : "w-60"
@@ -174,6 +179,9 @@ export function Sidebar() {
           </div>
         )}
         <button
+          aria-label={
+            collapsed ? "Expandir barra lateral" : "Colapsar barra lateral"
+          }
           className={cn(
             "inline-flex size-7 items-center justify-center rounded-sm text-sidebar-foreground/60 transition-colors hover:bg-primary/10 hover:text-sidebar-primary",
             collapsed && "mx-auto mt-2"
