@@ -26,6 +26,7 @@ Este directorio es la **fuente única de verdad (SSOT)** para cumplimiento, ries
 | [DEVELOPMENT_SPEC.md](../../DEVELOPMENT_SPEC.md) | Especificación funcional y de datos (texto largo; citas externas depuradas) |
 | [CONTRIBUTING.md](../../CONTRIBUTING.md) | Flujo de contribución y enlaces a DoR/DoD |
 | [.github/](../../.github/) | Plantillas de issues, PR y CI |
+| [resources/legal/](../../resources/legal/README.md) | Copias PDF e índice de fuentes normativas oficiales usadas por la matriz |
 
 ## Métricas de gobierno (M0)
 

@@ -6,6 +6,8 @@ Leyenda de **estado**: `Implementado` · `Parcial` · `Planificado` · `Excluido
 
 Normas abreviadas en columnas: **L23** Ley 23/1981 · **R1995** Res. 1995/1999 · **R3100** Res. 3100/2019 · **L2015** Ley 2015/2020 · **R866** Res. 866/2021 · **R1888** Res. 1888/2025 · **L1581** Ley 1581/2012 · **RIPS** Res. 2275/2023 y anexos · **FE** firma electrónica (Ley 527, Dec. 2364) · **RET** retención (Res. 839/2017, Ley 594, AGN)
 
+Las fuentes normativas oficiales versionadas para auditoría están indexadas en [`resources/legal/`](../../resources/legal/README.md).
+
 ---
 
 ## 1. Núcleo clínico-documental

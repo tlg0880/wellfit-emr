@@ -8,6 +8,8 @@ Ley 23 de 1981 · Resolución 1995 de 1999 · Ley 2015 de 2020 · Resoluciones 8
 
 La **matriz de cumplimiento** y el **registro de riesgos** viven en [`docs/governance/`](docs/governance/README.md) (fuente única de verdad para decisiones técnicas y regulatorias).
 
+Las copias PDF de fuentes oficiales usadas por la matriz están en [`resources/legal/`](resources/legal/README.md).
+
 ## Capacidades implementadas (resumen)
 
 | Área | Funcionalidad |
@@ -84,6 +86,7 @@ wellfit-emr/
 │   ├── auth/             # Better Auth
 │   └── ui/               # Componentes compartidos
 ├── docs/governance/      # Matriz, riesgos, DoR/DoD, roadmap
+├── resources/legal/      # PDFs oficiales de fuentes normativas
 ├── DEVELOPMENT_SPEC.md   # Especificación funcional extendida
 └── AGENTS.md             # Contexto para desarrollo y agentes
 ```
@@ -93,6 +96,7 @@ wellfit-emr/
 | Documento | Uso |
 |-----------|-----|
 | [docs/governance/README.md](docs/governance/README.md) | Gobierno M0, métricas, índice |
+| [resources/legal/README.md](resources/legal/README.md) | Fuentes normativas oficiales versionadas como PDFs |
 | [DEVELOPMENT_SPEC.md](DEVELOPMENT_SPEC.md) | Requisitos y modelo de datos (referencia larga) |
 | [AGENTS.md](AGENTS.md) | Estado de implementación y convenciones |
 
