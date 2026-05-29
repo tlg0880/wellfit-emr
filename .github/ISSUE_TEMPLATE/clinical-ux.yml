@@ -1,0 +1,50 @@
+name: UX clínica
+description: Flujos asistenciales, formularios, accesibilidad o copy en contexto de atención
+title: "[UX clínica] "
+labels: ["clinical-ux", "frontend"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ver [DoR](https://github.com/tlg0880/wellfit-emr/blob/main/docs/governance/definition-of-ready.md) y [matriz de cumplimiento](https://github.com/tlg0880/wellfit-emr/blob/main/docs/governance/compliance-matrix.md).
+  - type: input
+    id: route
+    attributes:
+      label: Ruta o pantalla
+      placeholder: "/encounters/$encounterId"
+    validations:
+      required: true
+  - type: dropdown
+    id: encounter_type
+    attributes:
+      label: Tipo de atención
+      options:
+        - Clínica (facturable / RIPS)
+        - Documental (no facturable)
+        - Ambos / N/A
+    validations:
+      required: true
+  - type: textarea
+    id: user_story
+    attributes:
+      label: Historia de usuario
+      placeholder: "Como médico tratante, necesito..."
+    validations:
+      required: true
+  - type: textarea
+    id: norms
+    attributes:
+      label: Normas o requisitos clínicos relacionados
+      placeholder: "Res. 1995 — registro cronológico con autor"
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Criterios de aceptación (UI)
+      description: Estados carga/vacío/error; español (CO); catálogos SISPRO si aplica
+    validations:
+      required: true
+  - type: textarea
+    id: mockups
+    attributes:
+      label: Mockups o referencias visuales
+      placeholder: Enlaces o descripción de layout

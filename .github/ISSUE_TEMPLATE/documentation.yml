@@ -1,0 +1,38 @@
+name: Documentación y gobierno
+description: Actualizar matriz, ADR, AGENTS.md, guías o especificación regulatoria
+title: "[Docs] "
+labels: ["documentation"]
+body:
+  - type: dropdown
+    id: doc_type
+    attributes:
+      label: Tipo de documentación
+      options:
+        - Matriz de cumplimiento
+        - Registro de riesgos
+        - ADR / decisión arquitectónica
+        - AGENTS.md / README
+        - DEVELOPMENT_SPEC.md
+        - DoR / DoD / Roadmap
+        - Otro
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Qué debe actualizarse y por qué
+    validations:
+      required: true
+  - type: textarea
+    id: norms
+    attributes:
+      label: Normas o hitos relacionados (M0, M1, …)
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: DoD documentación
+      options:
+        - label: Enlace desde docs/governance/README.md si es artefacto nuevo
+          required: false
+        - label: Versión y fecha en encabezado del documento
+          required: false

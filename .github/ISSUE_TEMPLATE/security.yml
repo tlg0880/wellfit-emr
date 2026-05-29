@@ -1,0 +1,60 @@
+name: Seguridad y protección de datos
+description: Vulnerabilidad, control de acceso, cifrado, auditoría o tratamiento de datos personales (Ley 1581)
+title: "[Seguridad] "
+labels: ["security", "compliance"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Consulta [matriz de cumplimiento](https://github.com/tlg0880/wellfit-emr/blob/main/docs/governance/compliance-matrix.md) y [registro de riesgos](https://github.com/tlg0880/wellfit-emr/blob/main/docs/governance/risk-register.md).
+        DoR: [definition-of-ready.md](https://github.com/tlg0880/wellfit-emr/blob/main/docs/governance/definition-of-ready.md)
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severidad
+      options:
+        - P0 — Bloqueo producción / exposición crítica
+        - P1 — Alto
+        - P2 — Medio
+        - P3 — Bajo
+    validations:
+      required: true
+  - type: input
+    id: risk_id
+    attributes:
+      label: ID de riesgo (si aplica)
+      placeholder: "RISK-004"
+  - type: textarea
+    id: norms
+    attributes:
+      label: Normas aplicables
+      description: Ej. Ley 1581, Res. 3100, Ley 2015
+      placeholder: "Ley 1581 de 2012"
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Descripción del hallazgo o requerimiento
+      placeholder: ¿Qué puede ocurrir? ¿Quién está afectado?
+    validations:
+      required: true
+  - type: textarea
+    id: modules
+    attributes:
+      label: Módulos / rutas afectados
+      placeholder: "orpc.auditEvents, /audit-events"
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Criterios de aceptación
+      description: Incluir evidencia de cierre (tests, logs, ADR)
+    validations:
+      required: true
+  - type: textarea
+    id: audit
+    attributes:
+      label: Impacto en auditoría y trazabilidad
+      placeholder: "Nuevo action_code, lectura sensible, etc."

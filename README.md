@@ -1,105 +1,101 @@
-# wellfit-emr
+# WellFit EMR
 
-This project was created with [Better-T-Stack](https://github.com/AmanVarshney01/create-better-t-stack), a modern TypeScript stack that combines React, TanStack Router, Hono, ORPC, and more.
+Historia Clínica Electrónica (HCE) orientada al cumplimiento normativo colombiano: registro clínico reservado, trazabilidad, RIPS-FEV, interoperabilidad IHCE/RDA, protección de datos y gobierno técnico documentado.
 
-## Features
+## Marco regulatorio (referencia)
 
-- **TypeScript** - For type safety and improved developer experience
-- **TanStack Router** - File-based routing with full type safety
-- **TailwindCSS** - Utility-first CSS for rapid UI development
-- **Shared UI package** - shadcn/ui primitives live in `packages/ui`
-- **Hono** - Lightweight, performant server framework
-- **oRPC** - End-to-end type-safe APIs with OpenAPI integration
-- **Bun** - Runtime environment
-- **Drizzle** - TypeScript-first ORM
-- **SQLite/Turso** - Database engine
-- **Authentication** - Better-Auth
-- **Turborepo** - Optimized monorepo build system
+Ley 23 de 1981 · Resolución 1995 de 1999 · Ley 2015 de 2020 · Resoluciones 866/2021 y 1888/2025 (IHCE/RDA) · Ley 1581 de 2012 · Resolución 3100 de 2019 · RIPS (Res. 2275/2023 y anexos) · Retención documental (Res. 839/2017, Ley 594)
 
-## Getting Started
+La **matriz de cumplimiento** y el **registro de riesgos** viven en [`docs/governance/`](docs/governance/README.md) (fuente única de verdad para decisiones técnicas y regulatorias).
 
-First, install the dependencies:
+## Capacidades implementadas (resumen)
+
+| Área | Funcionalidad |
+|------|----------------|
+| **Asistencial** | Pacientes, atenciones (clínicas y documentales), diagnósticos, alergias, observaciones, procedimientos CUPS, evolución SOAP |
+| **Documental** | Documentos clínicos versionados con firma lógica y hash; anexos S3; documentos de paciente con resumen IA |
+| **Órdenes** | Prescripciones, órdenes de servicio, resultados, interconsultas, incapacidades |
+| **Consentimiento** | Consentimiento informado y autorización de divulgación de datos (flujos separados) |
+| **Regulatorio** | Exportación RIPS con generación y preflight local; bundles IHCE; catálogos SISPRO; tareas regulatorias |
+| **Cumplimiento** | Auditoría de eventos, retención documental, panel de cumplimiento en dashboard |
+| **IA clínica** | Chat con contexto server-side, herramientas acotadas al paciente, sin firma automática |
+
+Estado detallado de routers, rutas y pendientes críticos: [`AGENTS.md`](AGENTS.md).
+
+## Stack
+
+- **Monorepo:** Turborepo + Bun  
+- **Frontend:** React 19, Vite, TanStack Router, Tailwind CSS v4  
+- **API:** oRPC + Hono + Zod  
+- **Base de datos:** SQLite (libSQL) + Drizzle ORM  
+- **Auth:** Better Auth  
+- **Objetos:** RustFS (S3 local vía Docker Compose)
+
+## Inicio rápido
 
 ```bash
+# Dependencias
 bun install
-```
 
-## Database Setup
+# Almacenamiento S3 local (opcional para adjuntos)
+docker compose up -d
 
-This project uses SQLite with Drizzle ORM.
+# Variables: copiar y ajustar según .env.example
+cp .env.example apps/server/.env
+# Editar apps/server/.env (DATABASE_URL, BETTER_AUTH_*, S3_*, etc.)
 
-1. Start the local SQLite database (optional):
+# Esquema de base de datos
+bun run db:migrate
 
-```bash
-bun run db:local
-```
+# Datos de demostración (requiere apps/server/.env; sincroniza catálogos SISPRO)
+bun run seed
 
-2. Update your `.env` file in the `apps/server` directory with the appropriate connection details if needed.
-
-3. Apply the schema to your database:
-
-```bash
-bun run db:push
-```
-
-Then, run the development server:
-
-```bash
+# Desarrollo
 bun run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173) in your browser to see the web application.
-The API is running at [http://localhost:3000](http://localhost:3000).
+- **Web:** http://localhost:5173  
+- **API:** http://localhost:3000  
 
-## UI Customization
-
-React web apps in this stack share shadcn/ui primitives through `packages/ui`.
-
-- Change design tokens and global styles in `packages/ui/src/styles/globals.css`
-- Update shared primitives in `packages/ui/src/components/*`
-- Adjust shadcn aliases or style config in `packages/ui/components.json` and `apps/web/components.json`
-
-### Add more shared components
-
-Run this from the project root to add more primitives to the shared UI package:
+## Calidad y CI
 
 ```bash
-npx shadcn@latest add accordion dialog popover sheet table -c packages/ui
+bun run check-types      # TypeScript en todo el monorepo
+bun x ultracite check    # Lint/format (Biome)
+bun x ultracite fix      # Auto-fix
 ```
 
-Import shared components like this:
+Los pull requests ejecutan CI en GitHub Actions (typecheck, ultracite y tests RIPS). Ver [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
 
-```tsx
-import { Button } from "@wellfit-emr/ui/components/button";
-```
+## Contribuir
 
-### Add app-specific blocks
+Leer [CONTRIBUTING.md](CONTRIBUTING.md): plantillas de issue, Definition of Ready/Done y actualización de la matriz de cumplimiento en cambios clínicos o regulatorios.
 
-If you want to add app-specific blocks instead of shared primitives, run the shadcn CLI from `apps/web`.
-
-## Project Structure
+## Estructura del repositorio
 
 ```
 wellfit-emr/
 ├── apps/
-│   ├── web/         # Frontend application (React + TanStack Router)
-│   └── server/      # Backend API (Hono, ORPC)
+│   ├── web/              # UI React + TanStack Router
+│   └── server/           # Hono, oRPC, chat, uploads
 ├── packages/
-│   ├── ui/          # Shared shadcn/ui components and styles
-│   ├── api/         # API layer / business logic
-│   ├── auth/        # Authentication configuration & logic
-│   └── db/          # Database schema & queries
+│   ├── api/              # Routers oRPC, servicios RIPS, IA
+│   ├── db/               # Schema Drizzle y migraciones
+│   ├── auth/             # Better Auth
+│   └── ui/               # Componentes compartidos
+├── docs/governance/      # Matriz, riesgos, DoR/DoD, roadmap
+├── DEVELOPMENT_SPEC.md   # Especificación funcional extendida
+└── AGENTS.md             # Contexto para desarrollo y agentes
 ```
 
-## Available Scripts
+## Documentación
 
-- `bun run dev`: Start all applications in development mode
-- `bun run build`: Build all applications
-- `bun run dev:web`: Start only the web application
-- `bun run dev:server`: Start only the server
-- `bun run check-types`: Check TypeScript types across all apps
-- `bun run db:push`: Push schema changes to database
-- `bun run db:generate`: Generate database client/types
-- `bun run db:migrate`: Run database migrations
-- `bun run db:studio`: Open database studio UI
-- `bun run db:local`: Start the local SQLite database
+| Documento | Uso |
+|-----------|-----|
+| [docs/governance/README.md](docs/governance/README.md) | Gobierno M0, métricas, índice |
+| [DEVELOPMENT_SPEC.md](DEVELOPMENT_SPEC.md) | Requisitos y modelo de datos (referencia larga) |
+| [AGENTS.md](AGENTS.md) | Estado de implementación y convenciones |
+
+## Licencia
+
+Privado — uso institucional WellFit EMR.
