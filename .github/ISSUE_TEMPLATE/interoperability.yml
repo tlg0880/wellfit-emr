@@ -1,0 +1,52 @@
+name: Interoperabilidad (IHCE / FHIR / RIPS)
+description: RDA, FHIR, catálogos SISPRO, exportación RIPS-FEV o integración MUV/CUV
+title: "[Interoperabilidad] "
+labels: ["interoperability", "compliance"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Skill operativa: `.agents/skills/rips-generation-validation` en el repo.
+        Riesgos: [RISK-001](https://github.com/tlg0880/wellfit-emr/blob/main/docs/governance/risk-register.md), RISK-005, RISK-008.
+  - type: dropdown
+    id: domain
+    attributes:
+      label: Dominio
+      options:
+        - RIPS / FEV
+        - IHCE / RDA / FHIR
+        - Catálogos SISPRO
+        - Facturación / billing items
+    validations:
+      required: true
+  - type: textarea
+    id: norms
+    attributes:
+      label: Normas y reglas
+      placeholder: "Res. 2275/2023, RVG01, RVC20, Res. 1888/2025"
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Descripción técnica
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidencia esperada
+      placeholder: "Test rips-preflight-validator, payload JSON, validador FHIR"
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist inicial
+      options:
+        - label: Sin placeholders en generación RIPS
+          required: false
+        - label: Encuentros documentales excluidos si aplica
+          required: false
+        - label: Errores accionables con path navegable en UI
+          required: false

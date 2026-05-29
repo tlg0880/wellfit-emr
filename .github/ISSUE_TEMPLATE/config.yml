@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Gobierno y cumplimiento (M0)
+    url: https://github.com/tlg0880/wellfit-emr/blob/main/docs/governance/README.md
+    about: Matriz de cumplimiento, riesgos, DoR/DoD y roadmap antes de abrir issues ad hoc
+  - name: AGENTS.md — estado del código
+    url: https://github.com/tlg0880/wellfit-emr/blob/main/AGENTS.md
+    about: Convenciones, routers implementados y cambios recientes

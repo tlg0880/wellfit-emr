@@ -6,6 +6,23 @@
 
 Historia Clínica Electrónica conforme con la normativa colombiana. Diseñada para cumplir con: Ley 23 de 1981, Resolución 1995 de 1999, Ley 2015 de 2020 (HCE interoperable), Resolución 866 de 2021, Resolución 1888 de 2025 (IHCE/RDA), Ley 1581 de 2012 (protección de datos), Decreto 780 de 2016 (habilitación), y regulación de RIPS.
 
+## Gobierno técnico y cumplimiento (M0)
+
+Fuente única de verdad para decisiones técnicas y regulatorias: [`docs/governance/README.md`](docs/governance/README.md).
+
+| Artefacto | Ruta |
+|-----------|------|
+| Matriz de cumplimiento (módulo × norma × evidencia) | `docs/governance/compliance-matrix.md` |
+| Registro de riesgos P0–P3 | `docs/governance/risk-register.md` |
+| Definition of Ready / Done | `docs/governance/definition-of-ready.md`, `definition-of-done.md` |
+| Roadmap 30/60/90 y hitos | `docs/governance/roadmap-30-60-90.md`, `milestones.md` |
+| ADR-lite | `docs/governance/architecture-decisions.md` |
+
+- **GitHub:** plantillas en `.github/ISSUE_TEMPLATE/` (seguridad, UX clínica, interoperabilidad, documentación, bug regulatorio); CI en `.github/workflows/ci.yml` (`check-types`, ultracite, tests RIPS).
+- **Contribución:** `CONTRIBUTING.md` enlaza DoR/DoD y obligación de actualizar matriz/riesgos en cambios clínicos o regulatorios.
+- **`DEVELOPMENT_SPEC.md`:** especificación extendida; citas externas rotas depuradas (2026-05-29) — usar matriz de gobierno para auditoría operativa.
+- **Fuentes normativas:** `resources/legal/README.md` indexa copias PDF oficiales versionadas para Ley 23/1981, Res. 1995/1999, Res. 3100/2019, Ley 2015/2020, Res. 866/2021, Res. 1888/2025, Ley 1581/2012, Ley 1751/2015, Res. 2275/2023, Ley 527/1999, Dec. 2364/2012, Res. 839/2017, Ley 594/2000 y Dec. 441/2022. El Decreto 780/2016 queda referenciado por enlace oficial HTML porque el endpoint PDF oficial no entregó contenido.
+
 ## Stack
 
 - **Monorepo**: Turborepo + Bun
@@ -109,6 +126,11 @@ const mutation = useMutation({ ...orpc.patients.create.mutationOptions(), onSucc
 ### Backend routers PENDIENTES
 
 _Ninguno. Todos los routers planificados están implementados._
+
+### Cambios recientes (2026-05-29)
+
+- **M0 — Gobierno técnico y matriz de cumplimiento** (issue #1): Nuevo paquete `docs/governance/` con matriz de cumplimiento por norma/módulo, registro de riesgos P0–P3, DoR/DoD clínico-regulatorio, roadmap 30/60/90, hitos M0–M3 y ADR-lite. README reescrito para el EMR real; `CONTRIBUTING.md` y plantillas GitHub (seguridad, UX clínica, interoperabilidad, documentación, bug regulatorio, feature). CI en `.github/workflows/ci.yml` (typecheck, ultracite, tests RIPS). `DEVELOPMENT_SPEC.md` depurado de marcadores de cita rotos. Issues de seguimiento P0/P1 enlazados desde `docs/governance/risk-register.md`.
+- **M0 — Corpus normativo local**: agregado `resources/legal/` con copias PDF oficiales e índice con fuente y hash SHA-256 para normas clave de historia clínica, IHCE/RDA, protección de datos, RIPS-FEV, firma electrónica, retención documental, habilitación y acuerdos de voluntades. `README.md`, `docs/governance/README.md` y `compliance-matrix.md` enlazan este inventario para auditoría.
 
 ### Cambios recientes (2026-05-28)
 

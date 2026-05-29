@@ -1,0 +1,29 @@
+name: Funcionalidad (clínica o regulatoria)
+description: Nueva capacidad con impacto en historia clínica o cumplimiento
+title: "[Feature] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Resumen
+    validations:
+      required: true
+  - type: textarea
+    id: norms
+    attributes:
+      label: Normas y filas de matriz aplicables
+      description: Enlazar módulo en docs/governance/compliance-matrix.md
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Criterios de aceptación
+    validations:
+      required: true
+  - type: textarea
+    id: milestone
+    attributes:
+      label: Hito roadmap (M1 / M2 / M3)
+      placeholder: "M1 — día 30"
